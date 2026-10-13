@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { tx } from "@/lib/i18n";
+import { untertitel } from "@/lib/i18n";
 import { getTenant } from "@/lib/tenant";
 
 /** Web-App-Manifest pro Gemeinde (Name, Farben, Icons). */
@@ -7,15 +7,15 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   const tenant = await getTenant();
   return {
     id: `/?app=${tenant.slug}`,
-    name: `${tenant.name} – ${tx(tenant.texte.untertitel, tenant.standardSprache)}`,
+    name: `${tenant.name} – ${untertitel(tenant, tenant.standardSprache)}`,
     short_name: tenant.name,
     description: `Bürgerservice der ${tenant.art} ${tenant.name}`,
     lang: tenant.standardSprache,
     start_url: "/",
     scope: "/",
     display: "standalone",
-    background_color: "#f5f5f7",
-    theme_color: "#f5f5f7",
+    background_color: "#f5f7f9",
+    theme_color: "#f5f7f9",
     categories: ["government", "utilities"],
     icons: [
       { src: "/pwa-icon/192", sizes: "192x192", type: "image/png" },

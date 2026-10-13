@@ -8,7 +8,7 @@
  * genutzt (mit Warnung). In Produktion ist der Schlüssel Pflicht.
  */
 import "server-only";
-import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes, timingSafeEqual } from "node:crypto";
 
 let cachedKey: Buffer | null = null;
 
@@ -45,6 +45,33 @@ export function decryptJson<T>(payload: string): T {
   decipher.setAuthTag(Buffer.from(tag, "base64url"));
   const plain = Buffer.concat([decipher.update(Buffer.from(data, "base64url")), decipher.final()]);
   return JSON.parse(plain.toString("utf8")) as T;
+}
+
+/** Verschlüsselt Binärdaten (Dokumente). Format: [12 Byte IV][16 Byte Tag][Daten]. */
+export function encryptBuffer(data: Buffer): Buffer {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key(), iv);
+  const enc = Buffer.concat([cipher.update(data), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), enc]);
+}
+
+export function decryptBuffer(payload: Buffer): Buffer {
+  const decipher = createDecipheriv("aes-256-gcm", key(), payload.subarray(0, 12));
+  decipher.setAuthTag(payload.subarray(12, 28));
+  return Buffer.concat([decipher.update(payload.subarray(28)), decipher.final()]);
+}
+
+/**
+ * Abgeleiteter Schlüssel für einen bestimmten Zweck (z. B. Signaturen).
+ * Nutzt SIGNING_SECRET, sonst wird er per HKDF aus DATA_ENCRYPTION_KEY abgeleitet.
+ */
+export function zweckSchluessel(zweck: string): Buffer {
+  const basis = process.env.SIGNING_SECRET ? Buffer.from(process.env.SIGNING_SECRET) : key();
+  return Buffer.from(hkdfSync("sha256", basis, Buffer.alloc(0), `buergerportal:${zweck}`, 32));
+}
+
+export function sha256Hex(data: Buffer | string): string {
+  return createHash("sha256").update(data).digest("hex");
 }
 
 /** Zugangscodes werden nur als Hash gespeichert. */

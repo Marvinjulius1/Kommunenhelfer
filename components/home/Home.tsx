@@ -1,39 +1,53 @@
 "use client";
 
 /**
- * Startseite: Wappen, Name, ein Eingabefeld. Nach der ersten Eingabe
- * gleitet die Seite sanft in die Gesprächsansicht – Wappen und Name
- * wandern nach oben, das Eingabefeld dockt unten an.
+ * Startseite – radikal reduziert: Wappen, "Bürgerservice online", Eingabefeld.
+ *
+ * Nach der ersten Eingabe bleibt das Eingabefeld DASSELBE Element und gleitet
+ * per Shared-Layout-Animation (nur transform) nach unten; das Wappen wird
+ * kleiner und rückt nach oben. Kein Umschalten, kein Layout-Sprung.
  */
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Antwort, Nachricht } from "@/lib/assistant/types";
-import { fadeUp, spring, stagger } from "@/lib/client/motion";
-import { tx } from "@/lib/i18n";
+import { entwurfId, useUploads } from "@/lib/client/uploads";
+import { untertitel, tx } from "@/lib/i18n";
+import { einblenden, feder, uebergang } from "@/lib/motion";
 import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
-import { AnswerBlock, KleinerLink, Warten } from "./AnswerBlock";
+import { Vorschau } from "@/components/upload/AttachmentTray";
+import { ConsentSheet } from "@/components/upload/ConsentSheet";
+import { DropOverlay } from "@/components/upload/DropOverlay";
+import type { EinreichungErgebnis } from "@/components/upload/Einreichung";
+import { ScanSheet } from "@/components/upload/ScanSheet";
+import { AnswerBlock, Denkt } from "./AnswerBlock";
 import { AskField, type AskFieldHandle } from "./AskField";
 
+interface AnhangInfo {
+  id: string;
+  name: string;
+  typ: string | null;
+}
+
 type Eintrag =
-  | { id: string; rolle: "buerger"; text: string }
-  | { id: string; rolle: "assistent"; antwort: Antwort }
+  | { id: string; rolle: "buerger"; text: string; anhaenge?: AnhangInfo[] }
+  | { id: string; rolle: "assistent"; antwort: Antwort; ergebnis?: EinreichungErgebnis }
   | { id: string; rolle: "fehler"; text: string };
 
-const SPEICHER = "gespraech.v1";
+const SPEICHER = "gespraech.v2";
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function Home() {
   const { tenant, lang, t } = useTenant();
-  const router = useRouter();
-  const reduce = useReducedMotion();
+  const de = lang === "de";
   const [verlauf, setVerlauf] = useState<Eintrag[]>([]);
   const [laedt, setLaedt] = useState(false);
-  const [zeigeWarten, setZeigeWarten] = useState(false);
+  const [scan, setScan] = useState(false);
+  const [vorschauen, setVorschauen] = useState<Record<string, string | undefined>>({});
   const askRef = useRef<AskFieldHandle>(null);
-  const endeRef = useRef<HTMLDivElement>(null);
   const letzterRef = useRef<HTMLDivElement>(null);
+  const up = useUploads(tenant, lang);
+  const uploadsAktiv = tenant.uploads.aktiv;
 
   // Gespräch nur für diese Sitzung merken (z. B. für "Zurück" aus einem Antrag).
   // Beim Schließen des Tabs ist es weg – Datensparsamkeit.
@@ -50,24 +64,26 @@ export function Home() {
     } catch {}
   }, [verlauf]);
 
-  // Neue Nachricht sanft in den Blick rücken.
+  // Neue Frage sanft in den Blick rücken (nur wenn sie nicht schon sichtbar ist).
   useEffect(() => {
-    if (!verlauf.length) return;
-    letzterRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
-  }, [verlauf.length, reduce]);
+    const el = letzterRef.current;
+    if (!el || verlauf.length < 2) return;
+    const r = el.getBoundingClientRect();
+    if (r.top < 0 || r.top > innerHeight * 0.6) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [verlauf.length]);
 
-  useEffect(() => {
-    if (!laedt) return setZeigeWarten(false);
-    const timer = setTimeout(() => setZeigeWarten(true), 300);
-    return () => clearTimeout(timer);
-  }, [laedt]);
-
-  const kontextLeistungId = [...verlauf].reverse().find((e): e is Extract<Eintrag, { rolle: "assistent" }> => e.rolle === "assistent")?.antwort
-    .leistungId;
+  const kontextLeistungId = [...verlauf].reverse().find((e): e is Extract<Eintrag, { rolle: "assistent" }> => e.rolle === "assistent")?.antwort.leistungId;
 
   const senden = useCallback(
     async (text: string, leistungId?: string) => {
-      const buerger: Eintrag = { id: uid(), rolle: "buerger", text };
+      const anhaenge = up.uebergeben();
+      if (anhaenge.length) setVorschauen((v) => ({ ...v, ...Object.fromEntries(anhaenge.map((a) => [a.serverId!, a.vorschau])) }));
+      const buerger: Eintrag = {
+        id: uid(),
+        rolle: "buerger",
+        text: text || (de ? "Ich möchte Unterlagen einreichen." : "I would like to submit documents."),
+        anhaenge: anhaenge.length ? anhaenge.map((a) => ({ id: a.serverId!, name: a.name, typ: a.typ })) : undefined,
+      };
       const neu = [...verlauf, buerger];
       setVerlauf(neu);
       setLaedt(true);
@@ -80,7 +96,13 @@ export function Home() {
         const res = await fetch("/api/assistent", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ nachrichten, leistungId, kontextLeistungId, lang }),
+          body: JSON.stringify({
+            nachrichten,
+            leistungId,
+            kontextLeistungId,
+            lang,
+            ...(anhaenge.length ? { entwurf: entwurfId(), dokumente: anhaenge.map((a) => a.serverId) } : {}),
+          }),
         });
         if (res.status === 429) throw new Error(t.zuVieleAnfragen);
         if (!res.ok) throw new Error(t.fehlerAllgemein);
@@ -93,179 +115,155 @@ export function Home() {
         requestAnimationFrame(() => askRef.current?.focus());
       }
     },
-    [verlauf, kontextLeistungId, lang, t],
+    [verlauf, kontextLeistungId, lang, t, de, up],
   );
 
   const neuesAnliegen = () => {
     setVerlauf([]);
+    entwurfId(true);
     requestAnimationFrame(() => askRef.current?.focus());
   };
 
-  const imGespraech = verlauf.length > 0;
+  const gespraech = verlauf.length > 0;
   const letzteFrage = verlauf.map((e) => e.rolle).lastIndexOf("buerger");
+  const letzteAntwort = verlauf.map((e) => e.rolle).lastIndexOf("assistent");
 
   return (
-    <LayoutGroup>
-      <AnimatePresence mode="popLayout" initial={false}>
-        {!imGespraech ? (
-          <Hero
-            key="hero"
-            askRef={askRef}
-            onSubmit={(text) => senden(text)}
-            onLeistung={(id, label) => senden(label, id)}
-            onLink={(href) => router.push(href)}
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 sm:px-6">
+      {uploadsAktiv && <DropOverlay aktiv onDateien={up.hinzufuegen} />}
+      <ConsentSheet offen={up.einwilligungNoetig} onJa={up.einwilligen} onNein={up.ablehnen} />
+      <ScanSheet offen={scan} onClose={() => setScan(false)} onFertig={(f) => up.hinzufuegen([f])} />
+
+      {/* Kopf: Wappen + Schrift. Im Gespräch klein und oben. */}
+      <div className={gespraech ? "flex items-center justify-between gap-2 pb-6 pr-10 pt-[max(16px,env(safe-area-inset-top))]" : "flex flex-1 flex-col items-center justify-end pb-8 pt-16"}>
+        <div className={gespraech ? "flex min-w-0 items-center gap-3" : "flex flex-col items-center"}>
+          <motion.img
+            layout
+            transition={feder.layout}
+            src={tenant.wappen}
+            alt={tenant.wappenAlt}
+            width={120}
+            height={140}
+            fetchPriority="high"
+            className={gespraech ? "h-9 w-auto" : "h-24 w-auto sm:h-28"}
           />
-        ) : (
-          <motion.div key="gespraech" className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 sm:px-6">
-            {/* Kopfzeile im Gespräch */}
-            <div className="flex items-center justify-between gap-3 pb-6 pt-2">
-              <div className="flex items-center gap-3">
-                <motion.img layoutId="wappen" transition={spring} src={tenant.wappen} alt={tenant.wappenAlt} className="h-10 w-auto" />
-                <motion.h1 layoutId="name" transition={spring} className="text-[19px] font-semibold tracking-[-0.02em]">
-                  {tenant.name}
-                </motion.h1>
-              </div>
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, transition: { delay: 0.2 } }}
-                type="button"
-                onClick={neuesAnliegen}
-                className="glass glass-interactive flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-medium"
-              >
-                <Icon name="refresh" className="size-4" />
-                {t.neuesAnliegen}
-              </motion.button>
-            </div>
-
-            <div role="log" aria-live="polite" aria-relevant="additions" className="flex flex-1 flex-col gap-8 pb-10">
-              {verlauf.map((e, i) => {
-                return (
-                  <div key={e.id} ref={i === letzteFrage ? letzterRef : undefined} className="scroll-mt-24">
-                    {e.rolle === "buerger" && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={spring}
-                        className="flex justify-end"
-                      >
-                        <p className="max-w-[85%] whitespace-pre-wrap rounded-[22px] rounded-br-[8px] bg-[color-mix(in_srgb,var(--fg)_7%,transparent)] px-4 py-2.5 text-[16px] leading-relaxed">
-                          <span className="sr-only">{t.sie}: </span>
-                          {e.text}
-                        </p>
-                      </motion.div>
-                    )}
-                    {e.rolle === "assistent" && (
-                      <AnswerBlock antwort={e.antwort} aktiv={!laedt && i === verlauf.length - 1} onOption={(id, label) => senden(label, id)} />
-                    )}
-                    {e.rolle === "fehler" && (
-                      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="text-[15px] text-danger">
-                        {e.text}
-                      </motion.p>
-                    )}
-                  </div>
-                );
-              })}
-              <AnimatePresence>{zeigeWarten && <Warten />}</AnimatePresence>
-              <div ref={endeRef} />
-            </div>
-
-            {/* Angedocktes Eingabefeld (sticky, damit Impressum & Co. im Footer erreichbar bleiben) */}
-            <div className="pointer-events-none sticky bottom-0 z-20 -mx-4 bg-gradient-to-t from-[var(--bg)] from-55% to-transparent pb-[max(1rem,env(safe-area-inset-bottom))] pt-10 sm:-mx-6">
-              <div className="pointer-events-auto px-4 sm:px-6">
-                <AskField ref={askRef} size="dock" onSubmit={(text) => senden(text)} disabled={laedt} placeholder={tx(tenant.texte.platzhalter, lang)} describedBy="ki-hinweis-kurz" />
-                <p id="ki-hinweis-kurz" className="mt-2 text-center text-[12px] text-subtle">
-                  {lang === "de"
-                    ? `Antworten beruhen auf Informationen der ${tenant.art} ${tenant.name}. Im Zweifel hilft Ihnen das Bürgerbüro.`
-                    : `Answers are based on information from ${tenant.name}. If in doubt, the citizens' office will help.`}
-                </p>
-              </div>
-            </div>
-          </motion.div>
+          <h1 className="sr-only">
+            {tenant.art} {tenant.name} – {untertitel(tenant, lang)}
+          </h1>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.p
+              key={gespraech ? "klein" : "gross"}
+              aria-hidden="true"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { ...uebergang.lang, delay: gespraech ? 0.12 : 0.05 } }}
+              exit={{ opacity: 0, transition: uebergang.kurz }}
+              className={gespraech ? "truncate text-[15px] tracking-[0.01em] text-muted" : "mt-8 text-[24px] font-light tracking-[0.02em] text-fg sm:text-[28px]"}
+            >
+              {untertitel(tenant, lang)}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+        {gespraech && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { ...uebergang.mittel, delay: 0.15 } }}
+            type="button"
+            onClick={neuesAnliegen}
+            aria-label={t.neuesAnliegen}
+            className="pressable flex h-10 shrink-0 items-center gap-2 rounded-full px-2 text-[14px] text-muted hover:text-fg sm:px-4"
+          >
+            <Icon name="refresh" className="size-4" />
+            <span className="hidden sm:inline">{t.neuesAnliegen}</span>
+          </motion.button>
         )}
-      </AnimatePresence>
-    </LayoutGroup>
-  );
-}
+      </div>
 
-// ---------------------------------------------------------------------------
-
-function Hero({
-  askRef,
-  onSubmit,
-  onLeistung,
-  onLink,
-}: {
-  askRef: React.RefObject<AskFieldHandle | null>;
-  onSubmit: (text: string) => void;
-  onLeistung: (id: string, label: string) => void;
-  onLink: (href: string) => void;
-}) {
-  const { tenant, lang, t } = useTenant();
-  const aktive = new Set(tenant.leistungen.filter((l) => l.aktiv).map((l) => l.id));
-  const aktionen = tenant.schnellaktionen.filter((s) => !s.leistungId || aktive.has(s.leistungId)).slice(0, 6);
-
-  return (
-    <motion.section
-      variants={stagger(0.07, 0.05)}
-      initial="hidden"
-      animate="show"
-      exit={{ opacity: 0, transition: { duration: 0.2 } }}
-      aria-labelledby="gemeinde-name"
-      className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center px-4 pb-10 pt-4 text-center sm:px-6 sm:pb-24"
-    >
-      <motion.img
-        layoutId="wappen"
-        transition={spring}
-        variants={{ hidden: { opacity: 0, scale: 0.9 }, show: { opacity: 1, scale: 1, transition: spring } }}
-        src={tenant.wappen}
-        alt={tenant.wappenAlt}
-        className="h-[72px] w-auto drop-shadow-[0_8px_24px_rgb(0_0_0/0.12)] sm:h-[88px]"
-      />
-      <motion.h1
-        id="gemeinde-name"
-        layoutId="name"
-        transition={spring}
-        variants={fadeUp}
-        className="mt-6 text-[40px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[56px]"
-      >
-        {tenant.name}
-      </motion.h1>
-      <motion.p variants={fadeUp} className="mt-3 text-[17px] text-muted sm:text-[19px]">
-        {tx(tenant.texte.untertitel, lang)}
-      </motion.p>
-
-      <motion.div variants={fadeUp} className="mt-10 w-full sm:mt-12">
-        <AskField ref={askRef} onSubmit={onSubmit} placeholder={tx(tenant.texte.platzhalter, lang)} describedBy="ki-hinweis" />
-      </motion.div>
-
-      {aktionen.length > 0 && (
-        <motion.nav variants={fadeUp} aria-label={t.schnellaktionen} className="mt-6 w-full">
-          <motion.ul variants={stagger(0.045, 0.1)} className="flex flex-wrap justify-center gap-2">
-            {aktionen.map((a, i) => {
-              const label = tx(a.label, lang);
-              return (
-                <motion.li key={i} variants={{ hidden: { opacity: 0, y: 6, scale: 0.97 }, show: { opacity: 1, y: 0, scale: 1, transition: spring } }}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      a.href ? onLink(a.href) : a.leistungId ? onLeistung(a.leistungId, label) : onSubmit(tx(a.anfrage, lang) || label)
-                    }
-                    className="glass glass-interactive rounded-full px-4 py-2.5 text-[14px] font-medium text-fg/90 sm:text-[15px]"
-                  >
-                    {label}
-                  </button>
-                </motion.li>
-              );
-            })}
-          </motion.ul>
-        </motion.nav>
+      {/* Gesprächsverlauf */}
+      {gespraech && (
+        <section role="log" aria-live="polite" aria-relevant="additions" aria-label={de ? "Gesprächsverlauf" : "Conversation"} className="flex flex-1 flex-col gap-8 pb-8">
+          {verlauf.map((e, i) => (
+            <div key={e.id} ref={i === letzteFrage ? letzterRef : undefined} className="scroll-mt-8">
+              {e.rolle === "buerger" && (
+                <motion.div variants={einblenden} initial="hidden" animate="show" className="flex flex-col items-end gap-2">
+                  {e.anhaenge && (
+                    <ul className="flex flex-wrap justify-end gap-2" aria-label={de ? "Gesendete Unterlagen" : "Sent documents"}>
+                      {e.anhaenge.map((a) => (
+                        <li key={a.id} className="flex max-w-56 items-center gap-2 rounded-[16px] bg-[var(--line)] p-1 pr-4">
+                          <Vorschau src={vorschauen[a.id]} typ={a.typ} className="size-10" />
+                          <span className="truncate text-[13px]">{a.name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="max-w-[85%] whitespace-pre-wrap rounded-[24px] rounded-br-[8px] bg-[var(--line)] px-4 py-2 text-[16px] leading-relaxed">
+                    <span className="sr-only">{t.sie}: </span>
+                    {e.text}
+                  </p>
+                </motion.div>
+              )}
+              {e.rolle === "assistent" && (
+                <AnswerBlock
+                  antwort={e.antwort}
+                  aktiv={!laedt && i === letzteAntwort}
+                  onOption={(id, label) => senden(label, id)}
+                  vorschauen={vorschauen}
+                  nachricht={(verlauf[i - 1] as { text?: string })?.text ?? ""}
+                  ergebnis={e.ergebnis}
+                  onAbgesendet={(ergebnis) => setVerlauf((v) => v.map((x) => (x.id === e.id ? { ...x, ergebnis } : x)))}
+                />
+              )}
+              {e.rolle === "fehler" && (
+                <motion.p variants={einblenden} initial="hidden" animate="show" role="alert" className="text-[15px] text-danger">
+                  {e.text}
+                </motion.p>
+              )}
+            </div>
+          ))}
+          <AnimatePresence>{laedt && <Denkt />}</AnimatePresence>
+        </section>
       )}
 
-      <motion.p variants={fadeUp} id="ki-hinweis" className="mt-10 max-w-md text-[12.5px] leading-relaxed text-subtle">
-        {t.kiHinweis} <KleinerLink href="/datenschutz#assistent">{t.kiHinweisMehr}</KleinerLink>
-        {" · "}
-        <KleinerLink href="/leistungen">{t.alleLeistungen}</KleinerLink>
-      </motion.p>
-    </motion.section>
+      {/* Eingabefeld: dasselbe Element in beiden Zuständen */}
+      <motion.div
+        layout="position"
+        transition={feder.layout}
+        className={
+          gespraech
+            ? "sticky bottom-0 z-20 -mx-4 bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md sm:-mx-6 sm:px-6"
+            : "flex-1 pb-24"
+        }
+      >
+        <AskField
+          ref={askRef}
+          size="hero"
+          onSubmit={(text) => senden(text)}
+          disabled={laedt}
+          placeholder={tx(tenant.texte.platzhalter, lang)}
+          describedBy={gespraech ? "ki-hinweis" : undefined}
+          uploads={
+            uploadsAktiv
+              ? { anhaenge: up.anhaenge, laedt: up.laedt, onDateien: up.hinzufuegen, onScan: () => setScan(true), onEntfernen: up.entfernen, onErneut: up.erneut }
+              : undefined
+          }
+        />
+        <div aria-live="polite">
+          {up.hinweis && (
+            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2 flex items-center justify-center gap-2 text-center text-[13px] text-muted">
+              {up.hinweis}
+              <button type="button" onClick={() => up.setHinweis(null)} aria-label={de ? "Hinweis schließen" : "Dismiss"} className="pressable grid size-6 place-items-center rounded-full">
+                <Icon name="close" className="size-3.5" />
+              </button>
+            </motion.p>
+          )}
+        </div>
+        {gespraech && (
+          <motion.p id="ki-hinweis" initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.3 } }} className="mt-2 text-center text-[12px] text-subtle">
+            {de
+              ? `Antworten erstellt ein KI-System auf Grundlage der Informationen der ${tenant.art} ${tenant.name}. Entscheidungen trifft immer das Amt.`
+              : `Answers are generated by an AI system based on information from ${tenant.name}. Decisions are always made by the office.`}
+          </motion.p>
+        )}
+      </motion.div>
+    </div>
   );
 }

@@ -1,29 +1,34 @@
 "use client";
 
-/** "Meine Anliegen": Status aller Anträge und Termine, die auf diesem Gerät gestellt wurden. */
+/**
+ * "Meine Anliegen": Status aller Vorgänge und Termine dieses Geräts.
+ * Abruf über Vorgangsnummer + Zugangscode (lokal gespeichert) – oder manuell.
+ */
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { entferneAnliegen, ladeAnliegen, type LokalesAnliegen } from "@/lib/client/anliegen";
-import { fadeUp, stagger } from "@/lib/client/motion";
+import { einblenden, gestaffelt } from "@/lib/motion";
 
 interface Status {
   id: string;
-  typ: "antrag" | "termin" | "unbekannt";
+  typ: "vorgang" | "termin" | "unbekannt";
   status?: string;
+  amt?: string;
   slot?: string;
-  verlauf?: { status: string; am: string }[];
+  dokumente?: number;
+  nachrichten?: { von: "amt" | "buerger"; text: string; am: string }[];
 }
 
-const STUFEN = ["eingegangen", "in_bearbeitung", "abgeschlossen"] as const;
+const STUFEN = ["eingegangen", "in_bearbeitung", "erledigt"] as const;
 const LABEL: Record<string, { de: string; en: string }> = {
   eingegangen: { de: "Eingegangen", en: "Received" },
   in_bearbeitung: { de: "In Bearbeitung", en: "In progress" },
-  rueckfrage: { de: "Rückfrage – wir melden uns", en: "Query – we will contact you" },
-  abgeschlossen: { de: "Abgeschlossen", en: "Completed" },
+  rueckfrage: { de: "Rückfrage", en: "Query" },
+  erledigt: { de: "Erledigt", en: "Completed" },
   gebucht: { de: "Gebucht", en: "Booked" },
   storniert: { de: "Abgesagt", en: "Cancelled" },
 };
@@ -35,7 +40,7 @@ export function MeineAnliegen() {
   const [status, setStatus] = useState<Record<string, Status>>({});
   const [laedt, setLaedt] = useState(false);
 
-  const laden = async (eintraege: LokalesAnliegen[]) => {
+  const laden = useCallback(async (eintraege: LokalesAnliegen[]) => {
     if (!eintraege.length) return;
     setLaedt(true);
     try {
@@ -46,21 +51,23 @@ export function MeineAnliegen() {
       });
       const d = await res.json();
       setStatus(Object.fromEntries((d.eintraege as Status[]).map((s) => [s.id, s])));
+    } catch {
+      /* Status bleibt leer – Hinweis unten */
     } finally {
       setLaedt(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const l = ladeAnliegen();
     setLokal(l);
-    laden(l);
-  }, []);
+    void laden(l);
+  }, [laden]);
 
   const absagen = async (a: LokalesAnliegen) => {
     if (!confirm(de ? "Möchten Sie diesen Termin wirklich absagen?" : "Do you really want to cancel this appointment?")) return;
     const res = await fetch("/api/termine", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: a.id, code: a.code }) });
-    if (res.ok) laden(lokal ?? []);
+    if (res.ok) void laden(lokal ?? []);
   };
 
   const entfernen = (id: string) => {
@@ -78,10 +85,10 @@ export function MeineAnliegen() {
 
   if (!lokal.length)
     return (
-      <Glass className="rounded-[26px] p-8 text-center">
+      <Glass className="rounded-[24px] p-8 text-center">
         <p className="text-[17px]">{de ? "Auf diesem Gerät sind noch keine Anliegen gespeichert." : "No requests are stored on this device yet."}</p>
         <p className="mt-2 text-[15px] text-muted">
-          {de ? "Sobald Sie einen Antrag stellen oder einen Termin buchen, sehen Sie hier den aktuellen Stand." : "Once you submit an application or book an appointment, you will see its status here."}
+          {de ? "Sobald Sie etwas einreichen oder einen Termin buchen, sehen Sie hier den aktuellen Stand." : "Once you submit something or book an appointment, you will see its status here."}
         </p>
         <div className="mt-6">
           <ButtonLink href="/">{t.startseite}</ButtonLink>
@@ -90,31 +97,28 @@ export function MeineAnliegen() {
     );
 
   return (
-    <motion.ul variants={stagger(0.06)} initial="hidden" animate="show" className="space-y-4" aria-busy={laedt}>
+    <motion.ul variants={gestaffelt(0.05)} initial="hidden" animate="show" className="space-y-4" aria-busy={laedt}>
       {lokal.map((a) => {
         const s = status[a.id];
         const st = s?.status ?? (laedt ? undefined : "unbekannt");
-        const stufe = STUFEN.indexOf((st as (typeof STUFEN)[number]) ?? "eingegangen");
+        const stufe = st === "rueckfrage" ? 1 : STUFEN.indexOf((st as (typeof STUFEN)[number]) ?? "eingegangen");
         return (
-          <motion.li key={a.id} variants={fadeUp}>
-            <Glass className="rounded-[24px] p-5 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+          <motion.li key={a.id} variants={einblenden}>
+            <Glass className="rounded-[24px] p-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-[13px] text-subtle">
                     <Icon name={a.typ === "termin" ? "calendar" : "doc"} className="size-4" />
-                    {a.typ === "termin" ? (de ? "Termin" : "Appointment") : de ? "Antrag" : "Application"} · {fmt(a.erstelltAm)}
+                    {a.typ === "termin" ? (de ? "Termin" : "Appointment") : de ? "Vorgang" : "Request"} · {fmt(a.erstelltAm)}
                   </p>
-                  <h2 className="mt-1 text-[18px] font-semibold tracking-[-0.01em]">{a.titel}</h2>
-                  <p className="mt-0.5 font-mono text-[13px] text-subtle">{a.id}</p>
+                  <h2 className="mt-1 text-[17px] font-semibold tracking-[-0.01em]">{a.titel}</h2>
+                  <p className="mt-1 font-mono text-[13px] text-subtle">{a.id}</p>
+                  {s?.amt && <p className="mt-1 text-[13px] text-subtle">{s.amt}</p>}
                 </div>
                 {st && st !== "unbekannt" && (
                   <span
-                    className={`rounded-full px-3 py-1 text-[13px] font-medium ${
-                      st === "abgeschlossen" || st === "gebucht"
-                        ? "bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-success"
-                        : st === "storniert"
-                          ? "bg-[var(--line)] text-muted"
-                          : "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] text-accent"
+                    className={`rounded-full px-4 py-1 text-[13px] font-medium ${
+                      st === "erledigt" || st === "gebucht" ? "bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-success" : "bg-[var(--line)] text-fg"
                     }`}
                   >
                     {LABEL[st]?.[lang] ?? st}
@@ -122,33 +126,35 @@ export function MeineAnliegen() {
                 )}
               </div>
 
-              {s?.typ === "antrag" && (
-                <ol className="mt-5 grid grid-cols-3 gap-2" aria-label={de ? "Bearbeitungsstand" : "Progress"}>
+              {s?.typ === "vorgang" && (
+                <ol className="mt-6 grid grid-cols-3 gap-2" aria-label={de ? "Bearbeitungsstand" : "Progress"}>
                   {STUFEN.map((x, i) => (
                     <li key={x} className="text-[12px] text-subtle" aria-current={i === stufe ? "step" : undefined}>
-                      <div className={`mb-2 h-1 rounded-full ${i <= stufe ? "bg-accent" : "bg-[var(--line)]"}`} />
+                      <div className={`mb-2 h-1 rounded-full ${i <= stufe ? "bg-fg/70" : "bg-[var(--line)]"}`} />
                       <span className={i <= stufe ? "text-fg" : ""}>{LABEL[x][lang]}</span>
                     </li>
                   ))}
                 </ol>
               )}
 
+              {s?.typ === "vorgang" && !!s.nachrichten?.length && <Nachrichten eintrag={a} nachrichten={s.nachrichten} offen={st === "rueckfrage"} onGesendet={() => laden(lokal)} />}
+
               {s?.typ === "termin" && s.slot && <p className="mt-4 text-[15px]">{fmtSlot(s.slot)}</p>}
 
               {st === "unbekannt" && (
-                <p className="mt-3 text-[14px] text-muted">
-                  {de ? "Dieses Anliegen ist abgeschlossen und wurde gemäß Löschfrist entfernt." : "This request has been completed and deleted after the retention period."}
+                <p className="mt-4 text-[14px] text-muted">
+                  {de ? "Dieses Anliegen ist abgeschlossen und wurde nach Ablauf der Aufbewahrungsfrist gelöscht." : "This request has been completed and deleted after the retention period."}
                 </p>
               )}
 
               <div className="mt-4 flex flex-wrap gap-2">
                 {s?.typ === "termin" && s.status === "gebucht" && (
-                  <Button variant="glass" className="min-h-9 px-4 text-[14px]" onClick={() => absagen(a)}>
+                  <Button variant="glass" className="!min-h-10 px-4 text-[14px]" onClick={() => absagen(a)}>
                     {de ? "Termin absagen" : "Cancel appointment"}
                   </Button>
                 )}
-                {(st === "unbekannt" || st === "storniert" || st === "abgeschlossen") && (
-                  <Button variant="quiet" className="min-h-9 px-4 text-[14px]" onClick={() => entfernen(a.id)}>
+                {(st === "unbekannt" || st === "storniert" || st === "erledigt") && (
+                  <Button variant="quiet" className="!min-h-10 px-4 text-[14px]" onClick={() => entfernen(a.id)}>
                     {de ? "Aus der Liste entfernen" : "Remove from list"}
                   </Button>
                 )}
@@ -158,5 +164,75 @@ export function MeineAnliegen() {
         );
       })}
     </motion.ul>
+  );
+}
+
+function Nachrichten({
+  eintrag,
+  nachrichten,
+  offen,
+  onGesendet,
+}: {
+  eintrag: LokalesAnliegen;
+  nachrichten: { von: "amt" | "buerger"; text: string; am: string }[];
+  offen: boolean;
+  onGesendet: () => void;
+}) {
+  const { lang } = useTenant();
+  const de = lang === "de";
+  const [text, setText] = useState("");
+  const [sendet, setSendet] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const fid = `antwort-${eintrag.id}`;
+
+  const senden = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setSendet(true);
+    setFehler(null);
+    try {
+      const res = await fetch("/api/anliegen/antwort", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: eintrag.id, code: eintrag.code, text }),
+      });
+      if (!res.ok) throw new Error();
+      setText("");
+      onGesendet();
+    } catch {
+      setFehler(de ? "Ihre Antwort konnte nicht gesendet werden. Bitte versuchen Sie es erneut." : "Your reply could not be sent. Please try again.");
+    } finally {
+      setSendet(false);
+    }
+  };
+
+  return (
+    <div className="mt-6 space-y-4 border-t border-[var(--line)] pt-6">
+      {nachrichten.map((n, i) => (
+        <div key={i} className={n.von === "amt" ? "" : "pl-8"}>
+          <p className="text-[12px] text-subtle">
+            {n.von === "amt" ? (de ? "Nachricht vom Amt" : "Message from the office") : de ? "Ihre Antwort" : "Your reply"} ·{" "}
+            {new Intl.DateTimeFormat(de ? "de-DE" : "en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(n.am))}
+          </p>
+          <p className="mt-1 whitespace-pre-wrap text-[15px] leading-relaxed">{n.text}</p>
+        </div>
+      ))}
+      {offen && (
+        <form onSubmit={senden} className="space-y-2">
+          <label htmlFor={fid} className="text-[14px] font-medium">
+            {de ? "Ihre Antwort" : "Your reply"}
+          </label>
+          <textarea id={fid} rows={3} className="field-input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
+          {fehler && (
+            <p role="alert" className="text-[14px] text-danger">
+              {fehler}
+            </p>
+          )}
+          <Button type="submit" disabled={sendet || !text.trim()} className="!min-h-10 px-4 text-[14px]">
+            {sendet ? (de ? "Wird gesendet …" : "Sending …") : de ? "Antwort senden" : "Send reply"}
+          </Button>
+        </form>
+      )}
+    </div>
   );
 }

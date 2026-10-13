@@ -39,7 +39,7 @@ export function Field({ feld, wert, fehler, onChange, onBlur }: Props) {
   ) : null;
 
   const Fehler = fehler ? (
-    <p id={fehlerId} className="mt-2 flex items-start gap-1.5 text-[14px] text-danger">
+    <p id={fehlerId} className="mt-2 flex items-start gap-2 text-[14px] text-danger">
       <Icon name="info" className="mt-[1px] size-4 shrink-0" />
       {fehler}
     </p>

@@ -4,10 +4,9 @@
  * denselben Regeln wie im Browser geprüft und verschlüsselt gespeichert.
  */
 import { z } from "zod";
-import { fehler, langAus, leseJson, tenantAus } from "@/lib/api";
+import { basisUrl, fehler, langAus, leseJson, tenantAus } from "@/lib/api";
 import { validiereFormular } from "@/lib/flows/validate";
 import { gatewayFuer } from "@/lib/integrations";
-import { sendMail } from "@/lib/mail";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { findeLeistung } from "@/lib/tenant";
 import { tx } from "@/lib/i18n";
@@ -44,31 +43,7 @@ export async function POST(req: Request) {
   const pruefung = validiereFormular(leistung.formular, body.werte, lang);
   if (!pruefung.ok) return fehler("validierung", 422, { felder: pruefung.fehler });
 
-  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte });
-
+  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant) });
   const titel = tx(leistung.titel, lang);
-  const email = pruefung.werte.email;
-  if (email) {
-    await sendMail(tenant, {
-      to: email,
-      subject: `Eingangsbestätigung: ${titel} (${ergebnis.vorgangsnummer})`,
-      text: [
-        `Guten Tag ${pruefung.werte.vorname ?? ""} ${pruefung.werte.nachname ?? ""},`.replace(/\s+,/, ","),
-        "",
-        `vielen Dank. Ihr Antrag „${titel}“ ist bei der ${tenant.art} ${tenant.name} eingegangen.`,
-        "",
-        `Vorgangsnummer: ${ergebnis.vorgangsnummer}`,
-        "",
-        "So geht es weiter:",
-        ...leistung.ablauf.slice(1).map((s, i) => `${i + 1}. ${tx(s, lang)}`),
-        "",
-        "Den aktuellen Stand sehen Sie jederzeit unter „Meine Anliegen“ auf dem Gerät, mit dem Sie den Antrag gestellt haben.",
-        "",
-        "Freundliche Grüße",
-        tenant.email.absenderName,
-      ].join("\n"),
-    }).catch((e) => console.error("[mail] Versand fehlgeschlagen:", (e as Error).message));
-  }
-
   return Response.json({ ...ergebnis, titel }, { status: 201 });
 }

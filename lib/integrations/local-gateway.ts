@@ -1,32 +1,30 @@
 /**
- * Standard-Übermittlung: Der Antrag wird verschlüsselt im Portal gespeichert
- * und kann von der Verwaltung (künftig: Admin-Bereich) bearbeitet werden.
+ * Standard-Übermittlung: Der Antrag wird als Vorgang verschlüsselt im Portal
+ * gespeichert, laut Konfiguration an das Amt weitergeleitet und ist im
+ * Backoffice bearbeitbar.
  */
 import "server-only";
-import { encryptJson, hashToken, vorgangsnummer, zugangscode } from "@/lib/crypto";
-import { inTagen, store } from "@/lib/storage/store";
-import type { AntragRecord } from "@/lib/records";
+import { erstelleVorgang } from "@/lib/vorgaenge/service";
 import type { SubmissionGateway } from "./index";
 
 export const localGateway: SubmissionGateway = {
   id: "local",
-  async einreichen({ tenant, leistung, daten }) {
-    const id = vorgangsnummer(tenant.slug);
-    const code = zugangscode();
-    const jetzt = new Date().toISOString();
-    const record: AntragRecord = {
-      id,
-      tenant: tenant.slug,
-      leistungId: leistung.id,
-      leistungsschluessel: leistung.leistungsschluessel,
-      status: "eingegangen",
-      verlauf: [{ status: "eingegangen", am: jetzt }],
-      tokenHash: hashToken(code),
-      daten: encryptJson(daten),
-      erstelltAm: jetzt,
-      loeschenAm: inTagen(leistung.formular?.aufbewahrungTage ?? 90),
-    };
-    await store().put("antraege", record);
-    return { vorgangsnummer: id, zugangscode: code };
+  async einreichen({ tenant, leistung, daten, basisUrl }) {
+    return erstelleVorgang({
+      tenant,
+      quelle: "formular",
+      leistung,
+      amtId: leistung.amtId ?? tenant.uploads.standardAmtId,
+      daten: {
+        kontakt: {
+          name: [daten.vorname, daten.nachname].filter(Boolean).join(" ") || "Antragsteller/in",
+          email: daten.email,
+          telefon: daten.telefon,
+        },
+        werte: daten,
+      },
+      aufbewahrungTage: leistung.formular?.aufbewahrungTage ?? tenant.uploads.aufbewahrungTage,
+      basisUrl,
+    });
   },
 };

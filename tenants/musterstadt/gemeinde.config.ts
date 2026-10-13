@@ -112,45 +112,73 @@ export default defineGemeinde({
       id: "buergerbuero",
       name: "Bürgerbüro",
       ort: "Rathaus, Erdgeschoss, Zimmer 0.12",
-      terminzeiten: {
-        mo: [["08:00", "12:00"]],
-        di: [["08:00", "12:00"], ["14:00", "18:00"]],
-        mi: [["08:00", "12:00"]],
-        do: [["08:00", "12:00"], ["14:00", "16:00"]],
-        fr: [["08:00", "12:00"]],
+      zustaendigkeiten: ["meldewesen", "anmeldung", "ummeldung", "abmeldung", "personalausweis", "reisepass", "meldebescheinigung", "führungszeugnis", "fundsache", "beglaubigung"],
+      bearbeitungshinweis: "In der Regel bearbeiten wir Ihr Anliegen innerhalb von 3 Werktagen.",
+      weiterleitung: { typ: "email", adresse: "buergerbuero@musterstadt.example" },
+      termine: {
+        zeiten: {
+          mo: [["08:00", "12:00"]],
+          di: [["08:00", "12:00"], ["14:00", "18:00"]],
+          mi: [["08:00", "12:00"]],
+          do: [["08:00", "12:00"], ["14:00", "16:00"]],
+          fr: [["08:00", "12:00"]],
+        },
+        slotMinuten: 15,
+        parallel: 2,
+        vorlaufTage: 1,
+        buchbarTage: 42,
       },
-      slotMinuten: 15,
-      parallel: 2,
-      vorlaufTage: 1,
-      buchbarTage: 42,
     },
     {
       id: "standesamt",
       name: "Standesamt",
       ort: "Rathaus, 1. Obergeschoss, Zimmer 1.04",
-      terminzeiten: {
-        di: [["09:00", "12:00"]],
-        do: [["09:00", "12:00"], ["14:00", "16:00"]],
+      zustaendigkeiten: ["standesamt", "geburt", "geburtsurkunde", "eheschließung", "heirat", "eheurkunde", "namensänderung", "sterbefall", "personenstand"],
+      bearbeitungshinweis: "In der Regel bearbeiten wir Ihr Anliegen innerhalb von 5 Werktagen.",
+      weiterleitung: { typ: "backoffice" },
+      termine: {
+        zeiten: {
+          di: [["09:00", "12:00"]],
+          do: [["09:00", "12:00"], ["14:00", "16:00"]],
+        },
+        slotMinuten: 30,
+        parallel: 1,
+        vorlaufTage: 2,
+        buchbarTage: 60,
       },
-      slotMinuten: 30,
-      parallel: 1,
-      vorlaufTage: 2,
-      buchbarTage: 60,
     },
     {
       id: "steueramt",
       name: "Steuer- und Kassenamt",
       ort: "Rathaus, 2. Obergeschoss, Zimmer 2.08",
-      terminzeiten: {
-        mo: [["09:00", "12:00"]],
-        mi: [["09:00", "12:00"]],
+      zustaendigkeiten: ["hundesteuer", "grundsteuer", "gewerbesteuer", "steuerbescheid", "mahnung", "zahlung", "lastschrift", "kasse"],
+      bearbeitungshinweis: "In der Regel bearbeiten wir Ihr Anliegen innerhalb von 10 Werktagen.",
+      weiterleitung: { typ: "backoffice" },
+      termine: {
+        zeiten: {
+          mo: [["09:00", "12:00"]],
+          mi: [["09:00", "12:00"]],
+        },
+        slotMinuten: 20,
+        parallel: 1,
+        vorlaufTage: 1,
+        buchbarTage: 30,
       },
-      slotMinuten: 20,
-      parallel: 1,
-      vorlaufTage: 1,
-      buchbarTage: 30,
     },
   ],
+
+  // -------------------------------------------------------------------------
+  // Dokumenten-Upload im Assistenten
+  // -------------------------------------------------------------------------
+  uploads: {
+    aktiv: true,
+    maxDateiMB: 10,
+    maxGesamtMB: 40,
+    maxDateien: 10,
+    aufbewahrungTage: 90,
+    // Unklare Unterlagen gehen an das Bürgerbüro (zentrale Poststelle).
+    standardAmtId: "buergerbuero",
+  },
 
   // -------------------------------------------------------------------------
   // Leistungen
@@ -186,6 +214,10 @@ export default defineGemeinde({
       ],
       fristen: ["Anmeldung innerhalb von 14 Tagen nach Aufnahme des Hundes oder nach Zuzug."],
       amtId: "steueramt",
+      dokumente: [
+        { art: "versicherungsnachweis", pflicht: true, hinweis: "Nachweis der Hundehaftpflichtversicherung" },
+        { art: "schwerbehindertenausweis", pflicht: false, hinweis: "Nur bei Antrag auf Steuerbefreiung" },
+      ],
       online: true,
       termin: true,
       dauer: { de: "ca. 5 Minuten", en: "approx. 5 minutes" },
@@ -399,6 +431,10 @@ export default defineGemeinde({
       ],
       fristen: ["Innerhalb von 2 Wochen nach dem Einzug (§ 17 Bundesmeldegesetz)."],
       amtId: "buergerbuero",
+      dokumente: [
+        { art: "wohnungsgeberbestaetigung", pflicht: true },
+        { art: "personalausweis", pflicht: true, hinweis: "Oder Reisepass" },
+      ],
       online: false,
       termin: true,
       leistungsschluessel: "99115001000000",
@@ -442,6 +478,12 @@ export default defineGemeinde({
         "Danach beantragen Sie neue Ausweisdokumente im Bürgerbüro.",
       ],
       amtId: "standesamt",
+      dokumente: [
+        { art: "personalausweis", pflicht: true },
+        { art: "eheurkunde", pflicht: false, hinweis: "Bei Namensänderung nach der Eheschließung" },
+        { art: "scheidungsurteil", pflicht: false, hinweis: "Bei Namensänderung nach einer Scheidung" },
+        { art: "geburtsurkunde", pflicht: false },
+      ],
       online: false,
       termin: true,
     },
@@ -544,6 +586,7 @@ export default defineGemeinde({
       ],
       ablauf: ["Sie bestellen online.", "Das Standesamt prüft Ihre Berechtigung.", "Sie erhalten die Urkunde mit Rechnung per Post."],
       amtId: "standesamt",
+      dokumente: [{ art: "personalausweis", pflicht: true, hinweis: "Zur Prüfung Ihrer Berechtigung" }],
       online: true,
       termin: false,
       dauer: "ca. 3 Minuten",
@@ -637,15 +680,6 @@ export default defineGemeinde({
         { label: "Reisepass", leistungId: "reisepass" },
       ],
     },
-  ],
-
-  schnellaktionen: [
-    { label: { de: "Hund anmelden", en: "Register a dog" }, leistungId: "hund-anmelden" },
-    { label: { de: "Termin buchen", en: "Book an appointment" }, href: "/termine" },
-    { label: { de: "Umziehen", en: "Moving" }, anfrage: { de: "Ich ziehe um", en: "I am moving" } },
-    { label: { de: "Namensänderung", en: "Change of name" }, leistungId: "namensaenderung" },
-    { label: { de: "Personalausweis", en: "ID card" }, leistungId: "personalausweis" },
-    { label: { de: "Meldebescheinigung", en: "Certificate of registration" }, leistungId: "meldebescheinigung" },
   ],
 
   faq: [

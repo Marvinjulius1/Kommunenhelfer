@@ -16,7 +16,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { anzeigeWert, istSichtbar, validiereSchritt, type Fehler, type Werte } from "@/lib/flows/validate";
 import { speichereAnliegen } from "@/lib/client/anliegen";
-import { fadeUp, spring, stagger } from "@/lib/client/motion";
+import { einblenden, feder, gestaffelt, schrittwechsel, uebergang } from "@/lib/motion";
 import { tx } from "@/lib/i18n";
 import { Field } from "./Field";
 
@@ -138,11 +138,6 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
 
   const titel = tx(leistung.titel, lang);
   const fortschritt = phase.typ === "schritt" ? (phase.index + 1) / (schritte.length + 1) : phase.typ === "pruefen" ? 1 : 0;
-  const variants = {
-    enter: (d: number) => ({ opacity: 0, x: reduce ? 0 : d * 24 }),
-    center: { opacity: 1, x: 0 },
-    exit: (d: number) => ({ opacity: 0, x: reduce ? 0 : d * -24 }),
-  };
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-10 sm:px-6">
@@ -162,7 +157,7 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
             </span>
           </div>
           <div className="h-1 overflow-hidden rounded-full bg-[var(--line)]" aria-hidden="true">
-            <motion.div className="h-full rounded-full bg-accent" initial={false} animate={{ width: `${fortschritt * 100}%` }} transition={spring} />
+            <motion.div className="h-full origin-left rounded-full bg-accent" initial={false} animate={{ scaleX: fortschritt }} transition={uebergang.lang} />
           </div>
         </div>
       )}
@@ -171,47 +166,46 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
         <motion.div
           key={phase.typ === "schritt" ? `s${phase.index}` : phase.typ}
           custom={richtung}
-          variants={variants}
+          variants={schrittwechsel}
           initial="enter"
           animate="center"
           exit="exit"
-          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
         >
           {/* ---------- Einstieg ---------- */}
           {phase.typ === "start" && (
-            <motion.div variants={stagger(0.06)} initial="hidden" animate="show">
-              <motion.div variants={fadeUp}>
-                <Link href="/" className="mb-6 inline-flex items-center gap-1.5 text-[14px] text-muted hover:text-fg">
+            <motion.div variants={gestaffelt(0.06)} initial="hidden" animate="show">
+              <motion.div variants={einblenden}>
+                <Link href="/" className="mb-6 inline-flex items-center gap-2 text-[14px] text-muted hover:text-fg">
                   <Icon name="chevronLeft" className="size-4" />
                   {t.zurueck}
                 </Link>
               </motion.div>
-              <motion.h1 variants={fadeUp} ref={headingRef} tabIndex={-1} className="text-[34px] font-semibold leading-tight tracking-[-0.03em] outline-none sm:text-[44px]">
+              <motion.h1 variants={einblenden} ref={headingRef} tabIndex={-1} className="text-[34px] font-semibold leading-tight tracking-[-0.03em] outline-none sm:text-[44px]">
                 {titel}
               </motion.h1>
-              <motion.p variants={fadeUp} className="mt-3 text-[17px] leading-relaxed text-muted">
+              <motion.p variants={einblenden} className="mt-3 text-[17px] leading-relaxed text-muted">
                 {tx(leistung.kurz, lang)}
               </motion.p>
               {leistung.dauer && (
-                <motion.p variants={fadeUp} className="mt-4 inline-flex items-center gap-2 text-[14px] text-subtle">
+                <motion.p variants={einblenden} className="mt-4 inline-flex items-center gap-2 text-[14px] text-subtle">
                   <Icon name="clock" className="size-4" />
                   {t.dauer}: {tx(leistung.dauer, lang)}
                 </motion.p>
               )}
-              <motion.div variants={fadeUp} className="mt-8">
-                <Glass className="rounded-[26px] p-5 sm:p-7">
+              <motion.div variants={einblenden} className="mt-8">
+                <Glass className="rounded-[24px] p-6">
                   <LeistungDetails leistung={leistung} />
                 </Glass>
               </motion.div>
-              <motion.p variants={fadeUp} className="mt-6 text-[13px] leading-relaxed text-subtle">
+              <motion.p variants={einblenden} className="mt-6 text-[13px] leading-relaxed text-subtle">
                 {de
                   ? `Ihre Angaben werden verschlüsselt übertragen und gespeichert. Sie werden ausschließlich zur Bearbeitung Ihres Antrags verwendet und nach ${formular.aufbewahrungTage} Tagen aus dem Portal gelöscht.`
                   : `Your data is transmitted and stored encrypted. It is used only to process your application and deleted from the portal after ${formular.aufbewahrungTage} days.`}{" "}
-                <Link href="/datenschutz" className="text-accent underline-offset-2 hover:underline">
+                <Link href="/datenschutz" className="text-accent underline underline-offset-2">
                   {t.datenschutz}
                 </Link>
               </motion.p>
-              <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
+              <motion.div variants={einblenden} className="mt-8 flex flex-wrap gap-3">
                 <Button onClick={() => gehe({ typ: "schritt", index: 0 }, 1)} className="min-h-12 px-7 text-[16px]">
                   {de ? "Antrag starten" : "Start application"}
                   <Icon name="arrowRight" className="size-4" />
@@ -237,7 +231,7 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
               )}
 
               {Object.keys(fehler).length > 0 && (
-                <div ref={summaryRef} tabIndex={-1} role="alert" className="mt-6 rounded-2xl border border-danger/40 bg-[color-mix(in_srgb,var(--danger)_7%,transparent)] p-4 text-[15px] outline-none">
+                <div ref={summaryRef} tabIndex={-1} role="alert" className="mt-6 rounded-[16px] border border-danger/40 bg-[color-mix(in_srgb,var(--danger)_7%,transparent)] p-4 text-[15px] outline-none">
                   <p className="font-medium text-danger">{de ? "Bitte prüfen Sie Ihre Eingaben:" : "Please check your entries:"}</p>
                   <ul className="mt-2 space-y-1">
                     {schritte[phase.index].felder
@@ -253,19 +247,19 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
                 </div>
               )}
 
-              <Glass className="mt-6 rounded-[26px] p-5 sm:p-7">
+              <Glass className="mt-6 rounded-[24px] p-6">
                 <div className="grid gap-x-4 gap-y-6 sm:grid-cols-2">
-                  <AnimatePresence initial={false}>
+                  <AnimatePresence initial={false} mode="popLayout">
                     {schritte[phase.index].felder
                       .filter((f) => istSichtbar(f, werte))
                       .map((f) => (
                         <motion.div
                           key={f.id}
-                          layout={!reduce}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={spring}
+                          layout
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={feder.layout}
                           className={f.halb ? "" : "sm:col-span-2"}
                         >
                           <Field feld={f} wert={werte[f.id] ?? ""} fehler={fehler[f.id]} onChange={(v) => setWert(f.id, v)} />
@@ -300,13 +294,13 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
 
               <div className="mt-6 space-y-4">
                 {schritte.map((s, i) => (
-                  <Glass key={s.id} className="rounded-[24px] p-5 sm:p-6">
+                  <Glass key={s.id} className="rounded-[24px] p-6">
                     <div className="mb-3 flex items-center justify-between gap-3">
                       <h2 className="text-[17px] font-semibold">{tx(s.titel, lang)}</h2>
                       <button
                         type="button"
                         onClick={() => gehe({ typ: "schritt", index: i, zurUebersicht: true }, -1)}
-                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[14px] font-medium text-accent hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
+                        className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[14px] font-medium text-accent pressable"
                       >
                         <Icon name="edit" className="size-4" />
                         {de ? "Ändern" : "Change"}
@@ -410,21 +404,21 @@ function Bestaetigung({
   const de = lang === "de";
   const [kopiert, setKopiert] = useState(false);
   return (
-    <motion.div variants={stagger(0.08, 0.1)} initial="hidden" animate="show" className="text-center">
-      <motion.div variants={{ hidden: { scale: 0.6, opacity: 0 }, show: { scale: 1, opacity: 1, transition: { type: "spring", stiffness: 200, damping: 16 } } }} className="mx-auto grid size-20 place-items-center rounded-full bg-accent text-on-accent shadow-[0_16px_40px_-12px_color-mix(in_srgb,var(--accent)_70%,transparent)]">
+    <motion.div variants={gestaffelt(0.08, 0.1)} initial="hidden" animate="show" className="text-center">
+      <motion.div variants={{ hidden: { scale: 0.6, opacity: 0 }, show: { scale: 1, opacity: 1, transition: feder.klein } }} className="mx-auto grid size-20 place-items-center rounded-full bg-accent text-on-accent ">
         <svg viewBox="0 0 24 24" className="size-9" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <motion.path d="M5 12.5 10 17.5 19 7" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }} />
         </svg>
       </motion.div>
-      <motion.h1 variants={fadeUp} ref={headingRef} tabIndex={-1} className="mt-8 text-[32px] font-semibold tracking-[-0.03em] outline-none sm:text-[40px]">
+      <motion.h1 variants={einblenden} ref={headingRef} tabIndex={-1} className="mt-8 text-[32px] font-semibold tracking-[-0.03em] outline-none sm:text-[40px]">
         {de ? "Vielen Dank." : "Thank you."}
       </motion.h1>
-      <motion.p variants={fadeUp} className="mx-auto mt-3 max-w-md text-[17px] leading-relaxed text-muted">
+      <motion.p variants={einblenden} className="mx-auto mt-3 max-w-md text-[17px] leading-relaxed text-muted">
         {de ? `Ihr Antrag „${tx(leistung.titel, lang)}“ ist bei uns eingegangen.` : `Your application "${tx(leistung.titel, lang)}" has been received.`}
         {email && (de ? ` Eine Bestätigung haben wir an ${email} gesendet.` : ` We have sent a confirmation to ${email}.`)}
       </motion.p>
 
-      <motion.div variants={fadeUp} className="mt-8 flex justify-center">
+      <motion.div variants={einblenden} className="mt-8 flex justify-center">
         <Glass className="flex items-center gap-4 rounded-full py-2 pl-6 pr-2">
           <span className="text-left">
             <span className="block text-[12px] text-subtle">{de ? "Vorgangsnummer" : "Reference number"}</span>
@@ -433,14 +427,14 @@ function Bestaetigung({
           <button
             type="button"
             onClick={() => navigator.clipboard?.writeText(nummer).then(() => setKopiert(true))}
-            className="rounded-full px-3 py-2 text-[13px] font-medium text-accent hover:bg-[color-mix(in_srgb,var(--accent)_8%,transparent)]"
+            className="rounded-full px-3 py-2 text-[13px] font-medium text-accent pressable"
           >
             <span aria-live="polite">{kopiert ? (de ? "Kopiert" : "Copied") : de ? "Kopieren" : "Copy"}</span>
           </button>
         </Glass>
       </motion.div>
 
-      <motion.div variants={fadeUp} className="mx-auto mt-10 max-w-md text-left">
+      <motion.div variants={einblenden} className="mx-auto mt-10 max-w-md text-left">
         <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle">{de ? "So geht es weiter" : "What happens next"}</h2>
         <ol className="prose-calm text-[15px] leading-relaxed">
           {leistung.ablauf.slice(1).map((s, i) => (
@@ -449,7 +443,7 @@ function Bestaetigung({
         </ol>
       </motion.div>
 
-      <motion.div variants={fadeUp} className="mt-10 flex flex-wrap justify-center gap-3">
+      <motion.div variants={einblenden} className="mt-10 flex flex-wrap justify-center gap-3">
         <ButtonLink href="/meine-anliegen" variant="primary">
           {t.menuAnliegen}
         </ButtonLink>

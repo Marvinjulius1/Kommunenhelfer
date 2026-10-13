@@ -24,3 +24,16 @@ export async function leseJson(req: Request, maxBytes = 32_000): Promise<unknown
 export function fehler(code: string, status = 400, extra?: Record<string, unknown>) {
   return Response.json({ fehler: code, ...extra }, { status });
 }
+
+/**
+ * Öffentliche Basis-URL für Links in E-Mails und Webhooks.
+ * PORTAL_URL (z. B. "https://{gemeinde}.meinportal.de") hat Vorrang – so lassen
+ * sich Links nicht über einen manipulierten Host-Header umlenken.
+ */
+export function basisUrl(req: Request, tenant: GemeindeConfig): string {
+  if (process.env.PORTAL_URL) return process.env.PORTAL_URL.replace("{gemeinde}", tenant.slug).replace(/\/$/, "");
+  const u = new URL(req.url);
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? u.host;
+  const proto = req.headers.get("x-forwarded-proto") ?? u.protocol.replace(":", "");
+  return `${proto}://${host}`;
+}

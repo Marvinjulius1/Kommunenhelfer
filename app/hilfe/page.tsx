@@ -17,7 +17,7 @@ export default async function HilfeSeite() {
     <Page titel={t.menuHilfe} intro={de ? "Antworten auf häufige Fragen und wie dieses Portal funktioniert." : "Answers to common questions and how this portal works."}>
       {tenant.faq.length > 0 && (
         <Section titel={de ? "Häufige Fragen" : "Frequently asked questions"}>
-          <Glass className="divide-y divide-[var(--line)] rounded-[24px] px-5">
+          <Glass className="divide-y divide-[var(--line)] rounded-[24px] px-6">
             {tenant.faq.map((f, i) => (
               <details key={i} className="group py-1">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-lg py-4 text-[16px] font-medium [&::-webkit-details-marker]:hidden">

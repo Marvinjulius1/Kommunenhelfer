@@ -102,20 +102,22 @@ export function berechneSlots(
   belegt: Map<string, number>,
   now = new Date(),
 ): Slot[] {
+  const angebot = amt.termine;
+  if (!angebot) return [];
   const heute = heuteBerlin(now);
   const jetzt = jetztMinutenBerlin(now);
   const slots: Slot[] = [];
 
-  for (let i = amt.vorlaufTage; i <= amt.buchbarTage; i++) {
+  for (let i = angebot.vorlaufTage; i <= angebot.buchbarTage; i++) {
     const datum = addTage(heute, i);
     if (istGeschlossen(tenant, datum)) continue;
-    const fenster = amt.terminzeiten[wochentag(datum)] ?? [];
+    const fenster = angebot.zeiten[wochentag(datum)] ?? [];
     for (const [von, bis] of fenster) {
-      for (let t = zuMinuten(von); t + amt.slotMinuten <= zuMinuten(bis); t += amt.slotMinuten) {
+      for (let t = zuMinuten(von); t + angebot.slotMinuten <= zuMinuten(bis); t += angebot.slotMinuten) {
         if (i === 0 && t <= jetzt + 30) continue; // heute: mind. 30 Minuten Vorlauf
         const zeit = zuZeit(t);
         const id = `${datum}T${zeit}`;
-        const frei = amt.parallel - (belegt.get(id) ?? 0);
+        const frei = angebot.parallel - (belegt.get(id) ?? 0);
         if (frei > 0) slots.push({ id, datum, zeit, frei });
       }
     }

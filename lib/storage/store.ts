@@ -27,11 +27,11 @@ export interface Store {
   get<T extends StoredRecord>(collection: string, id: string): Promise<T | undefined>;
   list<T extends StoredRecord>(collection: string, filter?: (r: T) => boolean): Promise<T[]>;
   delete(collection: string, id: string): Promise<void>;
-  /** Entfernt abgelaufene Datensätze. Gibt die Anzahl gelöschter Einträge zurück. */
-  purgeExpired(collection: string): Promise<number>;
+  /** Entfernt abgelaufene Datensätze und gibt sie zurück (z. B. um zugehörige Dateien zu löschen). */
+  purgeExpired<T extends StoredRecord>(collection: string): Promise<T[]>;
 }
 
-const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
+export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 
 /** Einfache Sperre, damit gleichzeitige Schreibvorgänge sich nicht überschreiben. */
 const locks = new Map<string, Promise<unknown>>();
@@ -93,19 +93,19 @@ class FileStore implements Store {
     });
   }
 
-  async purgeExpired(collection: string) {
+  async purgeExpired<T extends StoredRecord>(collection: string) {
     return withLock(collection, async () => {
-      const all = await this.read<StoredRecord>(collection);
+      const all = await this.read<T>(collection);
       const now = new Date();
-      let n = 0;
+      const entfernt: T[] = [];
       for (const [id, r] of Object.entries(all)) {
         if (new Date(r.loeschenAm) < now) {
+          entfernt.push(r);
           delete all[id];
-          n++;
         }
       }
-      if (n) await this.write(collection, all);
-      return n;
+      if (entfernt.length) await this.write(collection, all);
+      return entfernt;
     });
   }
 }

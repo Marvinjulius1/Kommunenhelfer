@@ -1,4 +1,7 @@
-/** Schlichte Linien-Icons (dekorativ, aria-hidden). Bewusst keine Funkel- oder Roboter-Symbole. */
+/**
+ * Ein einziger Icon-Stil: Linien-Icons, 24er-Raster, einheitliche Strichstärke 1.5.
+ * Dekorativ (aria-hidden) – die Bedeutung trägt immer ein Text oder aria-label.
+ */
 const paths = {
   arrowUp: "M12 19V5M5.5 11.5 12 5l6.5 6.5",
   arrowRight: "M5 12h14M13 5.5 19.5 12 13 18.5",
@@ -22,13 +25,25 @@ const paths = {
   chevronRight: "M9.5 6l6 6-6 6",
   euro: "M17.5 6.5A7 7 0 1 0 17.5 17.5M4.5 10.5h9M4.5 13.5h9",
   list: "M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01",
+  paperclip: "M20 11.5 12.2 19.3a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4L15 6.9",
+  camera: "M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9ZM12 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z",
+  plus: "M12 5v14M5 12h14",
+  upload: "M12 16V4M7 9l5-5 5 5M5 20h14",
+  shield: "M12 3 5 6v5c0 4.4 3 8.3 7 10 4-1.7 7-5.6 7-10V6l-7-3Z",
+  file: "M7 3h7l5 5v11.5a1.5 1.5 0 0 1-1.5 1.5h-10A1.5 1.5 0 0 1 6 19.5v-15A1.5 1.5 0 0 1 7.5 3ZM14 3v5h5",
+  alert: "M12 9v4M12 16.5v.01M10.3 4.2 2.8 17.5A2 2 0 0 0 4.5 20.5h15a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0Z",
+  sun: "M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4",
+  moon: "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z",
+  logout: "M15 4h3.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H15M10 16l4-4-4-4M14 12H4",
 } as const;
 
 export type IconName = keyof typeof paths;
 
-export function Icon({ name, className = "size-5", strokeWidth = 1.7 }: { name: IconName; className?: string; strokeWidth?: number }) {
+const STRICH = 1.5;
+
+export function Icon({ name, className = "size-5" }: { name: IconName; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={STRICH} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={paths[name]} />
     </svg>
   );

@@ -16,8 +16,8 @@ export async function GET(req: Request) {
   const tenant = tenantAus(req);
   const amtId = new URL(req.url).searchParams.get("amt");
   const amt = tenant.aemter.find((a) => a.id === amtId);
-  if (!amt) return Response.json({ fehler: "amt_unbekannt" }, { status: 404 });
+  if (!amt?.termine) return Response.json({ fehler: "amt_unbekannt" }, { status: 404 });
 
   const slots = berechneSlots(tenant, amt, await belegung(tenant.slug, amt.id));
-  return Response.json({ slots, slotMinuten: amt.slotMinuten }, { headers: { "Cache-Control": "no-store" } });
+  return Response.json({ slots, slotMinuten: amt.termine.slotMinuten }, { headers: { "Cache-Control": "no-store" } });
 }

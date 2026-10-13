@@ -11,10 +11,10 @@ export function OeffnungszeitenTabelle({ plan, lang }: { plan: Wochenplan; lang:
           .filter((t) => plan[t] || (t !== "sa" && t !== "so"))
           .map((t) => (
             <tr key={t} className="border-b border-[var(--line)] last:border-0">
-              <th scope="row" className="py-2.5 pr-4 text-left font-normal text-muted">
+              <th scope="row" className="py-2 pr-4 text-left font-normal text-muted">
                 {WOCHENTAGE[lang][t]}
               </th>
-              <td className="py-2.5 text-right tabular-nums">
+              <td className="py-2 text-right tabular-nums">
                 {plan[t]?.map(([v, b]) => `${v}–${b}`).join(", ") ?? <span className="text-subtle">{dict(lang).geschlossen}</span>}
               </td>
             </tr>

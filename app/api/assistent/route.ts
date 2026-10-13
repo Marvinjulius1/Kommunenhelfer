@@ -17,6 +17,8 @@ const Schema = z.object({
   leistungId: z.string().max(80).regex(/^[a-z0-9-]+$/).optional(),
   kontextLeistungId: z.string().max(80).regex(/^[a-z0-9-]+$/).optional(),
   lang: z.string().max(5).optional(),
+  entwurf: z.string().regex(/^[A-Za-z0-9_-]{16,64}$/).optional(),
+  dokumente: z.array(z.string().max(64)).max(30).optional(),
 });
 
 export async function POST(req: Request) {
@@ -29,7 +31,7 @@ export async function POST(req: Request) {
   } catch {
     return fehler("ungueltige_anfrage");
   }
-  if (!body.leistungId && !body.nachrichten.some((m) => m.rolle === "buerger" && m.text.trim())) {
+  if (!body.leistungId && !body.dokumente?.length && !body.nachrichten.some((m) => m.rolle === "buerger" && m.text.trim())) {
     return fehler("leere_anfrage");
   }
 

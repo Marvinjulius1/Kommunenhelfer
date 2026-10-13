@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
-import { spring } from "@/lib/client/motion";
+import { feder } from "@/lib/motion";
 
 interface Props {
   verfuegbar: Map<string, number>; // Datum → Anzahl freier Termine
@@ -69,10 +69,10 @@ export function Calendar({ verfuegbar, gewaehlt, onWaehle }: Props) {
           {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(monat)}
         </h3>
         <div className="flex gap-1">
-          <button type="button" onClick={() => wechsel(-1)} disabled={!kannZurueck} aria-label={lang === "de" ? "Vorheriger Monat" : "Previous month"} className="grid size-9 place-items-center rounded-full hover:bg-[var(--line)] disabled:opacity-30">
+          <button type="button" onClick={() => wechsel(-1)} disabled={!kannZurueck} aria-label={lang === "de" ? "Vorheriger Monat" : "Previous month"} className="grid size-10 place-items-center rounded-full pressable disabled:opacity-30">
             <Icon name="chevronLeft" className="size-4" />
           </button>
-          <button type="button" onClick={() => wechsel(1)} disabled={!kannVor} aria-label={lang === "de" ? "Nächster Monat" : "Next month"} className="grid size-9 place-items-center rounded-full hover:bg-[var(--line)] disabled:opacity-30">
+          <button type="button" onClick={() => wechsel(1)} disabled={!kannVor} aria-label={lang === "de" ? "Nächster Monat" : "Next month"} className="grid size-10 place-items-center rounded-full pressable disabled:opacity-30">
             <Icon name="chevronRight" className="size-4" />
           </button>
         </div>
@@ -95,7 +95,7 @@ export function Calendar({ verfuegbar, gewaehlt, onWaehle }: Props) {
           initial={{ opacity: 0, x: richtung * 20 }}
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: richtung * -20 }}
-          transition={spring}
+          transition={feder.klein}
           className="mt-1 grid grid-cols-7 gap-1"
         >
           {zellen.map((d, i) => {
@@ -118,8 +118,8 @@ export function Calendar({ verfuegbar, gewaehlt, onWaehle }: Props) {
                 onClick={() => onWaehle(key)}
                 aria-pressed={aktiv}
                 aria-label={`${label}, ${frei} ${lang === "de" ? (frei === 1 ? "freier Termin" : "freie Termine") : "free slots"}`}
-                className={`relative grid aspect-square place-items-center rounded-full text-[15px] font-medium transition-colors ${
-                  aktiv ? "bg-accent text-on-accent" : "text-fg hover:bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]"
+                className={`relative grid aspect-square place-items-center rounded-full text-[15px] font-medium ${
+                  aktiv ? "bg-accent text-on-accent" : "text-fg pressable"
                 }`}
               >
                 {d.getDate()}

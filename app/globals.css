@@ -2,10 +2,12 @@
 
 /*
  * ============================================================================
- *  Design-System
- *  Ruhig, reduziert, viel Weißraum. Liquid Glass für interaktive Flächen.
- *  Alle Farben als CSS-Variablen – die Akzentfarbe kommt aus der
- *  Gemeinde-Konfiguration (--accent-light / --accent-dark, gesetzt im Layout).
+ *  Design-System – ruhig, monoton, kühl.
+ *
+ *  Tokens (Farben, Radien, Bewegung) stehen ausschließlich hier und in
+ *  lib/motion.ts. Komponenten verwenden nur diese Tokens.
+ *  Die Akzentfarbe der Gemeinde (--accent) erscheint nur in Details:
+ *  Fokusringe, Primär-Buttons in Abläufen, Auswahlzustände.
  * ============================================================================
  */
 
@@ -24,65 +26,90 @@
   --color-on-accent: var(--on-accent);
   --color-danger: var(--danger);
   --color-success: var(--success);
-  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* ---------- Hell (Standard) ---------- */
+/* ---------- Bewegung (Spiegel von lib/motion.ts) ---------- */
+:root {
+  --dauer-kurz: 160ms;
+  --dauer-mittel: 280ms;
+  --dauer-lang: 480ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ---------- Hell ---------- */
 :root {
   color-scheme: light;
-  --bg: #f5f5f7;
+  --bg: #f5f7f9;
   --surface: #ffffff;
-  --fg: #1d1d1f;
-  --fg-muted: #5f5f64; /* 6.0:1 auf --bg */
-  --fg-subtle: #6e6e73; /* 4.6:1 auf --bg */
-  --line: rgb(0 0 0 / 0.08);
-  --danger: #b3261e;
-  --success: #1e7b34;
+  --fg: #1d2228; /* 15.4:1 auf --bg */
+  --fg-muted: #4a525c; /* 7.6:1 */
+  --fg-subtle: #5d6670; /* 5.6:1 */
+  --line: rgb(29 34 40 / 0.08);
+  --danger: #b42318; /* 6.0:1 */
+  --success: #1f7a3a; /* 5.2:1 */
 
   --accent: var(--accent-light, #1a5fb4);
   --on-accent: var(--on-accent-light, #ffffff);
 
-  --glass-bg: rgb(255 255 255 / 0.58);
-  --glass-bg-strong: rgb(255 255 255 / 0.78);
-  --glass-border: rgb(255 255 255 / 0.75);
-  --glass-hairline: rgb(0 0 0 / 0.06);
-  --glass-inner: rgb(255 255 255 / 0.9);
-  --glass-specular: rgb(255 255 255 / 0.75);
-  --glass-edge: rgb(255 255 255 / 0.95);
-  --glass-shadow: 0 1px 1px rgb(0 0 0 / 0.03), 0 8px 24px -6px rgb(0 0 0 / 0.08), 0 30px 60px -20px rgb(0 0 0 / 0.1);
-
-  --ambient-a: color-mix(in srgb, var(--accent) 22%, transparent);
-  --ambient-b: rgb(255 208 160 / 0.42);
-  --ambient-c: rgb(255 255 255 / 0.9);
+  --glass: rgb(255 255 255 / 0.62);
+  --glass-solid: #ffffff;
+  --glass-border: rgb(29 34 40 / 0.07);
+  --glass-highlight: rgb(255 255 255 / 0.9);
+  --shadow-soft: 0 1px 2px rgb(16 24 32 / 0.04), 0 12px 32px -12px rgb(16 24 32 / 0.1);
+  --field-bg: rgb(255 255 255 / 0.7);
+  --field-border: rgb(29 34 40 / 0.14);
+  --neutral-ring: rgb(29 34 40 / 0.1);
 }
 
 /* ---------- Dunkel ---------- */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #000000;
-  --surface: #1c1c1e;
-  --fg: #f5f5f7;
-  --fg-muted: #b0b0b5;
-  --fg-subtle: #98989d;
-  --line: rgb(255 255 255 / 0.1);
-  --danger: #ff8a80;
+  --bg: #07090b;
+  --surface: #12161a;
+  --fg: #e6e9ed; /* 16.5:1 auf --bg */
+  --fg-muted: #aab2bc; /* 9.4:1 */
+  --fg-subtle: #8d96a1; /* 6.5:1 */
+  --line: rgb(230 233 237 / 0.08);
+  --danger: #ff8a7a;
   --success: #6fd38a;
 
   --accent: var(--accent-dark, #7db3f0);
-  --on-accent: var(--on-accent-dark, #111111);
+  --on-accent: var(--on-accent-dark, #0b0d10);
 
-  --glass-bg: rgb(36 36 40 / 0.5);
-  --glass-bg-strong: rgb(36 36 40 / 0.78);
-  --glass-border: rgb(255 255 255 / 0.1);
-  --glass-hairline: rgb(255 255 255 / 0.06);
-  --glass-inner: rgb(255 255 255 / 0.08);
-  --glass-specular: rgb(255 255 255 / 0.1);
-  --glass-edge: rgb(255 255 255 / 0.28);
-  --glass-shadow: 0 1px 1px rgb(0 0 0 / 0.4), 0 10px 30px -8px rgb(0 0 0 / 0.6), 0 30px 80px -20px rgb(0 0 0 / 0.7);
+  --glass: rgb(22 26 31 / 0.62);
+  --glass-solid: #14181c;
+  --glass-border: rgb(230 233 237 / 0.08);
+  --glass-highlight: rgb(255 255 255 / 0.06);
+  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --field-bg: rgb(14 17 20 / 0.7);
+  --field-border: rgb(230 233 237 / 0.14);
+  --neutral-ring: rgb(230 233 237 / 0.12);
+}
 
-  --ambient-a: color-mix(in srgb, var(--accent) 20%, transparent);
-  --ambient-b: rgb(70 70 80 / 0.35);
-  --ambient-c: rgb(40 40 46 / 0.6);
+/* Ohne JavaScript: Systemeinstellung (das Theme-Skript setzt sonst data-theme vor dem ersten Paint). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #07090b;
+    --surface: #12161a;
+    --fg: #e6e9ed;
+    --fg-muted: #aab2bc;
+    --fg-subtle: #8d96a1;
+    --line: rgb(230 233 237 / 0.08);
+    --accent: var(--accent-dark, #7db3f0);
+    --on-accent: var(--on-accent-dark, #0b0d10);
+    --glass: rgb(22 26 31 / 0.62);
+    --glass-solid: #14181c;
+    --glass-border: rgb(230 233 237 / 0.08);
+    --glass-highlight: rgb(255 255 255 / 0.06);
+    --field-bg: rgb(14 17 20 / 0.7);
+    --field-border: rgb(230 233 237 / 0.14);
+  }
 }
 
 html {
@@ -92,6 +119,7 @@ html {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -103,192 +131,81 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 /* Sichtbarer, ruhiger Fokus für Tastaturbedienung (WCAG 2.4.7) */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
+@layer components {
 /* ---------------------------------------------------------------------------
- * Liquid Glass
+ * Liquid Glass – feine Border, weicher Schatten, Lichtkante oben.
  * ------------------------------------------------------------------------- */
 .glass {
-  position: relative;
-  isolation: isolate;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid var(--glass-hairline);
-  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-inner);
-  transition:
-    box-shadow 0.5s var(--ease-spring),
-    background-color 0.5s ease,
-    transform 0.5s var(--ease-spring);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 var(--glass-highlight);
 }
 
-/* Lichtreflex, der dem Zeiger leicht folgt (--mx/--my werden per JS gesetzt) */
-.glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  z-index: -1;
-  background: radial-gradient(
-    520px circle at var(--mx, 30%) var(--my, -20%),
-    var(--glass-specular),
-    transparent 45%
-  );
-  opacity: 0.9;
-  transition: opacity 0.6s ease;
-}
-
-/* Feine Lichtkante am Rand (Gradient-Border über Maske) */
-.glass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  pointer-events: none;
-  background: linear-gradient(
-    150deg,
-    var(--glass-edge) 0%,
-    transparent 35%,
-    transparent 65%,
-    color-mix(in srgb, var(--glass-edge) 50%, transparent) 100%
-  );
-  -webkit-mask:
-    linear-gradient(#000 0 0) content-box,
-    linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-}
-
-.glass-strong {
-  background: var(--glass-bg-strong);
-}
-
-/* Interaktive Glasflächen (Chips, Karten) */
-.glass-interactive {
-  cursor: pointer;
-}
-@media (hover: hover) {
-  .glass-interactive:hover {
-    box-shadow: var(--glass-shadow), 0 12px 32px -12px rgb(0 0 0 / 0.14), inset 0 1px 0 var(--glass-inner);
-    transform: translateY(-1px);
+/* Fallback ohne backdrop-filter (ältere Browser) und bei "Transparenz reduzieren" */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-solid);
   }
 }
-.glass-interactive:active {
-  transform: scale(0.98);
-  transition-duration: 0.15s;
-}
-
-/* Eingabefeld mit weichem Glow im Fokus */
-.glass-field:focus-within {
-  box-shadow:
-    var(--glass-shadow),
-    0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent),
-    0 18px 60px -12px color-mix(in srgb, var(--accent) 30%, transparent),
-    inset 0 1px 0 var(--glass-inner);
-}
-
-/* Barrierefreiheit: Nutzer, die Transparenz reduziert haben möchten */
 @media (prefers-reduced-transparency: reduce) {
   .glass {
-    background: var(--surface);
+    background: var(--glass-solid);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 }
-/* Windows-Kontrastmodus: klare Rahmen statt Glas */
+/* Windows-Kontrastmodus */
 @media (forced-colors: active) {
   .glass {
     border: 1px solid CanvasText;
     background: Canvas;
   }
-  .glass::before,
-  .glass::after {
-    display: none;
+}
+
+/* Interaktive Flächen: nur transform/opacity animieren */
+.pressable {
+  transition: transform var(--dauer-kurz) var(--ease-standard), opacity var(--dauer-kurz) var(--ease-standard);
+}
+.pressable:active {
+  transform: scale(0.98);
+}
+@media (hover: hover) {
+  .pressable:hover {
+    opacity: 0.88;
   }
 }
 
-/* ---------------------------------------------------------------------------
- * Hintergrund (ruhiges Licht, kein Neon)
- * ------------------------------------------------------------------------- */
-.ambient {
-  position: fixed;
-  inset: -10%;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
+/* Eingabefeld im Fokus: neutraler Ring (keine Akzentfarbe auf der Startseite) */
+.glass-field:focus-within {
+  border-color: var(--field-border);
+  box-shadow: var(--shadow-soft), 0 0 0 4px var(--neutral-ring), inset 0 1px 0 var(--glass-highlight);
 }
-.ambient span {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(80px);
-  will-change: transform;
-  transform: translate3d(calc(var(--px, 0) * var(--depth, 1) * 1px), calc(var(--py, 0) * var(--depth, 1) * 1px), 0);
-  transition: transform 1.2s var(--ease-spring);
-}
-.ambient .a {
-  width: 52vmax;
-  height: 52vmax;
-  left: -8vmax;
-  top: -18vmax;
-  background: var(--ambient-a);
-  --depth: 18;
-  animation: drift 38s ease-in-out infinite alternate;
-}
-.ambient .b {
-  width: 46vmax;
-  height: 46vmax;
-  right: -12vmax;
-  top: 8vmax;
-  background: var(--ambient-b);
-  --depth: -12;
-  animation: drift 46s ease-in-out infinite alternate-reverse;
-}
-.ambient .c {
-  width: 40vmax;
-  height: 40vmax;
-  left: 22vmax;
-  bottom: -20vmax;
-  background: var(--ambient-c);
-  --depth: 8;
-  animation: drift 52s ease-in-out infinite alternate;
-}
-@keyframes drift {
-  from {
-    translate: 0 0;
-  }
-  to {
-    translate: 4vmax 3vmax;
-  }
+
 }
 
 /* ---------------------------------------------------------------------------
- * Sanfter Wechsel zwischen Hell und Dunkel
+ * Sanfter Wechsel zwischen Hell und Dunkel (View Transitions = Opacity)
  * ------------------------------------------------------------------------- */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.5s;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-html.theme-anim,
-html.theme-anim * {
-  transition:
-    background-color 0.5s ease,
-    color 0.5s ease,
-    border-color 0.5s ease !important;
+  animation-duration: var(--dauer-lang);
+  animation-timing-function: var(--ease-standard);
 }
 
 /* ---------------------------------------------------------------------------
- * Bewegung reduzieren (WCAG 2.3.3)
+ * Bewegung reduzieren (WCAG 2.3.3) – nur Opacity bleibt
  * ------------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -296,11 +213,43 @@ html.theme-anim * {
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.001ms !important;
+    transition-property: opacity !important;
     scroll-behavior: auto !important;
   }
-  .ambient span {
-    transform: none !important;
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+@layer components {
+/* Drei leise pulsierende Punkte (Assistent antwortet) */
+@keyframes puls {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+.denkt span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--fg-subtle);
+  animation: puls 1.4s var(--ease-standard) infinite;
+}
+.denkt span:nth-child(2) {
+  animation-delay: 0.18s;
+}
+.denkt span:nth-child(3) {
+  animation-delay: 0.36s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .denkt span {
+    animation: puls 2.4s linear infinite !important;
   }
 }
 
@@ -339,8 +288,8 @@ ul.prose-calm > li::before,
   position: absolute;
   left: 0.15em;
   top: 0.68em;
-  width: 0.32em;
-  height: 0.32em;
+  width: 0.3em;
+  height: 0.3em;
   border-radius: 9999px;
   background: var(--fg-subtle);
 }
@@ -352,14 +301,10 @@ ol.prose-calm,
 .prose-calm li + li,
 ul.prose-calm > li + li,
 ol.prose-calm > li + li {
-  margin-top: 0.3em;
+  margin-top: 0.25em;
 }
 .prose-calm strong {
   font-weight: 600;
-}
-
-input[type="date"]::-webkit-calendar-picker-indicator {
-  opacity: 0.55;
 }
 
 /* ---------------------------------------------------------------------------
@@ -367,85 +312,65 @@ input[type="date"]::-webkit-calendar-picker-indicator {
  * ------------------------------------------------------------------------- */
 .field-input {
   width: 100%;
-  min-height: 3rem;
-  border-radius: 14px;
-  border: 1px solid color-mix(in srgb, var(--fg) 14%, transparent);
-  background: color-mix(in srgb, var(--surface) 72%, transparent);
-  padding: 0.7rem 0.95rem;
+  min-height: 48px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  padding: 12px 16px;
   font-size: 16px; /* verhindert Zoom auf iOS */
   color: var(--fg);
-  transition:
-    border-color 0.25s ease,
-    box-shadow 0.35s var(--ease-spring),
-    background-color 0.25s ease;
 }
 .field-input::placeholder {
   color: var(--fg-subtle);
 }
-.field-input:hover {
-  border-color: color-mix(in srgb, var(--fg) 24%, transparent);
-}
 .field-input:focus,
 .field-input:focus-visible {
-  outline: none;
-  border-color: var(--accent);
-  background: var(--surface);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+  border-color: transparent;
 }
 .field-input[aria-invalid="true"] {
   border-color: var(--danger);
 }
-.field-input[aria-invalid="true"]:focus {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--danger) 18%, transparent);
-}
 select.field-input {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23889' stroke-width='1.5' stroke-linecap='round'%3E%3Cpath d='M6 9.5 12 15.5 18 9.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.9rem center;
-  background-size: 1.1rem;
-  padding-right: 2.6rem;
+  background-position: right 16px center;
+  background-size: 16px;
+  padding-right: 40px;
 }
 
-/* Auswahlkarten (Radio) */
+/* Auswahlkarten (Radio/Checkbox) */
 .choice {
   display: flex;
-  gap: 0.85rem;
+  gap: 16px;
   align-items: flex-start;
-  border-radius: 16px;
-  border: 1px solid color-mix(in srgb, var(--fg) 12%, transparent);
-  background: color-mix(in srgb, var(--surface) 60%, transparent);
-  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--field-border);
+  background: var(--field-bg);
+  padding: 16px;
   cursor: pointer;
-  transition:
-    border-color 0.25s ease,
-    background-color 0.25s ease,
-    box-shadow 0.35s var(--ease-spring);
-}
-.choice:hover {
-  border-color: color-mix(in srgb, var(--fg) 22%, transparent);
 }
 .choice:has(input:checked) {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
 }
 .choice:has(input:focus-visible) {
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
-/* Native Radio/Checkbox ruhig gestaltet, aber voll zugänglich */
 .radio,
 .checkbox {
   appearance: none;
   flex-shrink: 0;
-  margin-top: 0.15rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  border: 1.5px solid color-mix(in srgb, var(--fg) 35%, transparent);
+  margin-top: 2px;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid color-mix(in srgb, var(--fg) 40%, transparent);
   background: var(--surface);
   display: grid;
   place-content: center;
-  transition: all 0.2s ease;
 }
 .radio {
   border-radius: 9999px;
@@ -460,20 +385,24 @@ select.field-input {
 }
 .radio:checked::after {
   content: "";
-  width: 0.45rem;
-  height: 0.45rem;
+  width: 8px;
+  height: 8px;
   border-radius: 9999px;
   background: var(--on-accent);
 }
 .checkbox:checked::after {
   content: "";
-  width: 0.7rem;
-  height: 0.7rem;
+  width: 12px;
+  height: 12px;
   background: var(--on-accent);
   clip-path: polygon(14% 52%, 0 66%, 38% 100%, 100% 22%, 86% 8%, 38% 72%);
 }
 .radio:focus-visible,
 .checkbox:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.55;
+}
 }

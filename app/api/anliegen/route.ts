@@ -2,14 +2,16 @@
  * POST /api/anliegen
  * Statusabfrage für "Meine Anliegen". Der Browser kennt Vorgangsnummer und
  * Zugangscode (lokal gespeichert); der Server speichert nur den Hash des Codes.
- * Es werden keine personenbezogenen Daten zurückgegeben.
+ * Zurückgegeben werden nur Daten, die der Bürger selbst kennt.
  */
 import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { hashToken, safeEqualHex } from "@/lib/crypto";
-import type { AntragRecord, TerminRecord } from "@/lib/records";
+import { tx } from "@/lib/i18n";
+import type { TerminRecord } from "@/lib/records";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { store } from "@/lib/storage/store";
+import { bereinigeGelegentlich, ladeMitCode, nachrichten } from "@/lib/vorgaenge/service";
 
 export const runtime = "nodejs";
 
@@ -27,20 +29,27 @@ export async function POST(req: Request) {
     return fehler("ungueltige_anfrage");
   }
   const tenant = tenantAus(req);
-  const s = store();
-  // Lazy Löschkonzept: abgelaufene Datensätze bei Gelegenheit entfernen.
-  void s.purgeExpired("antraege").catch(() => undefined);
-  void s.purgeExpired("termine").catch(() => undefined);
+  bereinigeGelegentlich();
 
   const ergebnisse = await Promise.all(
     body.eintraege.map(async ({ id, code }) => {
-      const h = hashToken(code);
-      const a = await s.get<AntragRecord>("antraege", id);
-      if (a && a.tenant === tenant.slug && safeEqualHex(a.tokenHash, h)) {
-        return { id, typ: "antrag" as const, leistungId: a.leistungId, status: a.status, verlauf: a.verlauf, erstelltAm: a.erstelltAm };
+      const v = await ladeMitCode(tenant, id, code);
+      if (v) {
+        const amt = tenant.aemter.find((a) => a.id === v.amtId);
+        return {
+          id,
+          typ: "vorgang" as const,
+          leistungId: v.leistungId,
+          amt: amt ? tx(amt.name, "de") : undefined,
+          status: v.status,
+          verlauf: v.verlauf.map(({ status, am }) => ({ status, am })),
+          dokumente: v.dokumente.length,
+          nachrichten: nachrichten(v).map(({ von, text, am }) => ({ von, text, am })),
+          erstelltAm: v.erstelltAm,
+        };
       }
-      const t = await s.get<TerminRecord>("termine", id);
-      if (t && t.tenant === tenant.slug && safeEqualHex(t.tokenHash, h)) {
+      const t = await store().get<TerminRecord>("termine", id);
+      if (t && t.tenant === tenant.slug && safeEqualHex(t.tokenHash, hashToken(code))) {
         return { id, typ: "termin" as const, leistungId: t.leistungId, amtId: t.amtId, slot: t.slot, status: t.status, erstelltAm: t.erstelltAm };
       }
       return { id, typ: "unbekannt" as const };

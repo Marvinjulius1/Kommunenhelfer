@@ -25,6 +25,14 @@ export interface Antwort {
   quellen: string[];
   /** false = der Assistent hat keine gesicherte Information gefunden. */
   sicher: boolean;
+  /** Vorsortierung hochgeladener Unterlagen – Grundlage der Zusammenfassung vor dem Absenden. */
+  einreichung?: Einreichung;
+}
+
+export interface Einreichung {
+  leistungId?: string;
+  amtId: string;
+  dokumente: { id: string; art: string; artSicher: boolean; name: string; typ: string; groesse: number; seiten?: number }[];
 }
 
 export interface Nachricht {
@@ -34,9 +42,13 @@ export interface Nachricht {
 
 export interface AssistentAnfrage {
   nachrichten: Nachricht[];
-  /** Direkte Auswahl einer Leistung (Schnellaktion oder Rückfrage-Option). */
+  /** Direkte Auswahl einer Leistung (z. B. Rückfrage-Option). */
   leistungId?: string;
   /** Leistung, über die zuletzt gesprochen wurde (für Folgefragen wie "Was kostet das?"). */
   kontextLeistungId?: string;
   lang: Sprache;
+  /** Entwurf mit hochgeladenen Unterlagen (vor dem Absenden) */
+  entwurf?: string;
+  /** Unterlagen, die mit dieser Nachricht gesendet wurden */
+  dokumente?: string[];
 }

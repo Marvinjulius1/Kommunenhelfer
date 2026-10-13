@@ -1,82 +1,66 @@
 "use client";
 
-import { useEffect, useState } from "react";
+/**
+ * Hell/Dunkel-Schalter.
+ * Das Icon wird per CSS aus data-theme abgeleitet – dadurch kein
+ * Hydration-Unterschied und kein Aufflackern beim Laden.
+ */
+import { useEffect } from "react";
 import { useTenant } from "./TenantProvider";
+import { Icon } from "./ui/Icon";
 
 type Pref = "light" | "dark" | "system";
+const mq = () => matchMedia("(prefers-color-scheme: dark)");
 
-function anwenden(pref: Pref) {
-  const dunkel = pref === "dark" || (pref === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+function anwenden(dunkel: boolean, pref: Pref) {
   const root = document.documentElement;
   const setzen = () => {
     root.dataset.theme = dunkel ? "dark" : "light";
     root.dataset.themePref = pref;
   };
-  const reduziert = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  // Sanfter Übergang: View Transitions API, sonst CSS-Transition.
+  // Weicher Übergang über View Transitions (Opacity-Überblendung). Ohne Unterstützung: sofort.
   const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
-  if (!reduziert && doc.startViewTransition) {
-    doc.startViewTransition(setzen);
-  } else {
-    root.classList.add("theme-anim");
-    setzen();
-    window.setTimeout(() => root.classList.remove("theme-anim"), 550);
-  }
+  if (doc.startViewTransition && !matchMedia("(prefers-reduced-motion: reduce)").matches) doc.startViewTransition(setzen);
+  else setzen();
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ className = "" }: { className?: string }) {
   const { t } = useTenant();
-  const [dunkel, setDunkel] = useState<boolean | null>(null);
 
+  // Folgt der Systemeinstellung, solange nichts manuell gewählt wurde.
   useEffect(() => {
-    setDunkel(document.documentElement.dataset.theme === "dark");
-    // Folgt der Systemeinstellung, solange nichts manuell gewählt wurde.
-    const mq = matchMedia("(prefers-color-scheme: dark)");
+    const m = mq();
     const onChange = () => {
-      let pref: Pref = "system";
-      try {
-        pref = (localStorage.getItem("theme") as Pref) || "system";
-      } catch {}
-      if (pref === "system") {
-        anwenden("system");
-        setDunkel(mq.matches);
-      }
+      if ((document.documentElement.dataset.themePref ?? "system") === "system") anwenden(m.matches, "system");
     };
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
+    m.addEventListener("change", onChange);
+    return () => m.removeEventListener("change", onChange);
   }, []);
 
   const umschalten = () => {
-    const neu: Pref = dunkel ? "light" : "dark";
+    const dunkel = document.documentElement.dataset.theme !== "dark";
     // Entspricht die Wahl dem System, merken wir "system" – so bleibt es automatisch.
-    const system = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const speichern: Pref = neu === system ? "system" : neu;
+    const pref: Pref = dunkel === mq().matches ? "system" : dunkel ? "dark" : "light";
     try {
-      localStorage.setItem("theme", speichern);
+      localStorage.setItem("theme", pref);
     } catch {}
-    anwenden(neu);
-    setDunkel(!dunkel);
+    anwenden(dunkel, pref);
   };
 
   return (
     <button
       type="button"
       onClick={umschalten}
-      aria-label={dunkel ? t.themeHell : t.themeDunkel}
+      aria-label={t.themeWechseln}
       title={t.themeWechseln}
-      className="glass glass-interactive grid size-10 place-items-center rounded-full text-fg"
+      className={`pressable grid size-10 place-items-center rounded-full text-subtle hover:text-fg ${className}`}
     >
-      <svg viewBox="0 0 24 24" className="size-[18px]" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
-        {/* Sonne / Mond als ruhige Linien-Icons; Wechsel per Opazität */}
-        <g style={{ opacity: dunkel ? 0 : 1, transition: "opacity .4s" }}>
-          <circle cx="12" cy="12" r="4" />
-          <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
-        </g>
-        <path
-          d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"
-          style={{ opacity: dunkel ? 1 : 0, transition: "opacity .4s" }}
-        />
-      </svg>
+      <span className="dark:hidden">
+        <Icon name="moon" className="size-[18px]" />
+      </span>
+      <span className="hidden dark:inline">
+        <Icon name="sun" className="size-[18px]" />
+      </span>
     </button>
   );
 }

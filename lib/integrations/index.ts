@@ -39,6 +39,8 @@ export interface AntragEinreichung {
   daten: Record<string, string>;
   /** Optional: Identität aus dem Servicekonto. */
   identitaet?: Identitaet;
+  /** Öffentliche Basis-URL des Portals (für Links in Benachrichtigungen) */
+  basisUrl: string;
 }
 
 export interface EinreichungsErgebnis {

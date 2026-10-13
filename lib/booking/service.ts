@@ -36,7 +36,8 @@ export interface Buchung {
 
 export async function buche(tenant: GemeindeConfig, b: Buchung) {
   const amt = tenant.aemter.find((a) => a.id === b.amtId);
-  if (!amt) return { fehler: "amt_unbekannt" as const };
+  if (!amt?.termine) return { fehler: "amt_unbekannt" as const };
+  const slotMinuten = amt.termine.slotMinuten;
   const leistung = b.leistungId ? findeLeistung(tenant, b.leistungId) : undefined;
 
   const ergebnis = await seriell(async () => {
@@ -95,7 +96,7 @@ export async function buche(tenant: GemeindeConfig, b: Buchung) {
       {
         filename: "termin.ics",
         contentType: "text/calendar; charset=utf-8",
-        content: ics({ uid: `${ergebnis.id}@${tenant.slug}`, start, minuten: amt.slotMinuten, titel, ort, beschreibung: `Buchungsnummer ${ergebnis.id}` }),
+        content: ics({ uid: `${ergebnis.id}@${tenant.slug}`, start, minuten: slotMinuten, titel, ort, beschreibung: `Buchungsnummer ${ergebnis.id}` }),
       },
     ],
   }).catch((e) => console.error("[mail] Versand fehlgeschlagen:", (e as Error).message));

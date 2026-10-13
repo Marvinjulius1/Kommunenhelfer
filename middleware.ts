@@ -66,5 +66,5 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   // Statische Dateien und Bilder ausnehmen.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|tenants/).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|sw.js|tenants/|api/dokument/).*)"],
 };

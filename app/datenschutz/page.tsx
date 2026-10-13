@@ -63,6 +63,25 @@ export default async function DatenschutzSeite() {
         </ul>
       </Section>
 
+      <Section titel="Hochgeladene Unterlagen" id="uploads">
+        <p>
+          Sie können im Assistenten Unterlagen hochladen (PDF, JPG, PNG, HEIC). Bevor Sie das erste Mal hochladen, bitten wir Sie um Ihre Einwilligung. Die Dateien werden verschlüsselt übertragen (TLS), auf Schadsoftware geprüft und
+          verschlüsselt (AES-256) in einem Rechenzentrum in der EU gespeichert.
+        </p>
+        <p>
+          Ein KI-System sortiert die Unterlagen vor: Es erkennt die Art des Dokuments (z. B. Meldebescheinigung) und schlägt die zuständige Stelle vor. Es trifft keine Entscheidung über Ihr Anliegen – das tut immer eine
+          Mitarbeiterin oder ein Mitarbeiter des Amts. Ihre Unterlagen werden nicht zum Training von KI-Modellen verwendet.
+          {process.env.DOKUMENT_KLASSIFIKATION === "modell"
+            ? " Für die Erkennung wird ein Sprachmodell eines Auftragsverarbeiters in der EU eingesetzt (Vertrag nach Art. 28 DSGVO)."
+            : " Die Erkennung erfolgt ausschließlich auf unseren Servern."}
+        </p>
+        <p>
+          Nicht abgesendete Dateien löschen wir nach 24 Stunden. Abgesendete Unterlagen werden nach {tenant.uploads.aufbewahrungTage} Tagen aus dem Portal gelöscht, sofern für den Vorgang keine andere Frist gilt. Zugriff haben
+          nur berechtigte Mitarbeitende des zuständigen Amts; jeder Zugriff wird protokolliert.
+        </p>
+        <p>Rechtsgrundlage: Art. 6 Abs. 1 lit. a und e DSGVO, bei Ausweisdokumenten in Verbindung mit dem jeweiligen Fachrecht.</p>
+      </Section>
+
       <Section titel="Terminbuchung">
         <p>Für die Terminvergabe verarbeiten wir Ihren Namen, Ihre E-Mail-Adresse und – freiwillig – Hinweise zu Unterstützungsbedarf. Die Daten werden 14 Tage nach dem Termin gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. a und e DSGVO.</p>
       </Section>

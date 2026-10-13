@@ -19,7 +19,6 @@ export default defineGemeinde({
   sprachen: ["de"],
   standardSprache: "de",
   texte: {
-    untertitel: "Ihr Rathaus online",
     platzhalter: "Was möchten Sie erledigen?",
     begruessung: "Guten Tag. Was möchten Sie erledigen?",
   },
@@ -48,13 +47,25 @@ export default defineGemeinde({
       id: "rathaus",
       name: "Rathaus",
       ort: "Lindenweg 3, Erdgeschoss",
-      terminzeiten: { di: [["08:00", "12:00"]], do: [["14:00", "18:00"]] },
-      slotMinuten: 20,
-      parallel: 1,
-      vorlaufTage: 1,
-      buchbarTage: 28,
+      zustaendigkeiten: ["meldewesen", "ausweis", "hundesteuer", "standesamt"],
+      weiterleitung: { typ: "backoffice" },
+      termine: {
+        zeiten: { di: [["08:00", "12:00"]], do: [["14:00", "18:00"]] },
+        slotMinuten: 20,
+        parallel: 1,
+        vorlaufTage: 1,
+        buchbarTage: 28,
+      },
     },
   ],
+  uploads: {
+    aktiv: true,
+    maxDateiMB: 8,
+    maxGesamtMB: 24,
+    maxDateien: 6,
+    aufbewahrungTage: 60,
+    standardAmtId: "rathaus",
+  },
   leistungen: [
     {
       id: "wohnsitz-anmelden",
@@ -101,11 +112,6 @@ export default defineGemeinde({
     },
   ],
   rueckfragen: [],
-  schnellaktionen: [
-    { label: "Termin buchen", href: "/termine" },
-    { label: "Umziehen", leistungId: "wohnsitz-anmelden" },
-    { label: "Personalausweis", leistungId: "personalausweis" },
-  ],
   faq: [],
   email: { absenderName: "Gemeinde Beispielhausen", absenderAdresse: "no-reply@beispielhausen.example" },
 });

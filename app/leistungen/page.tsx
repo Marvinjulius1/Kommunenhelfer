@@ -22,12 +22,12 @@ export default async function LeistungenSeite() {
           const href = l.online && l.formular ? `/antrag/${l.id}` : l.termin ? `/termine?leistung=${l.id}` : "/kontakt";
           return (
             <li key={l.id}>
-              <Link href={href} className="block rounded-[22px]">
-                <Glass interactive className="flex items-center justify-between gap-4 rounded-[22px] p-5">
+              <Link href={href} className="block rounded-[24px]">
+                <Glass className="pressable flex items-center justify-between gap-4 rounded-[24px] p-6">
                   <span>
                     <span className="block text-[17px] font-medium">{tx(l.titel, lang)}</span>
                     <span className="mt-1 block text-[14px] leading-relaxed text-muted">{tx(l.kurz, lang)}</span>
-                    <span className="mt-2 inline-flex items-center gap-1.5 text-[13px] text-subtle">
+                    <span className="mt-2 inline-flex items-center gap-2 text-[13px] text-subtle">
                       <Icon name={l.online && l.formular ? "doc" : "calendar"} className="size-3.5" />
                       {l.online && l.formular ? t.onlineBeantragen : l.termin ? t.terminBuchen : t.kontaktAufnehmen}
                     </span>

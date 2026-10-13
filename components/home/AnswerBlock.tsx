@@ -1,54 +1,60 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import type { Antwort } from "@/lib/assistant/types";
 import { useTenant } from "@/components/TenantProvider";
+import { ButtonLink } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Markdown } from "@/components/ui/Markdown";
-import { ButtonLink } from "@/components/ui/Button";
-import { fadeUp, stagger } from "@/lib/client/motion";
+import { Einreichung, type EinreichungErgebnis } from "@/components/upload/Einreichung";
+import { einblenden, gestaffelt } from "@/lib/motion";
 import { LeistungDetails } from "./LeistungDetails";
 
 interface Props {
   antwort: Antwort;
   onOption: (leistungId: string, label: string) => void;
   aktiv: boolean;
+  vorschauen: Record<string, string | undefined>;
+  nachricht: string;
+  ergebnis?: EinreichungErgebnis;
+  onAbgesendet: (e: EinreichungErgebnis) => void;
 }
 
 /** Eine Antwort des Bürgerservice: ruhig eingeblendet, ohne Avatar, ohne Tipp-Effekt. */
-export function AnswerBlock({ antwort, onOption, aktiv }: Props) {
+export function AnswerBlock({ antwort, onOption, aktiv, vorschauen, nachricht, ergebnis, onAbgesendet }: Props) {
   const { tenant, t } = useTenant();
   const leistung = antwort.leistungId ? tenant.leistungen.find((l) => l.id === antwort.leistungId) : undefined;
 
   return (
-    <motion.article variants={stagger(0.08)} initial="hidden" animate="show" className="space-y-4">
-      <motion.p variants={fadeUp} className="text-[13px] font-medium text-subtle">
-        {t.absender} {tenant.name}
-      </motion.p>
-
-      <motion.div variants={fadeUp}>
+    <motion.article variants={gestaffelt(0.06)} initial="hidden" animate="show" className="space-y-4">
+      <motion.div variants={einblenden}>
         <Markdown text={antwort.text} className="text-[17px] leading-[1.6] text-fg" />
       </motion.div>
 
       {leistung && (
-        <motion.div variants={fadeUp}>
-          <Glass className="rounded-[24px] p-5 sm:p-6">
+        <motion.div variants={einblenden}>
+          <Glass className="rounded-[24px] p-6">
             <LeistungDetails leistung={leistung} />
           </Glass>
         </motion.div>
       )}
 
+      {antwort.einreichung && (
+        <motion.div variants={einblenden}>
+          <Einreichung daten={antwort.einreichung} vorschauen={vorschauen} nachricht={nachricht} aktiv={aktiv || !!ergebnis} ergebnis={ergebnis} onAbgesendet={onAbgesendet} />
+        </motion.div>
+      )}
+
       {antwort.optionen && antwort.optionen.length > 0 && (
-        <motion.div variants={fadeUp} className="flex flex-wrap gap-2" role="group" aria-label={antwort.text}>
+        <motion.div variants={einblenden} className="flex flex-wrap gap-2" role="group" aria-label={antwort.text}>
           {antwort.optionen.map((o) => (
             <button
               key={o.leistungId}
               type="button"
               disabled={!aktiv}
               onClick={() => onOption(o.leistungId, o.label)}
-              className="glass glass-interactive rounded-full px-4 py-2.5 text-[15px] font-medium disabled:opacity-50"
+              className="glass pressable min-h-12 rounded-full px-6 text-[15px] font-medium disabled:opacity-50"
             >
               {o.label}
             </button>
@@ -57,7 +63,7 @@ export function AnswerBlock({ antwort, onOption, aktiv }: Props) {
       )}
 
       {antwort.aktionen.length > 0 && (
-        <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-2.5 pt-1">
+        <motion.div variants={einblenden} className="flex flex-wrap items-center gap-2">
           {antwort.aktionen.map((a, i) => {
             switch (a.typ) {
               case "antrag":
@@ -95,7 +101,7 @@ export function AnswerBlock({ antwort, onOption, aktiv }: Props) {
       )}
 
       {antwort.quellen.length > 0 && (
-        <motion.p variants={fadeUp} className="text-[13px] text-subtle">
+        <motion.p variants={einblenden} className="text-[13px] text-subtle">
           {t.quelle}: {antwort.quellen.join(" · ")}
         </motion.p>
       )}
@@ -103,25 +109,17 @@ export function AnswerBlock({ antwort, onOption, aktiv }: Props) {
   );
 }
 
-export function Warten() {
-  const { t } = useTenant();
+/** Ruhiger Ladezustand: drei leise pulsierende Punkte. */
+export function Denkt() {
+  const { lang } = useTenant();
   return (
-    <motion.p
-      initial={{ opacity: 0 }}
-      animate={{ opacity: [0.45, 0.9, 0.45] }}
-      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-      className="text-[15px] text-subtle"
-      role="status"
-    >
-      {t.einenMoment}
-    </motion.p>
-  );
-}
-
-export function KleinerLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="text-accent underline-offset-2 hover:underline">
-      {children}
-    </Link>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="status">
+      <span className="sr-only">{lang === "de" ? "Antwort wird erstellt" : "Preparing answer"}</span>
+      <div className="denkt flex h-6 items-center gap-1.5" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+    </motion.div>
   );
 }

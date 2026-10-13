@@ -13,7 +13,7 @@ export function Section({ titel, children, id }: { titel: string; children: Reac
   return (
     <section id={id} className="mt-10 scroll-mt-24 first:mt-0">
       <h2 className="mb-3 text-[20px] font-semibold tracking-[-0.015em]">{titel}</h2>
-      <div className="space-y-3 text-[16px] leading-relaxed text-fg/90">{children}</div>
+      <div className="space-y-3 text-[16px] leading-relaxed text-fg">{children}</div>
     </section>
   );
 }

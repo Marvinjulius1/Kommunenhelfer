@@ -2,7 +2,7 @@
  * Mehrsprachigkeit: Oberflächentexte (UI-Chrome) + Hilfsfunktion für
  * übersetzbare Konfigurationstexte (LText).
  */
-import type { LText, Sprache } from "@/config/types";
+import type { GemeindeConfig, LText, Sprache } from "@/config/types";
 
 export function tx(text: LText | undefined, lang: Sprache): string {
   if (text === undefined) return "";
@@ -10,27 +10,24 @@ export function tx(text: LText | undefined, lang: Sprache): string {
   return text[lang] ?? text.de;
 }
 
+/** Schrift unter dem Wappen. Standard: "Bürgerservice online". */
+export function untertitel(tenant: Pick<GemeindeConfig, "texte">, lang: Sprache): string {
+  return tx(tenant.texte.untertitel ?? { de: "Bürgerservice online", en: "Online citizen services" }, lang);
+}
+
 const de = {
   menuTermine: "Termine",
   menuHilfe: "Hilfe",
   menuKontakt: "Kontakt",
-  menuSprache: "Sprache",
   menuAnliegen: "Meine Anliegen",
   menuOeffnen: "Menü öffnen",
   menuSchliessen: "Menü schließen",
-  themeHell: "Helles Erscheinungsbild",
-  themeDunkel: "Dunkles Erscheinungsbild",
   themeWechseln: "Erscheinungsbild wechseln",
   senden: "Absenden",
   eingabeLabel: "Ihr Anliegen",
-  schnellaktionen: "Häufige Anliegen",
   alleLeistungen: "Alle Leistungen von A bis Z",
-  kiHinweis:
-    "Der digitale Assistent nutzt ein KI-System und antwortet ausschließlich auf Grundlage der Informationen Ihrer Verwaltung. Bitte geben Sie hier keine sensiblen Daten ein.",
-  kiHinweisMehr: "Mehr zum Datenschutz",
   neuesAnliegen: "Neues Anliegen",
   einenMoment: "Einen Moment bitte …",
-  absender: "Bürgerservice",
   sie: "Sie",
   fehlerAllgemein: "Das hat leider nicht geklappt. Bitte versuchen Sie es noch einmal.",
   zuVieleAnfragen: "Sie haben sehr viele Anfragen gesendet. Bitte warten Sie einen Moment.",
@@ -44,7 +41,6 @@ const de = {
   onlineBeantragen: "Online beantragen",
   terminBuchen: "Termin buchen",
   kontaktAufnehmen: "Kontakt aufnehmen",
-  mehrErfahren: "Mehr erfahren",
   unterlagen: "Das brauchen Sie",
   gebuehren: "Gebühren",
   ablauf: "So geht es",
@@ -62,23 +58,15 @@ const en: Dict = {
   menuTermine: "Appointments",
   menuHilfe: "Help",
   menuKontakt: "Contact",
-  menuSprache: "Language",
   menuAnliegen: "My requests",
   menuOeffnen: "Open menu",
   menuSchliessen: "Close menu",
-  themeHell: "Light appearance",
-  themeDunkel: "Dark appearance",
   themeWechseln: "Change appearance",
   senden: "Send",
   eingabeLabel: "Your request",
-  schnellaktionen: "Common requests",
   alleLeistungen: "All services from A to Z",
-  kiHinweis:
-    "The digital assistant uses an AI system and answers only on the basis of information provided by your administration. Please do not enter sensitive data here.",
-  kiHinweisMehr: "More on data protection",
   neuesAnliegen: "New request",
   einenMoment: "One moment please …",
-  absender: "Citizen service",
   sie: "You",
   fehlerAllgemein: "Unfortunately that did not work. Please try again.",
   zuVieleAnfragen: "You have sent many requests. Please wait a moment.",
@@ -92,7 +80,6 @@ const en: Dict = {
   onlineBeantragen: "Apply online",
   terminBuchen: "Book an appointment",
   kontaktAufnehmen: "Contact us",
-  mehrErfahren: "Learn more",
   unterlagen: "What you need",
   gebuehren: "Fees",
   ablauf: "How it works",

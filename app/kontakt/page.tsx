@@ -18,7 +18,7 @@ export default async function KontaktSeite() {
   return (
     <Page titel={t.menuKontakt} intro={de ? "Wir sind gern persönlich für Sie da." : "We are happy to help you in person."} breit>
       <div className="grid gap-4 md:grid-cols-2">
-        <Glass className="rounded-[26px] p-6">
+        <Glass className="rounded-[24px] p-6">
           <h2 className="text-[19px] font-semibold">{tx(k.bezeichnung, lang)}</h2>
           <address className="mt-4 space-y-3 text-[15px] not-italic">
             <p className="flex gap-3">
@@ -54,7 +54,7 @@ export default async function KontaktSeite() {
             </ButtonLink>
           </div>
         </Glass>
-        <Glass className="rounded-[26px] p-6">
+        <Glass className="rounded-[24px] p-6">
           <h2 className="mb-2 text-[19px] font-semibold">{t.oeffnungszeiten}</h2>
           <OeffnungszeitenTabelle plan={tenant.oeffnungszeiten} lang={lang} />
           {tenant.oeffnungszeitenHinweis && <p className="mt-4 text-[14px] text-muted">{tx(tenant.oeffnungszeitenHinweis, lang)}</p>}
@@ -65,7 +65,7 @@ export default async function KontaktSeite() {
       <ul className="grid gap-3 sm:grid-cols-2">
         {tenant.aemter.map((a) => (
           <li key={a.id}>
-            <Glass className="rounded-[22px] p-5">
+            <Glass className="rounded-[24px] p-6">
               <p className="font-medium">{tx(a.name, lang)}</p>
               <p className="mt-1 text-[14px] text-muted">{tx(a.ort, lang)}</p>
             </Glass>

@@ -28,9 +28,12 @@ export async function sendMail(tenant: GemeindeConfig, mail: Mail): Promise<void
     await transporter.sendMail({ from, ...mail });
     return;
   }
-  // Entwicklungsmodus: keine echten Mails. Empfängeradresse wird gekürzt geloggt.
+  // Entwicklungsmodus: keine echten Mails. Es wird nur der gekürzte Empfänger und der
+  // Betreff geloggt – niemals Inhalte (Datenschutz). MAIL_LOG_INHALT=1 zeigt zum Testen auch
+  // den Text, aber nur außerhalb der Produktion.
   const masked = mail.to.replace(/^(.).*(@.*)$/, "$1…$2");
-  console.info(`[mail] an ${masked} | ${mail.subject}\n${mail.text}\n`);
+  const inhalt = process.env.MAIL_LOG_INHALT === "1" && process.env.NODE_ENV !== "production" ? `\n${mail.text}\n` : "";
+  console.info(`[mail] an ${masked} | ${mail.subject}${inhalt}`);
 }
 
 /** Erstellt einen Kalendereintrag (iCalendar) für Terminbestätigungen. */

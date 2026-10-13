@@ -12,10 +12,10 @@ import { formatEuro, tx } from "@/lib/i18n";
 function Abschnitt({ icon, titel, children }: { icon: IconName; titel: string; children: React.ReactNode }) {
   return (
     <section className="py-4 first:pt-0 last:pb-0">
-      <h3 className="mb-2 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle">
+      <h2 className="mb-2 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle">
         <Icon name={icon} className="size-4" />
         {titel}
-      </h3>
+      </h2>
       {children}
     </section>
   );

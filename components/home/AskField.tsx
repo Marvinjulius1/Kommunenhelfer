@@ -1,15 +1,18 @@
 "use client";
 
 /**
- * Das zentrale Eingabefeld im Liquid-Glass-Stil.
- * Wächst bei längeren Eingaben mit (Textarea), Enter sendet, Shift+Enter = neue Zeile.
+ * Das zentrale Eingabefeld (Liquid Glass) – mit Dateiablage.
+ * Enter sendet, Shift+Enter = neue Zeile. Büroklammer: Datei wählen oder
+ * (auf Mobilgeräten) Dokument fotografieren.
  */
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { useSpecular } from "@/components/ui/Glass";
-import { Icon } from "@/components/ui/Icon";
 import { useTenant } from "@/components/TenantProvider";
-import { spring } from "@/lib/client/motion";
+import { Icon } from "@/components/ui/Icon";
+import { AttachmentTray } from "@/components/upload/AttachmentTray";
+import type { Anhang } from "@/lib/client/uploads";
+import { feder } from "@/lib/motion";
+import { ACCEPT } from "@/lib/uploads/formate";
 
 export interface AskFieldHandle {
   focus: () => void;
@@ -21,86 +24,177 @@ interface Props {
   placeholder: string;
   size?: "hero" | "dock";
   describedBy?: string;
+  uploads?: {
+    anhaenge: Anhang[];
+    laedt: boolean;
+    onDateien: (f: File[]) => void;
+    onScan: () => void;
+    onEntfernen: (id: string) => void;
+    onErneut: (id: string) => void;
+  };
 }
 
-export const AskField = forwardRef<AskFieldHandle, Props>(function AskField(
-  { onSubmit, disabled, placeholder, size = "hero", describedBy },
-  ref,
-) {
-  const { t } = useTenant();
+export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ onSubmit, disabled, placeholder, size = "hero", describedBy, uploads }, ref) {
+  const { lang, t } = useTenant();
+  const de = lang === "de";
   const [wert, setWert] = useState("");
+  const [menue, setMenue] = useState(false);
+  const [kamera, setKamera] = useState(false);
   const taRef = useRef<HTMLTextAreaElement>(null);
-  const glassRef = useSpecular<HTMLFormElement>();
+  const dateiRef = useRef<HTMLInputElement>(null);
+  const menueRef = useRef<HTMLDivElement>(null);
 
-  useImperativeHandle(ref, () => ({ focus: () => taRef.current?.focus() }));
+  useImperativeHandle(ref, () => ({ focus: () => taRef.current?.focus({ preventScroll: true }) }));
 
-  // Höhe an den Inhalt anpassen
+  useEffect(() => setKamera(matchMedia("(pointer: coarse)").matches), []);
+
+  // Höhe an den Inhalt anpassen (max. ca. 6 Zeilen)
   useEffect(() => {
     const ta = taRef.current;
     if (!ta) return;
+    // Leeres Feld: nichts messen (vermeidet einen erzwungenen Reflow beim Laden)
+    if (!wert) {
+      ta.style.height = "";
+      return;
+    }
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
+    ta.style.height = Math.min(ta.scrollHeight, 168) + "px";
   }, [wert]);
 
+  useEffect(() => {
+    if (!menue) return;
+    const zu = (e: MouseEvent | KeyboardEvent) => {
+      if (e instanceof KeyboardEvent ? e.key === "Escape" : !menueRef.current?.contains(e.target as Node)) setMenue(false);
+    };
+    document.addEventListener("click", zu);
+    document.addEventListener("keydown", zu);
+    return () => {
+      document.removeEventListener("click", zu);
+      document.removeEventListener("keydown", zu);
+    };
+  }, [menue]);
+
+  const fertige = uploads?.anhaenge.filter((a) => a.status === "fertig").length ?? 0;
+  const kannSenden = (wert.trim().length > 0 || fertige > 0) && !disabled && !uploads?.laedt;
+
   const senden = () => {
-    const text = wert.trim();
-    if (!text || disabled) return;
-    onSubmit(text);
+    if (!kannSenden) return;
+    onSubmit(wert.trim());
     setWert("");
   };
 
   const hero = size === "hero";
-  const kannSenden = wert.trim().length > 0 && !disabled;
 
   return (
-    <motion.form
-      ref={glassRef}
-      layoutId="ask-field"
-      transition={spring}
+    <form
       role="search"
+      aria-label={t.eingabeLabel}
       onSubmit={(e) => {
         e.preventDefault();
         senden();
       }}
-      className={`glass glass-field flex w-full items-end gap-2 ${
-        hero ? "rounded-[30px] p-2 pl-6 sm:p-2.5 sm:pl-7" : "rounded-[26px] p-1.5 pl-5"
-      }`}
+      className={`glass glass-field w-full ${hero ? "rounded-[32px]" : "rounded-[28px]"}`}
     >
-      <label htmlFor="anliegen" className="sr-only">
-        {t.eingabeLabel}
-      </label>
-      <textarea
-        id="anliegen"
-        ref={taRef}
-        rows={1}
-        value={wert}
-        maxLength={1000}
-        onChange={(e) => setWert(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-            e.preventDefault();
-            senden();
-          }
-        }}
-        placeholder={placeholder}
-        aria-describedby={describedBy}
-        autoComplete="off"
-        enterKeyHint="send"
-        className={`flex-1 resize-none self-center bg-transparent leading-snug text-fg outline-none placeholder:text-subtle focus-visible:outline-none ${
-          hero ? "py-3 text-[18px] sm:text-[20px]" : "py-2.5 text-[16px]"
-        }`}
-        style={{ outline: "none" }}
-      />
-      <motion.button
-        type="submit"
-        aria-label={t.senden}
-        disabled={!kannSenden}
-        animate={{ scale: kannSenden ? 1 : 0.92, opacity: kannSenden ? 1 : 0.35 }}
-        transition={spring}
-        className={`grid shrink-0 place-items-center rounded-full bg-accent text-on-accent ${hero ? "size-12" : "size-10"}`}
-      >
-        <Icon name="arrowUp" className={hero ? "size-5" : "size-[18px]"} strokeWidth={2.2} />
-      </motion.button>
-    </motion.form>
+      {uploads && <AttachmentTray anhaenge={uploads.anhaenge} onEntfernen={uploads.onEntfernen} onErneut={uploads.onErneut} />}
+      <div className={`flex items-end gap-1 ${hero ? "p-2" : "p-1.5"}`}>
+        {uploads && (
+          <div className="relative" ref={menueRef}>
+            <button
+              type="button"
+              aria-label={de ? "Dokument hinzufügen" : "Add document"}
+              aria-haspopup={kamera ? "menu" : undefined}
+              aria-expanded={kamera ? menue : undefined}
+              onClick={() => (kamera ? setMenue((m) => !m) : dateiRef.current?.click())}
+              className={`pressable grid shrink-0 place-items-center rounded-full text-subtle hover:text-fg ${hero ? "size-12" : "size-10"}`}
+            >
+              <Icon name="paperclip" className="size-5" />
+            </button>
+            <AnimatePresence>
+              {menue && (
+                <motion.div
+                  role="menu"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={feder.klein}
+                  className="glass absolute bottom-14 left-0 z-20 w-60 rounded-[24px] p-2"
+                >
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenue(false);
+                      uploads.onScan();
+                    }}
+                    className="flex w-full items-center gap-4 rounded-[16px] px-4 py-4 text-left text-[15px]"
+                  >
+                    <Icon name="camera" className="size-5 text-muted" />
+                    {de ? "Dokument fotografieren" : "Photograph document"}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenue(false);
+                      dateiRef.current?.click();
+                    }}
+                    className="flex w-full items-center gap-4 rounded-[16px] px-4 py-4 text-left text-[15px]"
+                  >
+                    <Icon name="file" className="size-5 text-muted" />
+                    {de ? "Datei auswählen" : "Choose file"}
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <input
+              ref={dateiRef}
+              type="file"
+              multiple
+              accept={ACCEPT}
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              onChange={(e) => {
+                uploads.onDateien([...(e.target.files ?? [])]);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        )}
+        <label htmlFor="anliegen" className="sr-only">
+          {t.eingabeLabel}
+        </label>
+        <textarea
+          id="anliegen"
+          ref={taRef}
+          rows={1}
+          value={wert}
+          maxLength={1000}
+          onChange={(e) => setWert(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              senden();
+            }
+          }}
+          placeholder={placeholder}
+          aria-describedby={describedBy}
+          autoComplete="off"
+          enterKeyHint="send"
+          className={`min-w-0 flex-1 resize-none self-center bg-transparent leading-snug text-fg outline-none placeholder:text-subtle focus-visible:outline-none ${
+            uploads ? "" : "pl-4"
+          } ${hero ? "py-3 text-[17px] sm:text-[19px]" : "py-2 text-[16px]"}`}
+          style={{ outline: "none" }}
+        />
+        <button
+          type="submit"
+          aria-label={uploads?.laedt ? (de ? "Senden – bitte warten, Dateien werden hochgeladen" : "Send – please wait, uploading") : t.senden}
+          disabled={!kannSenden}
+          className={`pressable grid shrink-0 place-items-center rounded-full bg-fg text-bg disabled:opacity-25 ${hero ? "size-12" : "size-10"}`}
+        >
+          <Icon name="arrowUp" className="size-5" />
+        </button>
+      </div>
+    </form>
   );
 });

@@ -33,15 +33,11 @@ export interface Kontakt {
   hinweis?: LText;
 }
 
-/** Ein Amt / eine Stelle, bei der Termine gebucht werden können. */
-export interface Amt {
-  id: string;
-  name: LText;
-  /** Raum, Gebäude o. Ä. */
-  ort: LText;
+/** Buchbare Termine eines Amts. */
+export interface Terminangebot {
   /** Buchbare Zeitfenster pro Wochentag. */
-  terminzeiten: Wochenplan;
-  /** Länge eines Termins in Minuten (Standard, kann pro Leistung überschrieben werden). */
+  zeiten: Wochenplan;
+  /** Länge eines Termins in Minuten. */
   slotMinuten: number;
   /** Wie viele Personen parallel bedient werden (Schalteranzahl). */
   parallel: number;
@@ -49,6 +45,35 @@ export interface Amt {
   vorlaufTage: number;
   /** Wie viele Tage im Voraus gebucht werden kann. */
   buchbarTage: number;
+}
+
+/**
+ * Wohin eingehende Vorgänge (Uploads, Online-Anträge) eines Amts gehen.
+ *  - backoffice: nur im Backoffice des Portals (Standard)
+ *  - email:      zusätzlich eine Benachrichtigung an das Amt – OHNE Anhänge und ohne
+ *                personenbezogene Daten, nur Vorgangsnummer und Link ins Backoffice
+ *  - webhook:    JSON an ein Fachverfahren/eine Schnittstelle, signiert (HMAC-SHA256).
+ *                Dokumente sind über kurzlebige, signierte Links abrufbar.
+ */
+export type Weiterleitung =
+  | { typ: "backoffice" }
+  | { typ: "email"; adresse: string }
+  | { typ: "webhook"; url: string; /** Name der Umgebungsvariable mit dem Signatur-Geheimnis */ secretEnv: string };
+
+/** Ein Amt / ein Fachbereich. */
+export interface Amt {
+  id: string;
+  name: LText;
+  /** Raum, Gebäude o. Ä. */
+  ort: LText;
+  /** Stichworte für die Zuständigkeit (z. B. "hundesteuer", "gewerbe"). Hilft beim Vorsortieren von Uploads. */
+  zustaendigkeiten?: string[];
+  /** Weiterleitung eingehender Vorgänge. Standard: nur Backoffice. */
+  weiterleitung?: Weiterleitung;
+  /** Hinweis an Bürger zur Bearbeitung, z. B. "In der Regel innerhalb von 5 Werktagen." */
+  bearbeitungshinweis?: LText;
+  /** Terminbuchung. Fehlt der Eintrag, ist das Amt nicht online buchbar. */
+  termine?: Terminangebot;
 }
 
 // ---------------------------------------------------------------------------
@@ -125,6 +150,22 @@ export interface Gebuehr {
   hinweis?: LText;
 }
 
+/** Eine Unterlage, die für eine Leistung hochgeladen werden soll. */
+export interface DokumentAnforderung {
+  /** ID einer Dokumentart (Standardliste in lib/uploads/dokumentarten.ts oder `dokumentarten` der Gemeinde). */
+  art: string;
+  pflicht: boolean;
+  hinweis?: LText;
+}
+
+/** Zusätzliche, gemeindespezifische Dokumentart. */
+export interface Dokumentart {
+  id: string;
+  label: LText;
+  /** Begriffe, an denen die Art in Dateiname oder Dokumenttext erkannt wird. */
+  stichworte: string[];
+}
+
 export interface Leistung {
   /** Eindeutige ID, wird in URLs verwendet (z. B. /antrag/hund-anmelden). */
   id: string;
@@ -152,6 +193,10 @@ export interface Leistung {
   dauer?: LText;
   /** Geführtes Formular, wenn die Leistung online beantragt werden kann. */
   formular?: Formular;
+  /** Unterlagen, die Bürger hochladen können/müssen. Grundlage der Vollständigkeitsprüfung. */
+  dokumente?: DokumentAnforderung[];
+  /** Löschfrist für Vorgänge dieser Leistung (Uploads) in Tagen. Standard: uploads.aufbewahrungTage. */
+  aufbewahrungTage?: number;
   /** Leistungsschlüssel aus dem LeiKa/FIM-Katalog – für spätere OZG-/XÖV-Anbindung. */
   leistungsschluessel?: string;
   /** Rechtsgrundlage (Anzeige als Quelle). */
@@ -169,16 +214,6 @@ export interface Rueckfrage {
   stichworte: string[];
   frage: LText;
   optionen: { label: LText; leistungId: string }[];
-}
-
-export interface Schnellaktion {
-  label: LText;
-  /** Entweder eine Leistung (der Assistent erklärt sie direkt) … */
-  leistungId?: string;
-  /** … oder ein Satz, der an den Assistenten geht (z. B. "Ich ziehe um" → Rückfrage) … */
-  anfrage?: LText;
-  /** … oder ein direkter Link (z. B. /termine). */
-  href?: string;
 }
 
 export interface GemeindeConfig {
@@ -204,8 +239,8 @@ export interface GemeindeConfig {
   standardSprache: Sprache;
 
   texte: {
-    /** Untertitel unter dem Namen, z. B. "Bürgerservice online". */
-    untertitel: LText;
+    /** Schrift unter dem Wappen auf der Startseite. Standard: "Bürgerservice online". */
+    untertitel?: LText;
     /** Platzhalter im Eingabefeld. */
     platzhalter: LText;
     /** Erste Antwort des Assistenten, falls benötigt. */
@@ -231,9 +266,25 @@ export interface GemeindeConfig {
   };
 
   aemter: Amt[];
+
+  /** Dokumenten-Upload im Assistenten. */
+  uploads: {
+    aktiv: boolean;
+    /** Maximale Größe pro Datei in MB. */
+    maxDateiMB: number;
+    /** Maximale Gesamtgröße pro Vorgang in MB. */
+    maxGesamtMB: number;
+    /** Maximale Anzahl Dateien pro Vorgang. */
+    maxDateien: number;
+    /** Standard-Löschfrist für Vorgänge mit Uploads (Tage). */
+    aufbewahrungTage: number;
+    /** Amt, an das Unterlagen gehen, wenn die Zuständigkeit unklar ist (z. B. zentrale Poststelle). */
+    standardAmtId: string;
+  };
+  /** Ergänzt die Standard-Dokumentarten. */
+  dokumentarten?: Dokumentart[];
   leistungen: Leistung[];
   rueckfragen: Rueckfrage[];
-  schnellaktionen: Schnellaktion[];
 
   /** Häufige Fragen (erscheinen unter /hilfe und fließen in die Wissensbasis ein). */
   faq: { frage: LText; antwort: LText }[];

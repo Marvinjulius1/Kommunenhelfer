@@ -23,6 +23,9 @@ import { suche, type Treffer } from "./knowledge";
 import { enthaeltPhrase, istFrage, normalisiere, tokens } from "./text";
 import { getProvider } from "./providers";
 import { redact } from "./redact";
+import { decryptJson } from "@/lib/crypto";
+import { artLabel, fehlendeUnterlagen, zustaendigesAmt } from "@/lib/uploads/pruefung";
+import { uploadsImEntwurf } from "@/lib/uploads/service";
 
 /** Ab hier gilt ein Wissensbasis-Treffer als gesichert (Punktzahl und Anteil gefundener Begriffe). */
 const WISSEN_SCHWELLE = 1.5;
@@ -199,6 +202,15 @@ function oeffnungszeitenText(tenant: GemeindeConfig, lang: Sprache): string {
     .join("\n");
 }
 
+/** Grobe Erkennung anderer Sprachen (für einen freundlichen Hinweis statt einer falschen Antwort). */
+function istFremdsprache(text: string): boolean {
+  if (/[\u0400-\u04ff\u0600-\u06ff\u0370-\u03ff\u4e00-\u9fff\u0590-\u05ff]/.test(text)) return true;
+  if (/[ğşıİĞŞąęłńśźżćőű]/.test(text)) return true;
+  const w = normalisiere(text).split(" ");
+  const fremd = ["je", "suis", "veux", "est", "quiero", "necesito", "una", "por", "favor", "voglio", "sono", "ben", "bir", "nasil", "jak", "chce", "prosze", "eu", "preciso"];
+  return w.filter((x) => fremd.includes(x)).length >= 2;
+}
+
 export function weissNicht(tenant: GemeindeConfig, lang: Sprache): Antwort {
   const k = tenant.kontakt;
   const d = dict(lang);
@@ -264,6 +276,13 @@ function lokaleAntwort(tenant: GemeindeConfig, a: Analyse, lang: Sprache): Antwo
 
   // Eine offene Frage, die nur am Rande eine Leistung streift, beantworten wir nicht mit der Leistung.
   if (a.leistung && !(a.frage && !a.leistungEindeutig)) return leistungAntwort(a.leistung, lang);
+  if (istFremdsprache(a.text)) {
+    const sprachen = tenant.sprachen.map((s) => (s === "de" ? "Deutsch" : "English")).join(" / ");
+    return {
+      ...weissNicht(tenant, lang),
+      text: `Leider kann ich Ihnen nur auf ${sprachen} antworten. Bitte beschreiben Sie Ihr Anliegen in einer dieser Sprachen – oder wenden Sie sich direkt an uns.\n\nUnfortunately I can only answer in ${sprachen}. Please describe your request in one of these languages or contact us directly.`,
+    };
+  }
   return weissNicht(tenant, lang);
 }
 
@@ -383,6 +402,100 @@ async function modellAntwort(tenant: GemeindeConfig, anfrage: AssistentAnfrage, 
 }
 
 // ---------------------------------------------------------------------------
+// Hochgeladene Unterlagen: vorsortieren, Vollständigkeit prüfen, Zusammenfassung
+// (Der Assistent entscheidet nie über einen Antrag – er leitet nur weiter.)
+// ---------------------------------------------------------------------------
+
+async function dokumentAntwort(tenant: GemeindeConfig, a: Analyse, entwurf: string, lang: Sprache): Promise<Antwort> {
+  const de = lang === "de";
+  const uploads = (await uploadsImEntwurf(tenant, entwurf)).sort((x, y) => x.erstelltAm.localeCompare(y.erstelltAm));
+  if (!uploads.length) {
+    return {
+      text: de ? "Ich konnte keine hochgeladenen Unterlagen finden. Bitte fügen Sie die Dateien erneut hinzu." : "I could not find any uploaded documents. Please add the files again.",
+      aktionen: [],
+      quellen: [],
+      sicher: false,
+    };
+  }
+  const arten = uploads.map((u) => u.art);
+
+  // Vorgang: aus dem Text des Bürgers, sonst aus den Unterlagen (eindeutigste Übereinstimmung)
+  let leistung = a.leistung && a.leistungEindeutig ? a.leistung : undefined;
+  if (!leistung) {
+    const kandidaten = aktiveLeistungen(tenant)
+      .map((l) => ({ l, score: (l.dokumente ?? []).reduce((s, d) => s + (arten.includes(d.art) && d.art !== "personalausweis" && d.art !== "reisepass" ? (d.pflicht ? 2 : 1) : 0), 0) }))
+      .filter((k) => k.score > 0)
+      .sort((x, y) => y.score - x.score);
+    if (kandidaten[0] && kandidaten[0].score > (kandidaten[1]?.score ?? 0)) leistung = kandidaten[0].l;
+  }
+
+  // Zuständigkeit: Leistung → Hinweise aus den Unterlagen → Standard-Amt
+  const vorschlaege = uploads.map((u) => u.amtVorschlag).filter(Boolean) as string[];
+  const haeufigster = vorschlaege.sort((x, y) => vorschlaege.filter((v) => v === y).length - vorschlaege.filter((v) => v === x).length)[0];
+  const amt = zustaendigesAmt(tenant, leistung?.id, haeufigster);
+  const fehlend = fehlendeUnterlagen(tenant, leistung?.id, arten);
+  const unsicher = uploads.filter((u) => !u.artSicher).length;
+
+  const teile: string[] = [];
+  teile.push(
+    de
+      ? `Vielen Dank. Ich habe ${uploads.length === 1 ? "eine Unterlage" : `${uploads.length} Unterlagen`} erhalten.`
+      : `Thank you. I have received ${uploads.length === 1 ? "one document" : `${uploads.length} documents`}.`,
+  );
+  if (leistung) {
+    teile.push(
+      de
+        ? `Das passt zum Vorgang **${tx(leistung.titel, lang)}**. Zuständig ist: **${tx(amt.name, lang)}**.`
+        : `This matches **${tx(leistung.titel, lang)}**. Responsible office: **${tx(amt.name, lang)}**.`,
+    );
+  } else {
+    teile.push(
+      de
+        ? `Zuständig ist voraussichtlich: **${tx(amt.name, lang)}**. Wenn Sie wissen, worum es geht, wählen Sie unten bitte den passenden Vorgang.`
+        : `The responsible office is probably **${tx(amt.name, lang)}**. If you know what it is about, please choose the matching request below.`,
+    );
+  }
+  if (fehlend.length) {
+    teile.push(
+      (de ? "Für diesen Vorgang fehlt noch:\n" : "Still missing for this request:\n") +
+        fehlend.map((f) => `- ${artLabel(tenant, f.art, lang)}${f.hinweis ? ` (${tx(f.hinweis, lang)})` : ""}`).join("\n") +
+        (de ? "\n\nSie können die Unterlagen jetzt ergänzen oder trotzdem absenden." : "\n\nYou can add them now or send anyway."),
+    );
+  }
+  if (unsicher)
+    teile.push(
+      de
+        ? `Bei ${unsicher === 1 ? "einer Unterlage" : `${unsicher} Unterlagen`} bin ich mir bei der Art nicht sicher. Bitte prüfen Sie die Angabe in der Zusammenfassung.`
+        : `I am not sure about the type of ${unsicher} document(s). Please check in the summary.`,
+    );
+  teile.push(
+    de
+      ? "Bitte prüfen Sie die Zusammenfassung. Erst wenn Sie bestätigen, senden wir alles an das Amt. Über Ihr Anliegen entscheidet das Amt."
+      : "Please check the summary. Nothing is sent until you confirm. The office decides on your request.",
+  );
+
+  return {
+    text: teile.join("\n\n"),
+    aktionen: [],
+    quellen: [],
+    sicher: true,
+    einreichung: {
+      leistungId: leistung?.id,
+      amtId: amt.id,
+      dokumente: uploads.map((u) => ({
+        id: u.id,
+        art: u.art,
+        artSicher: u.artSicher,
+        name: decryptJson<string>(u.name),
+        typ: u.typ,
+        groesse: u.groesse,
+        seiten: u.seiten,
+      })),
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Einstiegspunkt
 // ---------------------------------------------------------------------------
 
@@ -396,6 +509,8 @@ export async function beantworte(tenant: GemeindeConfig, anfrage: AssistentAnfra
 
   const letzte = [...anfrage.nachrichten].reverse().find((m) => m.rolle === "buerger")?.text ?? "";
   const a = await analysiere(tenant, letzte, anfrage.kontextLeistungId);
+
+  if (anfrage.entwurf && anfrage.dokumente?.length) return dokumentAntwort(tenant, a, anfrage.entwurf, lang);
 
   // Eindeutige Fälle beantworten wir deterministisch aus der Konfiguration.
   const eindeutig = a.smalltalk || a.rueckfrage || (a.leistung && a.leistungEindeutig && !a.frage);
