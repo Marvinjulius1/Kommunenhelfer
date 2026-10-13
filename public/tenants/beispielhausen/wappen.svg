@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-labelledby="t">
+  <title id="t">Wappen der Gemeinde Beispielhausen</title>
+  <path d="M6 6h108v62c0 34-24 56-54 66C30 124 6 102 6 68z" fill="#2F7A3D" stroke="#1D4D27" stroke-width="3"/>
+  <g fill="#F2C94C">
+    <circle cx="60" cy="52" r="24"/>
+    <circle cx="44" cy="62" r="14"/>
+    <circle cx="76" cy="62" r="14"/>
+    <rect x="56" y="70" width="8" height="34" rx="2"/>
+    <path d="M36 106h48v6H36z"/>
+  </g>
+</svg>

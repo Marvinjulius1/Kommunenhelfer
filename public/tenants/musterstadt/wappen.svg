@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-labelledby="t">
+  <title id="t">Wappen der Stadt Musterstadt</title>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2A70C8"/>
+      <stop offset="1" stop-color="#174E96"/>
+    </linearGradient>
+  </defs>
+  <path d="M6 6h108v62c0 34-24 56-54 66C30 124 6 102 6 68z" fill="url(#g)" stroke="#0E3466" stroke-width="3"/>
+  <path d="M6 6h108v62c0 34-24 56-54 66C30 124 6 102 6 68z" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="1.2" transform="translate(4 4) scale(.933)"/>
+  <g fill="#fff">
+    <path d="M38 36h8v8h6v-8h8v8h6v-8h8v8h6v-8h0v18H38z"/>
+    <path d="M42 54h36v54H42z"/>
+    <path d="M53 108V92a7 7 0 0 1 14 0v16z" fill="#174E96"/>
+    <rect x="49" y="64" width="6" height="10" rx="3" fill="#174E96"/>
+    <rect x="65" y="64" width="6" height="10" rx="3" fill="#174E96"/>
+  </g>
+  <path d="M30 108h60" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+</svg>
