@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
 import { MeineAnliegen } from "@/components/anliegen/MeineAnliegen";
 import { Page } from "@/components/ui/Page";
+import { aktuellesKonto } from "@/lib/konto/service";
 import { getLang, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Meine Anliegen" };
 
 export default async function AnliegenSeite() {
-  const lang = await getLang(await getTenant());
+  const tenant = await getTenant();
+  const lang = await getLang(tenant);
+  const konto = await aktuellesKonto(tenant);
+  const de = lang === "de";
   return (
     <Page
-      titel={lang === "de" ? "Meine Anliegen" : "My requests"}
+      titel={de ? "Meine Anliegen" : "My requests"}
       intro={
-        lang === "de"
-          ? "Der aktuelle Stand Ihrer Anträge und Termine. Die Liste wird nur auf diesem Gerät gespeichert."
-          : "The current status of your applications and appointments. The list is stored only on this device."
+        konto
+          ? de
+            ? "Der aktuelle Stand Ihrer Anträge und Termine – auf jedem Gerät, auf dem Sie angemeldet sind."
+            : "The current status of your applications and appointments – on every device you are signed in on."
+          : de
+            ? "Der aktuelle Stand Ihrer Anträge und Termine. Ohne Bürgerkonto wird die Liste nur auf diesem Gerät gespeichert."
+            : "The current status of your applications and appointments. Without an account, the list is stored only on this device."
       }
     >
       <MeineAnliegen />

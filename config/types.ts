@@ -193,6 +193,16 @@ export interface Leistung {
   dauer?: LText;
   /** Geführtes Formular, wenn die Leistung online beantragt werden kann. */
   formular?: Formular;
+  /** Gebühr, die direkt online bezahlt wird (z. B. 10 € pro Meldebescheinigung). */
+  bezahlung?: {
+    betrag: number;
+    /** Feld-ID mit der Anzahl (z. B. "anzahl") */
+    mengeFeld?: string;
+    /** Betrag je weiterer Ausfertigung; ohne Angabe gilt „betrag“ für jede. */
+    weitere?: number;
+  };
+  /** Nur mit Online-Ausweis (Vertrauensniveau "hoch") beantragbar, z. B. elektronischer Wohnsitzwechsel. */
+  erfordertOnlineAusweis?: boolean;
   /** Unterlagen, die Bürger hochladen können/müssen. Grundlage der Vollständigkeitsprüfung. */
   dokumente?: DokumentAnforderung[];
   /** Löschfrist für Vorgänge dieser Leistung (Uploads) in Tagen. Standard: uploads.aufbewahrungTage. */
@@ -247,6 +257,70 @@ export interface Funktionen {
    * Servern des Browser-Herstellers – vorher datenschutzrechtlich prüfen.
    */
   spracheingabe: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Erweiterte Portal-Funktionen
+// ---------------------------------------------------------------------------
+
+export interface AbfallConfig {
+  arten: { id: string; label: LText; hinweis?: LText }[];
+  bezirke: {
+    id: string;
+    name: string;
+    strassen: string[];
+    /** Erste Abfuhr im Jahr und Rhythmus in Tagen, je Abfallart */
+    termine: Record<string, { start: string; intervallTage: number }>;
+  }[];
+  /** Fällt die Abfuhr auf einen Feiertag, verschiebt sie sich um einen Tag. */
+  feiertagVerschiebung: boolean;
+}
+
+/** Lebenslage: eine persönliche Checkliste über alle Ämter hinweg ("Ich bekomme ein Kind"). */
+export interface Lebenslage {
+  id: string;
+  titel: LText;
+  kurz: LText;
+  stichworte: string[];
+  /** Beschriftung des Stichtags, z. B. "Tag des Umzugs" */
+  stichtag: LText;
+  schritte: {
+    id: string;
+    titel: LText;
+    text?: LText;
+    leistungId?: string;
+    href?: string;
+    /** Frist relativ zum Stichtag in Tagen (negativ = vorher) */
+    tage?: number;
+    /** Zuständig ist eine andere Stelle (z. B. Familienkasse) */
+    extern?: LText;
+  }[];
+}
+
+export interface MaengelConfig {
+  kategorien: { id: string; label: LText; amtId: string }[];
+}
+
+/** Sitzungen des Gemeinderats (statisch oder über die OParl-Schnittstelle des Ratsinformationssystems). */
+export interface RatsinfoConfig {
+  /** OParl-System-URL, z. B. https://ratsinfo.example.de/oparl/v1.1/system */
+  oparlUrl?: string;
+  sitzungen?: {
+    id: string;
+    gremium: string;
+    datum: string;
+    ort: string;
+    tagesordnung: { titel: string; kurz?: string; beschluss?: string }[];
+  }[];
+}
+
+export interface Fundsache {
+  id: string;
+  bezeichnung: string;
+  beschreibung: string;
+  fundort: string;
+  funddatum: string;
+  kategorie: string;
 }
 
 export interface GemeindeConfig {
@@ -317,6 +391,18 @@ export interface GemeindeConfig {
     /** Amt, an das Unterlagen gehen, wenn die Zuständigkeit unklar ist (z. B. zentrale Poststelle). */
     standardAmtId: string;
   };
+  /** Ortsteile (für Meldungen und Push-Benachrichtigungen nach Wohnort) */
+  ortsteile?: string[];
+  abfall?: AbfallConfig;
+  lebenslagen?: Lebenslage[];
+  maengel?: MaengelConfig;
+  ratsinfo?: RatsinfoConfig;
+  /** Fundsachen im Fundbüro (Beispieldaten; im Echtbetrieb aus dem Fachverfahren) */
+  fundsachen?: Fundsache[];
+  /** Video-Beratung: Basis-URL eines Jitsi-Servers in der EU, z. B. https://meet.example.de */
+  videoBeratung?: { url: string; aemter: string[] };
+  /** Textbausteine für Rückfragen im Backoffice. */
+  textbausteine?: { titel: string; text: string }[];
   /** Ergänzt die Standard-Dokumentarten. */
   dokumentarten?: Dokumentart[];
   leistungen: Leistung[];

@@ -43,3 +43,26 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(req).catch(() => caches.match("/offline")));
   }
 });
+
+// ---------------------------------------------------------------------------
+// Push-Benachrichtigungen (Inhalte sind bewusst allgemein – keine persönlichen Daten)
+// ---------------------------------------------------------------------------
+self.addEventListener("push", (event) => {
+  let d = { titel: "Bürgerservice", text: "Es gibt Neuigkeiten.", url: "/" };
+  try {
+    d = { ...d, ...event.data.json() };
+  } catch {}
+  event.waitUntil(self.registration.showNotification(d.titel, { body: d.text, icon: "/pwa-icon/192", badge: "/pwa-icon/192", data: { url: d.url } }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((liste) => {
+      const offen = liste.find((c) => c.url.startsWith(self.location.origin));
+      if (offen) return offen.navigate(url).then((c) => c && c.focus());
+      return self.clients.openWindow(url);
+    }),
+  );
+});

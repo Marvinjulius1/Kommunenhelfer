@@ -33,8 +33,13 @@ export interface Store {
 
 export const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), ".data");
 
-/** Einfache Sperre, damit gleichzeitige Schreibvorgänge sich nicht überschreiben. */
-const locks = new Map<string, Promise<unknown>>();
+/**
+ * Einfache Sperre, damit gleichzeitige Schreibvorgänge sich nicht überschreiben.
+ * Prozessweit über globalThis: Next.js bündelt Routen getrennt, ein Modul-Map
+ * gäbe es sonst einmal pro Route.
+ */
+const g = globalThis as { __speicherSperren?: Map<string, Promise<unknown>> };
+const locks = (g.__speicherSperren ??= new Map<string, Promise<unknown>>());
 async function withLock<T>(name: string, fn: () => Promise<T>): Promise<T> {
   const prev = locks.get(name) ?? Promise.resolve();
   const next = prev.then(fn, fn);

@@ -4,7 +4,10 @@ import { VorgangAktionen } from "@/components/backoffice/Aktionen";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { auditFuerVorgang, protokolliere } from "@/lib/backoffice/audit";
-import { aktuellerBenutzer, darfAmt } from "@/lib/backoffice/auth";
+import { aktuellerBenutzer, benutzerListe, darfAmt } from "@/lib/backoffice/auth";
+import { aktiv } from "@/lib/funktionen";
+import { postFuerVorgang, postSicht } from "@/lib/postfach/service";
+import { euro, zahlungenVon } from "@/lib/zahlung/service";
 import { decryptJson } from "@/lib/crypto";
 import { anzeigeWert } from "@/lib/flows/validate";
 import { tx } from "@/lib/i18n";
@@ -25,6 +28,9 @@ const AKTION: Record<string, string> = {
   dokument_extern_abgerufen: "Dokument von Schnittstelle abgerufen",
   status_geaendert: "Status geändert",
   rueckfrage_gesendet: "Rückfrage gesendet",
+  bescheid_zugestellt: "Bescheid zugestellt",
+  zahlung_angefordert: "Zahlung angefordert",
+  zugewiesen: "Zugewiesen",
 };
 
 function Block({ titel, children }: { titel: string; children: React.ReactNode }) {
@@ -50,6 +56,8 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
   const felder = l?.formular?.schritte.flatMap((s) => s.felder) ?? [];
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Berlin" });
   const audit = (await auditFuerVorgang(tenant.slug, v.id)).slice(0, 20);
+  const post = (await postFuerVorgang(tenant.slug, v.id)).map(postSicht);
+  const zahlungen = await zahlungenVon((z) => z.tenant === tenant.slug && z.vorgangId === v.id);
   // Relative Links: gültig 5 Minuten, nur mit dieser Sitzung
   const links = Object.fromEntries(v.dokumente.map((dok) => [dok.id, dokumentLink("", v, dok.id, b.name, 5 * 60)]));
 
@@ -63,7 +71,8 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
         <div>
           <h1 className="text-[28px] font-semibold tracking-[-0.02em]">{l ? tx(l.titel, "de") : "Sonstiges Anliegen"}</h1>
           <p className="mt-1 text-[15px] text-muted">
-            <span className="font-mono">{v.id}</span> · {amt ? tx(amt.name, "de") : v.amtId} · eingegangen {fmt.format(new Date(v.erstelltAm))} · {v.quelle === "upload" ? "Upload über Assistent" : "Online-Antrag"}
+            <span className="font-mono">{v.id}</span> · {amt ? tx(amt.name, "de") : v.amtId} · eingegangen {fmt.format(new Date(v.erstelltAm))} · {v.quelle === "upload" ? "Upload über Assistent" : v.quelle === "mangel" ? "Mängelmelder" : "Online-Antrag"}
+            {v.zugewiesen ? ` · bei ${v.zugewiesen}` : ""}
           </p>
         </div>
         <span className="rounded-full bg-[var(--line)] px-4 py-1 text-[13px]">{STATUS_LABEL[v.status]}</span>
@@ -150,8 +159,38 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
 
         <div className="space-y-4">
           <Block titel="Bearbeitung">
-            <VorgangAktionen id={v.id} status={v.status} statusOptionen={VORGANG_STATUS.map((s) => ({ wert: s, label: STATUS_LABEL[s] }))} />
+            <VorgangAktionen
+              id={v.id}
+              status={v.status}
+              statusOptionen={VORGANG_STATUS.map((s) => ({ wert: s, label: STATUS_LABEL[s] }))}
+              benutzer={benutzerListe()
+                .filter((x) => (x.gemeinde === "*" || x.gemeinde === tenant.slug) && darfAmt(x, v.amtId))
+                .map((x) => x.name)}
+              zugewiesen={v.zugewiesen}
+              textbausteine={tenant.textbausteine ?? []}
+              zahlungMoeglich={aktiv(tenant, "zahlung")}
+            />
           </Block>
+          {(post.length > 0 || zahlungen.length > 0) && (
+            <Block titel="Zustellungen & Zahlungen">
+              <ul className="space-y-2 text-[14px]">
+                {post.map((p) => (
+                  <li key={p.id} className="flex justify-between gap-4">
+                    <span>{p.titel}</span>
+                    <span className="shrink-0 text-subtle">{p.gelesenAm ? `gelesen ${fmt.format(new Date(p.gelesenAm))}` : "ungelesen"}</span>
+                  </li>
+                ))}
+                {zahlungen.map((z) => (
+                  <li key={z.id} className="flex justify-between gap-4">
+                    <span>
+                      {euro(z.betragCent)} · {z.zweck.split(" – ")[0]}
+                    </span>
+                    <span className={`shrink-0 ${z.status === "bezahlt" ? "text-success" : "text-subtle"}`}>{z.status === "bezahlt" ? "bezahlt" : "offen"}</span>
+                  </li>
+                ))}
+              </ul>
+            </Block>
+          )}
           <Block titel="Verlauf">
             <ol className="space-y-2 text-[14px]">
               {v.verlauf.map((s, i) => (

@@ -540,10 +540,12 @@ export default defineGemeinde({
       stichworte: ["meldebescheinigung", "meldebestätigung", "wohnsitzbescheinigung", "aufenthaltsbescheinigung", "bescheinigung adresse", "certificate of registration"],
       unterlagen: ["Keine – Sie geben nur Ihre persönlichen Daten an."],
       gebuehren: [{ bezeichnung: "Meldebescheinigung", betrag: 10 }],
+      bezahlung: { betrag: 10 },
       ablauf: [
         "Sie bestellen die Bescheinigung online (ca. 2 Minuten).",
         "Wir prüfen Ihre Angaben im Melderegister.",
-        "Sie erhalten die Bescheinigung mit Rechnung per Post.",
+        "Sie bezahlen direkt online – oder später per Rechnung.",
+        "Sie erhalten die Bescheinigung per Post.",
       ],
       amtId: "buergerbuero",
       online: true,
@@ -584,7 +586,8 @@ export default defineGemeinde({
         { bezeichnung: "Geburtsurkunde", betrag: 12 },
         { bezeichnung: "jede weitere Ausfertigung", betrag: 6 },
       ],
-      ablauf: ["Sie bestellen online.", "Das Standesamt prüft Ihre Berechtigung.", "Sie erhalten die Urkunde mit Rechnung per Post."],
+      bezahlung: { betrag: 12, mengeFeld: "anzahl", weitere: 6 },
+      ablauf: ["Sie bestellen online.", "Das Standesamt prüft Ihre Berechtigung.", "Sie bezahlen online oder per Rechnung.", "Sie erhalten die Urkunde per Post."],
       amtId: "standesamt",
       dokumente: [{ art: "personalausweis", pflicht: true, hinweis: "Zur Prüfung Ihrer Berechtigung" }],
       online: true,
@@ -700,6 +703,21 @@ export default defineGemeinde({
       frage: "Kann eine andere Person mein Anliegen erledigen?",
       antwort:
         "Bei vielen Anliegen ja, mit einer schriftlichen Vollmacht und Ihrem Ausweis. Ausweise und Pässe müssen Sie persönlich beantragen.",
+    },
+  ],
+
+  textbausteine: [
+    {
+      titel: "Unterlage fehlt",
+      text: "Guten Tag,\n\nfür die Bearbeitung fehlt uns noch eine Unterlage. Bitte laden Sie diese über „Meine Anliegen“ hoch.\n\nVielen Dank!",
+    },
+    {
+      titel: "Foto unleserlich",
+      text: "Guten Tag,\n\ndas hochgeladene Foto ist leider nicht gut lesbar. Bitte fotografieren Sie das Dokument bei gutem Licht noch einmal vollständig.",
+    },
+    {
+      titel: "Angaben bestätigen",
+      text: "Guten Tag,\n\nbitte bestätigen Sie uns kurz die folgenden Angaben: ",
     },
   ],
 

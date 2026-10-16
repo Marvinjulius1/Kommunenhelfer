@@ -29,6 +29,8 @@ interface Props {
     laedt: boolean;
     onDateien: (f: File[]) => void;
     onScan: () => void;
+    /** Nur mit Bürgerkonto: Auswahl aus dem Dokumentensafe */
+    onSafe?: () => void;
     onEntfernen: (id: string) => void;
     onErneut: (id: string) => void;
   };
@@ -39,7 +41,9 @@ export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ on
   const de = lang === "de";
   const [wert, setWert] = useState("");
   const [menue, setMenue] = useState(false);
-  const [kamera, setKamera] = useState(false);
+  const [kameraGeraet, setKamera] = useState(false);
+  // Menü statt direkter Dateiauswahl, sobald es mehr als eine Quelle gibt
+  const kamera = kameraGeraet || !!uploads?.onSafe;
   const taRef = useRef<HTMLTextAreaElement>(null);
   const dateiRef = useRef<HTMLInputElement>(null);
   const menueRef = useRef<HTMLDivElement>(null);
@@ -119,18 +123,20 @@ export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ on
                   transition={feder.klein}
                   className="glass absolute bottom-14 left-0 z-20 w-60 rounded-[24px] p-2"
                 >
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setMenue(false);
-                      uploads.onScan();
-                    }}
-                    className="flex w-full items-center gap-4 rounded-[16px] px-4 py-4 text-left text-[15px]"
-                  >
-                    <Icon name="camera" className="size-5 text-muted" />
-                    {de ? "Dokument fotografieren" : "Photograph document"}
-                  </button>
+                  {kameraGeraet && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenue(false);
+                        uploads.onScan();
+                      }}
+                      className="flex w-full items-center gap-4 rounded-[16px] px-4 py-4 text-left text-[15px]"
+                    >
+                      <Icon name="camera" className="size-5 text-muted" />
+                      {de ? "Dokument fotografieren" : "Photograph document"}
+                    </button>
+                  )}
                   <button
                     type="button"
                     role="menuitem"
@@ -143,6 +149,20 @@ export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ on
                     <Icon name="file" className="size-5 text-muted" />
                     {de ? "Datei auswählen" : "Choose file"}
                   </button>
+                  {uploads.onSafe && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setMenue(false);
+                        uploads.onSafe?.();
+                      }}
+                      className="flex w-full items-center gap-4 rounded-[16px] px-4 py-4 text-left text-[15px]"
+                    >
+                      <Icon name="lock" className="size-5 text-muted" />
+                      {de ? "Aus meinem Dokumentensafe" : "From my document safe"}
+                    </button>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

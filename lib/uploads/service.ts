@@ -37,16 +37,22 @@ export async function uploadsImEntwurf(tenant: GemeindeConfig, entwurf: string):
   return store().list<UploadRecord>("uploads", (u) => u.tenant === tenant.slug && u.entwurf === entwurf);
 }
 
-export async function nimmUploadAn(tenant: GemeindeConfig, eingabe: { entwurf: string; dateiname: string; daten: Buffer }): Promise<UploadErgebnis> {
-  const cfg = tenant.uploads;
-  if (!cfg.aktiv) return { ok: false, fehler: "deaktiviert" };
-  const { daten } = eingabe;
+export interface GepruefteDatei {
+  typ: import("./formate").Dateityp;
+  seiten?: number;
+  text: string;
+  sha256: string;
+}
+
+/**
+ * Sicherheitsprüfung einer Datei – für Bürger-Uploads, Dokumentensafe und Bescheide:
+ * Größe, Typ am Inhalt, aktive PDF-Inhalte, Virenscan.
+ */
+export async function pruefeDatei(daten: Buffer, maxMB: number, nurTypen?: string[]): Promise<{ ok: true; datei: GepruefteDatei } | { ok: false; fehler: UploadFehler }> {
   if (!daten.length) return { ok: false, fehler: "leer" };
-  if (daten.length > cfg.maxDateiMB * 1024 * 1024) return { ok: false, fehler: "zu_gross" };
-
+  if (daten.length > maxMB * 1024 * 1024) return { ok: false, fehler: "zu_gross" };
   const typ = erkenneTyp(daten);
-  if (!typ) return { ok: false, fehler: "format" };
-
+  if (!typ || (nurTypen && !nurTypen.includes(typ))) return { ok: false, fehler: "format" };
   let text = "";
   let seiten: number | undefined;
   if (typ === "application/pdf") {
@@ -55,11 +61,19 @@ export async function nimmUploadAn(tenant: GemeindeConfig, eingabe: { entwurf: s
     text = pdf.text;
     seiten = pdf.seiten;
   }
-
   const scan = await scanne(daten);
   if (!scan.ok) return { ok: false, fehler: scan.grund === "virus" ? "virus" : "scanner" };
+  return { ok: true, datei: { typ, seiten, text, sha256: sha256Hex(daten) } };
+}
 
-  const sha256 = sha256Hex(daten);
+export async function nimmUploadAn(tenant: GemeindeConfig, eingabe: { entwurf: string; dateiname: string; daten: Buffer }): Promise<UploadErgebnis> {
+  const cfg = tenant.uploads;
+  if (!cfg.aktiv) return { ok: false, fehler: "deaktiviert" };
+  const { daten } = eingabe;
+  const p = await pruefeDatei(daten, cfg.maxDateiMB);
+  if (!p.ok) return p;
+  const { typ, text, seiten, sha256 } = p.datei;
+
   const vorhanden = await uploadsImEntwurf(tenant, eingabe.entwurf);
   const doppelt = vorhanden.find((u) => u.sha256 === sha256);
   if (doppelt) return { ok: true, record: doppelt, duplikat: true };
@@ -72,28 +86,37 @@ export async function nimmUploadAn(tenant: GemeindeConfig, eingabe: { entwurf: s
     const modell = await klassifiziereMitModell(tenant, daten, typ);
     if (modell) Object.assign(k, { art: modell, sicher: true });
   }
+  return { ok: true, record: await legeUploadAn(tenant, eingabe.entwurf, daten, { typ, seiten, sha256, name, art: k.art, artSicher: k.sicher, amtVorschlag: k.amtVorschlag }), duplikat: false };
+}
 
+/** Speichert eine (bereits geprüfte) Datei als Zwischen-Upload eines Entwurfs. */
+export async function legeUploadAn(
+  tenant: GemeindeConfig,
+  entwurf: string,
+  daten: Buffer,
+  m: { typ: GepruefteDatei["typ"]; seiten?: number; sha256: string; name: string; art: string; artSicher: boolean; amtVorschlag?: string },
+): Promise<UploadRecord> {
   const id = randomBytes(18).toString("base64url");
   await blobs.put(id, daten);
   const jetzt = new Date();
   const record: UploadRecord = {
     id,
     tenant: tenant.slug,
-    entwurf: eingabe.entwurf,
-    typ,
+    entwurf,
+    typ: m.typ,
     groesse: daten.length,
-    sha256,
-    seiten,
-    art: k.art,
-    artSicher: k.sicher,
-    amtVorschlag: k.amtVorschlag,
-    name: encryptJson(name),
+    sha256: m.sha256,
+    seiten: m.seiten,
+    art: m.art,
+    artSicher: m.artSicher,
+    amtVorschlag: m.amtVorschlag,
+    name: encryptJson(m.name),
     einwilligungAm: jetzt.toISOString(),
     erstelltAm: jetzt.toISOString(),
     loeschenAm: new Date(jetzt.getTime() + ENTWURF_STUNDEN * 3_600_000).toISOString(),
   };
   await store().put("uploads", record);
-  return { ok: true, record, duplikat: false };
+  return record;
 }
 
 export async function entferneUpload(tenant: GemeindeConfig, entwurf: string, id: string): Promise<boolean> {

@@ -97,7 +97,19 @@ export interface TerminRecord extends StoredRecord {
 
 export interface AuditRecord extends StoredRecord {
   benutzer: string;
-  aktion: "anmeldung" | "anmeldung_fehlgeschlagen" | "vorgang_geoeffnet" | "dokument_geoeffnet" | "dokument_extern_abgerufen" | "status_geaendert" | "rueckfrage_gesendet";
+  aktion:
+    | "anmeldung"
+    | "anmeldung_fehlgeschlagen"
+    | "vorgang_geoeffnet"
+    | "dokument_geoeffnet"
+    | "dokument_extern_abgerufen"
+    | "status_geaendert"
+    | "rueckfrage_gesendet"
+    | "bescheid_zugestellt"
+    | "zahlung_angefordert"
+    | "zugewiesen"
+    | "inhalt_geaendert"
+    | "meldung_veroeffentlicht";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
@@ -125,4 +137,54 @@ export interface SitzungRecord extends StoredRecord {
   kontoId: string;
   /** Grobe Geräteangabe zur Anzeige ("Chrome auf Android") */
   geraet: string;
+}
+
+// ---------------------------------------------------------------------------
+// Postfach, Zahlungen, Dokumentensafe
+// ---------------------------------------------------------------------------
+
+export interface PostfachRecord extends StoredRecord {
+  kontoId?: string;
+  vorgangId?: string;
+  art: "bescheid" | "nachricht" | "erinnerung" | "meldung" | "zahlung";
+  /** Verschlüsselt: { titel, text } */
+  inhalt: Verschluesselt;
+  dokument?: { id: string; typ: import("@/lib/uploads/formate").Dateityp; groesse: number; name: Verschluesselt };
+  /** Zeitpunkt des ersten Öffnens (Zugangsnachweis) */
+  gelesenAm?: string;
+  absender: string;
+}
+
+export type ZahlungStatus = "offen" | "bezahlt" | "abgebrochen";
+
+export interface ZahlungRecord extends StoredRecord {
+  kontoId?: string;
+  vorgangId?: string;
+  betragCent: number;
+  zweck: string;
+  status: ZahlungStatus;
+  anbieter: string;
+  methode?: string;
+  referenz?: string;
+  bezahltAm?: string;
+}
+
+export interface SafeRecord extends StoredRecord {
+  kontoId: string;
+  art: string;
+  typ: import("@/lib/uploads/formate").Dateityp;
+  groesse: number;
+  seiten?: number;
+  sha256: string;
+  name: Verschluesselt;
+}
+
+export interface PushRecord extends StoredRecord {
+  kontoId?: string;
+  /** Verschlüsselt: PushSubscription (Endpoint + Schlüssel) */
+  abo: Verschluesselt;
+  endpointHash: string;
+  themen: ("konto" | "abfall" | "meldungen")[];
+  abfallBezirk?: string;
+  ortsteil?: string;
 }

@@ -21,6 +21,9 @@ interface Status {
   slot?: string;
   dokumente?: number;
   nachrichten?: { von: "amt" | "buerger"; text: string; am: string }[];
+  post?: { id: string; art: string; titel: string; erstelltAm: string; gelesen: boolean; datei?: string; oeffnen: string }[];
+  zahlungen?: { id: string; betragCent: number; zweck: string; status: string; url: string }[];
+  videoLink?: string;
 }
 
 const STUFEN = ["eingegangen", "in_bearbeitung", "erledigt"] as const;
@@ -153,6 +156,51 @@ export function MeineAnliegen() {
                     </li>
                   ))}
                 </ol>
+              )}
+
+              {s?.typ === "vorgang" && !!s.zahlungen?.length && (
+                <ul className="mt-6 space-y-2">
+                  {s.zahlungen.map((z) => (
+                    <li key={z.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[16px] bg-[var(--line)] px-4 py-2">
+                      <span className="text-[14px]">
+                        {new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(z.betragCent / 100)} · {z.status === "bezahlt" ? (de ? "bezahlt" : "paid") : de ? "offen" : "open"}
+                      </span>
+                      {z.status === "offen" ? (
+                        <a href={z.url} className="pressable rounded-full bg-accent px-4 py-2 text-[14px] font-medium text-on-accent">
+                          {de ? "Jetzt bezahlen" : "Pay now"}
+                        </a>
+                      ) : (
+                        <a href={z.url.replace(/\?t=/, "/quittung?t=")} className="text-[14px] text-accent underline underline-offset-2">
+                          {de ? "Quittung" : "Receipt"}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {s?.typ === "vorgang" && !!s.post?.length && (
+                <ul className="mt-6 space-y-2" aria-label={de ? "Bescheide und Nachrichten" : "Notices and messages"}>
+                  {s.post.map((p) => (
+                    <li key={p.id}>
+                      <a href={p.datei ?? p.oeffnen} target="_blank" rel="noopener" className="flex items-center gap-4 rounded-[16px] bg-[var(--line)] px-4 py-2">
+                        <Icon name="doc" className="size-5 shrink-0" />
+                        <span className="min-w-0 flex-1">
+                          <span className={`block truncate text-[14px] ${p.gelesen ? "" : "font-semibold"}`}>{p.titel}</span>
+                          <span className="text-[12px] text-subtle">{p.art === "bescheid" ? (de ? "Bescheid" : "Notice") : de ? "Nachricht" : "Message"} · {fmt(p.erstelltAm)}</span>
+                        </span>
+                        <Icon name="external" className="size-4 text-subtle" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {s?.typ === "termin" && s.videoLink && s.status === "gebucht" && (
+                <a href={s.videoLink} target="_blank" rel="noopener noreferrer" className="pressable mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-[14px] font-medium text-on-accent">
+                  <Icon name="video" className="size-4" />
+                  {de ? "Zur Video-Beratung" : "Join video call"}
+                </a>
               )}
 
               {s?.typ === "vorgang" && !!s.nachrichten?.length && <Nachrichten eintrag={a} nachrichten={s.nachrichten} offen={st === "rueckfrage"} onGesendet={() => laden()} />}

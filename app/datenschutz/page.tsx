@@ -74,6 +74,32 @@ export default async function DatenschutzSeite() {
         </p>
       </Section>
 
+      <Section titel="Postfach, Bescheide und Dokumentensafe" id="postfach">
+        <p>
+          Bescheide und Nachrichten der Verwaltung stellen wir Ihnen auf Wunsch digital in Ihr Postfach zu. Inhalt und Dokumente liegen verschlüsselt (AES-256) auf Servern in der EU. Per E-Mail erhalten Sie nur den Hinweis, dass etwas Neues
+          bereitliegt – nie den Inhalt. Nachrichten im Postfach werden nach 2 Jahren gelöscht, sofern für den Vorgang keine längere Frist gilt.
+        </p>
+        <p>
+          Im Dokumentensafe können Sie häufig benötigte Unterlagen (z. B. Ausweiskopie) ablegen und in Anträgen wiederverwenden. Die Dateien werden wie hochgeladene Unterlagen geprüft und verschlüsselt. Mitarbeitende der Verwaltung
+          sehen den Safe nicht – nur Unterlagen, die Sie selbst einem Anliegen beifügen. Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO.
+        </p>
+      </Section>
+
+      <Section titel="Online-Bezahlung" id="bezahlung">
+        <p>
+          Gebühren können Sie online bezahlen. Die Zahlung wickelt ein Zahlungsdienstleister im Auftrag der Verwaltung ab (z. B. ePayBL); Kartendaten oder Zugangsdaten zu Ihrem Bankkonto erreichen das Portal nicht. Wir speichern Betrag,
+          Zweck, Zahlart, Zeitpunkt und die Referenz des Dienstleisters. Diese Angaben bewahren wir wegen haushaltsrechtlicher Aufbewahrungspflichten 10 Jahre auf. Rechtsgrundlage: Art. 6 Abs. 1 lit. c und e DSGVO.
+        </p>
+      </Section>
+
+      <Section titel="Benachrichtigungen (Push)" id="push">
+        <p>
+          Wenn Sie Benachrichtigungen einschalten, speichert Ihr Browser-Anbieter (z. B. Google, Apple, Mozilla) eine Zustelladresse, an die wir verschlüsselte Nachrichten senden. Wir speichern diese Adresse und die gewählten Themen
+          (z. B. Abfallbezirk) – keine Inhalte Ihrer Anliegen. Sie können Benachrichtigungen jederzeit in den Einstellungen Ihres Kontos oder Ihres Browsers abschalten; die Adresse wird dann gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. a
+          DSGVO, § 25 Abs. 1 TDDDG.
+        </p>
+      </Section>
+
       <Section titel="Hochgeladene Unterlagen" id="uploads">
         <p>
           Sie können im Assistenten Unterlagen hochladen (PDF, JPG, PNG, HEIC). Bevor Sie das erste Mal hochladen, bitten wir Sie um Ihre Einwilligung. Die Dateien werden verschlüsselt übertragen (TLS), auf Schadsoftware geprüft und
@@ -98,7 +124,7 @@ export default async function DatenschutzSeite() {
       </Section>
 
       <Section titel="Speicherung auf Ihrem Gerät">
-        <p>Wir speichern ausschließlich technisch notwendige Einstellungen auf Ihrem Gerät (§ 25 Abs. 2 TDDDG): Ihr gewähltes Erscheinungsbild (hell/dunkel), Ihre Sprache und – damit Sie den Stand Ihrer Anliegen sehen können – Vorgangsnummern mit einem Zugangscode. Sie können diese Daten jederzeit über die Einstellungen Ihres Browsers löschen.</p>
+        <p>Wir speichern ausschließlich technisch notwendige Einstellungen auf Ihrem Gerät (§ 25 Abs. 2 TDDDG): Ihr gewähltes Erscheinungsbild (hell/dunkel), Ihre Sprache und – damit Sie den Stand Ihrer Anliegen sehen können – Vorgangsnummern mit einem Zugangscode sowie – wenn Sie angemeldet sind – ein Sitzungs-Cookie für Ihr Bürgerkonto. Sie können diese Daten jederzeit über die Einstellungen Ihres Browsers löschen.</p>
       </Section>
 
       <Section titel="Ihre Rechte">

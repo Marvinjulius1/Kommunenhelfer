@@ -12,16 +12,16 @@ import { bereinigeGelegentlich, STATUS_LABEL } from "@/lib/vorgaenge/service";
 
 export const dynamic = "force-dynamic";
 
-export default async function Vorgaenge({ searchParams }: { searchParams: Promise<{ amt?: string; status?: string }> }) {
+export default async function Vorgaenge({ searchParams }: { searchParams: Promise<{ amt?: string; status?: string; wer?: string }> }) {
   const tenant = await getTenant();
   const b = await aktuellerBenutzer(tenant);
   if (!b) redirect("/backoffice/anmelden");
   bereinigeGelegentlich();
-  const { amt = "", status = "" } = await searchParams;
+  const { amt = "", status = "", wer = "" } = await searchParams;
 
   const aemter = tenant.aemter.filter((a) => darfAmt(b, a.id));
   const liste = (
-    await store().list<VorgangRecord>("vorgaenge", (v) => v.tenant === tenant.slug && darfAmt(b, v.amtId) && (!amt || v.amtId === amt) && (!status || v.status === status))
+    await store().list<VorgangRecord>("vorgaenge", (v) => v.tenant === tenant.slug && darfAmt(b, v.amtId) && (!amt || v.amtId === amt) && (!status || v.status === status) && (!wer || (wer === "ich" ? v.zugewiesen === b.name : !v.zugewiesen)))
   ).sort((x, y) => y.erstelltAm.localeCompare(x.erstelltAm));
 
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Berlin" });
@@ -35,6 +35,7 @@ export default async function Vorgaenge({ searchParams }: { searchParams: Promis
         </div>
         <div className="flex flex-wrap gap-4">
           <FilterSelect name="amt" label="Amt" wert={amt} optionen={[{ wert: "", label: "Alle Ämter" }, ...aemter.map((a) => ({ wert: a.id, label: tx(a.name, "de") }))]} />
+          <FilterSelect name="wer" label="Zuständig" wert={wer} optionen={[{ wert: "", label: "Alle" }, { wert: "ich", label: "Mir zugewiesen" }, { wert: "offen", label: "Nicht zugewiesen" }]} />
           <FilterSelect name="status" label="Status" wert={status} optionen={[{ wert: "", label: "Alle" }, ...VORGANG_STATUS.map((s) => ({ wert: s, label: STATUS_LABEL[s] }))]} />
         </div>
       </div>
@@ -51,8 +52,11 @@ export default async function Vorgaenge({ searchParams }: { searchParams: Promis
                 <Link href={`/backoffice/vorgang/${v.id}`} className="block rounded-[16px]">
                   <Glass className="pressable grid items-center gap-2 rounded-[16px] px-6 py-4 text-[14px] md:grid-cols-[10rem_minmax(0,1fr)_11rem_11rem_8rem]">
                     <span className="font-mono">{v.id}</span>
-                    <span className="font-medium">{l ? tx(l.titel, "de") : "Sonstiges Anliegen"}</span>
-                    <span className="text-muted">{a ? tx(a.name, "de") : v.amtId}</span>
+                    <span className="font-medium">{l ? tx(l.titel, "de") : v.quelle === "mangel" ? `Mängelmeldung: ${v.mangel?.kategorie ?? ""}` : "Sonstiges Anliegen"}</span>
+                    <span className="text-muted">
+                      {a ? tx(a.name, "de") : v.amtId}
+                      {v.zugewiesen && <span className="block text-[12px] text-subtle">bei {v.zugewiesen}</span>}
+                    </span>
                     <span className="flex items-center gap-2 text-subtle md:justify-end">
                       {v.dokumente.length > 0 && (
                         <>

@@ -8,6 +8,9 @@ import { basisUrl, fehler, langAus, leseJson, tenantAus } from "@/lib/api";
 import { validiereFormular } from "@/lib/flows/validate";
 import { gatewayFuer } from "@/lib/integrations";
 import { aktuellesKonto } from "@/lib/konto/service";
+import { aktiv } from "@/lib/funktionen";
+import { zahlungsAnbieter } from "@/lib/zahlung/anbieter";
+import { betragFuer, legeZahlungAn, zahlungZugang } from "@/lib/zahlung/service";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { findeLeistung } from "@/lib/tenant";
 import { tx } from "@/lib/i18n";
@@ -47,5 +50,13 @@ export async function POST(req: Request) {
   const konto = await aktuellesKonto(tenant);
   const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant), kontoId: konto?.id });
   const titel = tx(leistung.titel, lang);
-  return Response.json({ ...ergebnis, titel }, { status: 201 });
+
+  // Gebühr direkt online bezahlen (falls konfiguriert)
+  let zahlung: { id: string; betragCent: number; url: string } | undefined;
+  const betrag = betragFuer(leistung, pruefung.werte);
+  if (betrag && aktiv(tenant, "zahlung") && zahlungsAnbieter()) {
+    const z = await legeZahlungAn(tenant, { betragCent: betrag, zweck: `${titel} – ${ergebnis.vorgangsnummer}`, kontoId: konto?.id, vorgangId: ergebnis.vorgangsnummer });
+    zahlung = { id: z.id, betragCent: z.betragCent, url: `/bezahlen/${z.id}?t=${encodeURIComponent(zahlungZugang(z))}` };
+  }
+  return Response.json({ ...ergebnis, titel, zahlung }, { status: 201 });
 }

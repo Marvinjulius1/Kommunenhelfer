@@ -59,7 +59,7 @@ Backoffice in der Entwicklung: http://localhost:3000/backoffice – Benutzer `de
 
 > Alle Gebühren, Adressen und Zeiten der Beispiel-Gemeinden sind **frei erfunden**.
 
-**Vorschau auf Vercel** (nur Testdaten!): Umgebungsvariablen `DATA_ENCRYPTION_KEY` (Zufallswert, siehe `.env.example`), `DATA_DIR=/tmp`, `ALLOW_TENANT_PREVIEW=1`, `VIRUS_SCAN=off`, `BACKOFFICE_DEMO=1` setzen. Daten auf Vercel sind flüchtig. Für den Echtbetrieb gilt der Abschnitt [Betrieb](#betrieb-multi-tenant-und-hosting).
+**Vorschau auf Vercel** (nur Testdaten!): Umgebungsvariablen `DATA_ENCRYPTION_KEY` (Zufallswert, siehe `.env.example`), `DATA_DIR=/tmp`, `ALLOW_TENANT_PREVIEW=1` und `DEMO_MODUS=1` setzen. `DEMO_MODUS=1` schaltet in einem Rutsch Test-Online-Ausweis (Erika Mustermann), Test-Bezahlung, Backoffice `demo`/`demo` und den deaktivierten Virenscan frei – **niemals mit echten Daten**. Daten auf Vercel sind flüchtig. Für den Echtbetrieb gilt der Abschnitt [Betrieb](#betrieb-multi-tenant-und-hosting).
 
 ---
 
@@ -316,6 +316,35 @@ npm run backoffice:benutzer -- anna musterstadt steueramt,standesamt
 
 Sitzungen: signiertes Cookie (`HttpOnly`, `SameSite=Strict`, `Secure`), 8 Stunden; zustandsändernde Anfragen werden zusätzlich auf gleiche Herkunft geprüft. Login mit Rate Limiting.
 
+Weitere Werkzeuge im Vorgang:
+
+- **Zuweisung** an eine Person, Filter „Mir zugewiesen“ / „Nicht zugewiesen“
+- **Textbausteine** für Rückfragen (`textbausteine` in der Gemeinde-Config)
+- **Bescheid digital zustellen:** Titel, Begleittext, PDF – landet verschlüsselt im Postfach des Bürgers (Bürgerkonto oder „Meine Anliegen“), Benachrichtigung per E-Mail ohne Inhalt und per Push
+- **Gebühr anfordern:** Betrag und Zweck – der Bürger bezahlt online, das Backoffice sieht den Zahlungsstatus
+
+---
+
+## Bürgerkonto
+
+`/konto` – ein Konto für jede Bürgerin und jeden Bürger, mit E-Mail und Passwort oder mit dem Online-Ausweis (BundID; in der Demo eine Testidentität).
+
+| Bereich | Inhalt |
+|---|---|
+| Meine Anliegen | alle Anträge, Uploads und Termine – geräteübergreifend, mit Status, Zahlungen und Post |
+| Postfach | digitale Bescheide und Nachrichten (verschlüsselt, Mail nur als Hinweis) |
+| Zahlungen | offene und bezahlte Gebühren, Quittungen |
+| Dokumentensafe | bis zu 30 geprüfte, verschlüsselte Dokumente – im Assistenten über die Büroklammer wiederverwendbar |
+| Persönliche Daten | füllen Antrags- und Terminformulare automatisch aus; Daten aus dem Online-Ausweis sind gesperrt |
+| Benachrichtigungen | E-Mail, Push, Ortsteil, Abfallbezirk |
+| Sicherheit & Datenschutz | Passwort, angemeldete Geräte, Datenexport (Art. 20 DSGVO), Konto löschen |
+
+Technik: Profildaten verschlüsselt, E-Mail/eID-Pseudonym nur als HMAC-Index, Passwörter als scrypt-Hash, widerrufbare Server-Sitzungen (30 Tage), Löschung nach 3 Jahren Inaktivität.
+
+**Online-Bezahlung:** Leistungen erhalten in der Config `bezahlung: { betrag, mengeFeld?, weitere? }` (z. B. 12 € erste, 6 € jede weitere Urkunde). Nach dem Absenden erscheint „Jetzt online bezahlen“. Anbieter über `ZAHLUNG_ANBIETER` (`demo` | `epaybl`); die ePayBL-Anbindung ist als Adapter in `lib/zahlung/anbieter.ts` vorbereitet und braucht die Zugangsdaten des Landes.
+
+**Push:** Web Push (VAPID). Ohne `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` wird ein stabiles Schlüsselpaar aus `DATA_ENCRYPTION_KEY` abgeleitet.
+
 ---
 
 ## Design- und Motion-System
@@ -450,12 +479,12 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Roadmap
 
-- **Backoffice ausbauen:** Termine verwalten, Texte und Wissensbasis pflegen, Vorlagen für Rückfragen, Zuweisung an Personen
+- **Backoffice ausbauen:** Termine verwalten, Texte und Wissensbasis pflegen
 - Datenbank-Adapter (PostgreSQL) und Redis-Rate-Limit für mehrere Instanzen
 - BundID-Anmeldung und FIT-Connect-Gateway
 - Weitere Sprachen inkl. **Leichte Sprache**
 - Daten aus dem Gespräch in Formulare übernehmen (z. B. Hundename)
-- Online-Bezahlung (z. B. ePayBL)
+- ePayBL-Zugangsdaten des Landes anbinden (Adapter vorhanden)
 - Status-Benachrichtigung per E-Mail bei Änderungen
 - Texterkennung (OCR) für fotografierte Dokumente auf eigenem Server, um die Erkennung der Dokumentart zu verbessern
 - Fortsetzbare Uploads in Teilen (tus-Protokoll) für sehr große Dateien

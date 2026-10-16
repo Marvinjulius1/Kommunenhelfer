@@ -2,7 +2,7 @@
 import { tenantAus } from "@/lib/api";
 import { mitKonto } from "@/lib/konto/api";
 import { anliegenVon } from "@/lib/konto/service";
-import { terminSicht, vorgangSicht } from "@/lib/vorgaenge/sicht";
+import { terminSicht, vorgangExtras, vorgangSicht } from "@/lib/vorgaenge/sicht";
 
 export const runtime = "nodejs";
 
@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const ctx = await mitKonto(req, tenant);
   if ("antwort" in ctx) return ctx.antwort;
   const { vorgaenge, termine } = await anliegenVon(ctx.konto);
-  const eintraege = [...vorgaenge.map((v) => vorgangSicht(tenant, v)), ...termine.map((t) => terminSicht(tenant, t))].sort((a, b) => b.erstelltAm.localeCompare(a.erstelltAm));
+  const mitExtras = await Promise.all(vorgaenge.map(async (v) => ({ ...vorgangSicht(tenant, v), ...(await vorgangExtras(tenant, v)) })));
+  const eintraege = [...mitExtras, ...termine.map((t) => terminSicht(tenant, t))].sort((a, b) => b.erstelltAm.localeCompare(a.erstelltAm));
   return Response.json({ eintraege }, { headers: { "Cache-Control": "no-store" } });
 }

@@ -3,7 +3,9 @@ import { tenantAus } from "@/lib/api";
 import { decryptJson } from "@/lib/crypto";
 import { mitKonto } from "@/lib/konto/api";
 import { anliegenVon, profilVon, sitzungenVon } from "@/lib/konto/service";
-import type { VorgangDaten } from "@/lib/records";
+import type { PostfachRecord, SafeRecord, VorgangDaten, ZahlungRecord } from "@/lib/records";
+import { postSicht } from "@/lib/postfach/service";
+import { safeSicht } from "@/lib/safe/service";
 import { store, type StoredRecord } from "@/lib/storage/store";
 import { nachrichten } from "@/lib/vorgaenge/service";
 
@@ -15,11 +17,13 @@ export async function GET(req: Request) {
   if ("antwort" in ctx) return ctx.antwort;
   const k = ctx.konto;
   const { vorgaenge, termine } = await anliegenVon(k);
-  const weitere = Object.fromEntries(
-    await Promise.all(
-      ["postfach", "zahlungen", "safe", "checklisten"].map(async (s) => [s, (await store().list<StoredRecord & { kontoId?: string }>(s, (x) => x.kontoId === k.id)).map((x) => ({ ...x, daten: undefined, text: undefined }))]),
-    ),
-  );
+  const eigene = <T extends StoredRecord & { kontoId?: string }>(s: string) => store().list<T>(s, (x) => x.kontoId === k.id);
+  const weitere = {
+    postfach: (await eigene<PostfachRecord>("postfach")).map(postSicht),
+    zahlungen: (await eigene<ZahlungRecord>("zahlungen")).map(({ id, betragCent, zweck, status, methode, bezahltAm, erstelltAm }) => ({ id, betrag: betragCent / 100, zweck, status, methode, bezahltAm, erstelltAm })),
+    dokumentensafe: (await eigene<SafeRecord>("safe")).map(safeSicht),
+    checklisten: await eigene("checklisten"),
+  };
   const daten = {
     exportiertAm: new Date().toISOString(),
     gemeinde: `${tenant.art} ${tenant.name}`,

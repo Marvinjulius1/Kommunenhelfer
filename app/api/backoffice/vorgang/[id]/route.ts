@@ -3,29 +3,31 @@
  * POST  /api/backoffice/vorgang/[id]  { rueckfrage }     – Rückfrage an den Bürger senden
  */
 import { z } from "zod";
-import { fehler, leseJson, tenantAus } from "@/lib/api";
+import { fehler, leseJson } from "@/lib/api";
 import { protokolliere } from "@/lib/backoffice/audit";
-import { aktuellerBenutzer, darfAmt, gleicheHerkunft } from "@/lib/backoffice/auth";
+import { benutzerListe } from "@/lib/backoffice/auth";
+import { store } from "@/lib/storage/store";
 import { VORGANG_STATUS } from "@/lib/records";
-import { fuegeNachrichtHinzu, ladeVorgang, setzeStatus } from "@/lib/vorgaenge/service";
+import { fuegeNachrichtHinzu, setzeStatus } from "@/lib/vorgaenge/service";
+import { vorbereiten } from "@/lib/backoffice/vorgang";
 
 export const runtime = "nodejs";
-
-async function vorbereiten(req: Request, id: string) {
-  if (!gleicheHerkunft(req)) return { antwort: fehler("herkunft", 403) };
-  const tenant = await tenantAus(req);
-  const b = await aktuellerBenutzer(tenant);
-  if (!b) return { antwort: fehler("nicht_angemeldet", 401) };
-  const v = await ladeVorgang(tenant, id);
-  if (!v || !darfAmt(b, v.amtId)) return { antwort: fehler("nicht_gefunden", 404) };
-  return { tenant, b, v };
-}
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await vorbereiten(req, (await params).id);
   if ("antwort" in ctx) return ctx.antwort;
-  const parsed = z.object({ status: z.enum(VORGANG_STATUS as [string, ...string[]]) }).safeParse(await leseJson(req).catch(() => null));
+  const parsed = z
+    .object({ status: z.enum(VORGANG_STATUS as [string, ...string[]]).optional(), zugewiesen: z.string().max(60).nullable().optional() })
+    .safeParse(await leseJson(req).catch(() => null));
   if (!parsed.success) return fehler("ungueltige_anfrage");
+  if (parsed.data.zugewiesen !== undefined) {
+    const name = parsed.data.zugewiesen;
+    if (name && !benutzerListe().some((b) => b.name === name)) return fehler("benutzer_unbekannt");
+    await store().put("vorgaenge", { ...ctx.v, zugewiesen: name ?? undefined });
+    await protokolliere({ tenant: ctx.tenant.slug, benutzer: ctx.b.name, aktion: "zugewiesen", vorgangId: ctx.v.id, details: name ?? "–" });
+    return Response.json({ ok: true });
+  }
+  if (!parsed.data.status) return fehler("ungueltige_anfrage");
   const status = parsed.data.status as (typeof VORGANG_STATUS)[number];
   await setzeStatus(ctx.v, status, ctx.b.name);
   await protokolliere({ tenant: ctx.tenant.slug, benutzer: ctx.b.name, aktion: "status_geaendert", vorgangId: ctx.v.id, details: status });

@@ -11,7 +11,7 @@ import type { TerminRecord } from "@/lib/records";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { store } from "@/lib/storage/store";
 import { bereinigeGelegentlich, ladeMitCode } from "@/lib/vorgaenge/service";
-import { terminSicht, vorgangSicht } from "@/lib/vorgaenge/sicht";
+import { terminSicht, vorgangExtras, vorgangSicht } from "@/lib/vorgaenge/sicht";
 
 export const runtime = "nodejs";
 
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
   const ergebnisse = await Promise.all(
     body.eintraege.map(async ({ id, code }) => {
       const v = await ladeMitCode(tenant, id, code);
-      if (v) return vorgangSicht(tenant, v);
+      if (v) return { ...vorgangSicht(tenant, v), ...(await vorgangExtras(tenant, v, { code })) };
       const t = await store().get<TerminRecord>("termine", id);
       if (t && t.tenant === tenant.slug && safeEqualHex(t.tokenHash, hashToken(code))) return terminSicht(tenant, t);
       return { id, typ: "unbekannt" as const };

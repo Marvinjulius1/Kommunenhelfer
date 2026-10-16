@@ -61,6 +61,10 @@ const leistung = z.object({
       aufbewahrungTage: z.number().int().positive(),
     })
     .optional(),
+  bezahlung: z
+    .object({ betrag: z.number().positive(), mengeFeld: z.string().optional(), weitere: z.number().nonnegative().optional() })
+    .optional(),
+  erfordertOnlineAusweis: z.boolean().optional(),
   dokumente: z.array(z.object({ art: z.string(), pflicht: z.boolean(), hinweis: ltext.optional() })).optional(),
   aufbewahrungTage: z.number().int().positive().optional(),
   leistungsschluessel: z.string().optional(),
@@ -139,6 +143,57 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
     standardAmtId: z.string(),
   }),
   dokumentarten: z.array(z.object({ id, label: ltext, stichworte: z.array(z.string()) })).optional(),
+  textbausteine: z.array(z.object({ titel: z.string().min(1), text: z.string().min(1) })).optional(),
+  ortsteile: z.array(z.string()).optional(),
+  abfall: z
+    .object({
+      arten: z.array(z.object({ id, label: ltext, hinweis: ltext.optional() })).min(1),
+      bezirke: z.array(
+        z.object({
+          id,
+          name: z.string(),
+          strassen: z.array(z.string()),
+          termine: z.record(z.string(), z.object({ start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), intervallTage: z.number().int().min(1).max(366) })),
+        }),
+      ),
+      feiertagVerschiebung: z.boolean(),
+    })
+    .optional(),
+  lebenslagen: z
+    .array(
+      z.object({
+        id,
+        titel: ltext,
+        kurz: ltext,
+        stichworte: z.array(z.string()),
+        stichtag: ltext,
+        schritte: z.array(
+          z.object({ id: z.string(), titel: ltext, text: ltext.optional(), leistungId: z.string().optional(), href: z.string().optional(), tage: z.number().int().optional(), extern: ltext.optional() }),
+        ),
+      }),
+    )
+    .optional(),
+  maengel: z.object({ kategorien: z.array(z.object({ id, label: ltext, amtId: z.string() })).min(1) }).optional(),
+  ratsinfo: z
+    .object({
+      oparlUrl: z.string().url().optional(),
+      sitzungen: z
+        .array(
+          z.object({
+            id: z.string(),
+            gremium: z.string(),
+            datum: z.string(),
+            ort: z.string(),
+            tagesordnung: z.array(z.object({ titel: z.string(), kurz: z.string().optional(), beschluss: z.string().optional() })),
+          }),
+        )
+        .optional(),
+    })
+    .optional(),
+  fundsachen: z
+    .array(z.object({ id: z.string(), bezeichnung: z.string(), beschreibung: z.string(), fundort: z.string(), funddatum: z.string(), kategorie: z.string() }))
+    .optional(),
+  videoBeratung: z.object({ url: z.string().url(), aemter: z.array(z.string()) }).optional(),
   leistungen: z.array(leistung),
   rueckfragen: z.array(z.object({ id: z.string(), stichworte: z.array(z.string()), frage: ltext, optionen: z.array(z.object({ label: ltext, leistungId: z.string() })) })),
   faq: z.array(z.object({ frage: ltext, antwort: ltext })),
@@ -170,6 +225,11 @@ export function pruefeGemeinde(roh: unknown): string[] {
     if (a.weiterleitung?.typ === "webhook" && !/^https:\/\//.test(a.weiterleitung.url) && !/^http:\/\/localhost/.test(a.weiterleitung.url))
       fehler.push(`aemter[${a.id}].weiterleitung.url: nur https:// erlaubt`);
 
+  for (const k of t.maengel?.kategorien ?? []) if (!aemter.has(k.amtId)) fehler.push(`maengel.kategorien[${k.id}].amtId: Amt "${k.amtId}" existiert nicht`);
+  for (const a of t.videoBeratung?.aemter ?? []) if (!aemter.has(a)) fehler.push(`videoBeratung.aemter: Amt "${a}" existiert nicht`);
+  for (const b of t.abfall?.bezirke ?? [])
+    for (const art of Object.keys(b.termine)) if (!t.abfall!.arten.some((a) => a.id === art)) fehler.push(`abfall.bezirke[${b.id}].termine: unbekannte Abfallart "${art}"`);
+
   const ids = new Set<string>();
   for (const l of t.leistungen) {
     if (ids.has(l.id)) fehler.push(`leistungen: ID "${l.id}" doppelt`);
@@ -199,6 +259,7 @@ export function pruefeGemeinde(roh: unknown): string[] {
       for (const f of felder) if (f.nurWenn && !fids.has(f.nurWenn.feld)) fehler.push(`${pfad}.${f.id}.nurWenn: unbekanntes Feld "${f.nurWenn.feld}"`);
     }
   }
+  for (const ll of t.lebenslagen ?? []) for (const sc of ll.schritte) if (sc.leistungId && !ids.has(sc.leistungId)) fehler.push(`lebenslagen[${ll.id}].${sc.id}: unbekannte Leistung "${sc.leistungId}"`);
   for (const r of t.rueckfragen) for (const o of r.optionen) if (!ids.has(o.leistungId)) fehler.push(`rueckfragen[${r.id}]: unbekannte Leistung "${o.leistungId}"`);
   return fehler;
 }

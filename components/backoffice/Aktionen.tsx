@@ -91,55 +91,149 @@ export function FilterSelect({ name, wert, optionen, label }: { name: string; we
   );
 }
 
-export function VorgangAktionen({ id, status, statusOptionen }: { id: string; status: string; statusOptionen: { wert: string; label: string }[] }) {
+export function VorgangAktionen({
+  id,
+  status,
+  statusOptionen,
+  benutzer,
+  zugewiesen,
+  textbausteine,
+  zahlungMoeglich,
+}: {
+  id: string;
+  status: string;
+  statusOptionen: { wert: string; label: string }[];
+  benutzer: string[];
+  zugewiesen?: string;
+  textbausteine: { titel: string; text: string }[];
+  zahlungMoeglich: boolean;
+}) {
   const router = useRouter();
   const [neu, setNeu] = useState(status);
   const [text, setText] = useState("");
   const [meldung, setMeldung] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [betrag, setBetrag] = useState("");
+  const [zweck, setZweck] = useState("");
+  const pfad = `/api/backoffice/vorgang/${encodeURIComponent(id)}`;
 
-  const anfrage = async (method: "PATCH" | "POST", body: object, erfolg: string) => {
+  const anfrage = async (url: string, method: "PATCH" | "POST", body: object | FormData, erfolg: string) => {
     setLaedt(true);
     setMeldung(null);
-    const res = await fetch(`/api/backoffice/vorgang/${encodeURIComponent(id)}`, { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const res = await fetch(url, {
+      method,
+      headers: body instanceof FormData ? undefined : { "content-type": "application/json" },
+      body: body instanceof FormData ? body : JSON.stringify(body),
+    });
     setLaedt(false);
-    setMeldung(res.ok ? erfolg : "Das hat nicht geklappt. Bitte erneut versuchen.");
+    setMeldung(res.ok ? erfolg : "Das hat nicht geklappt. Bitte Eingaben prüfen und erneut versuchen.");
     if (res.ok) router.refresh();
     return res.ok;
   };
 
+  const auswahl = "field-input !min-h-10 w-full !py-2 text-[14px] text-fg";
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-2">
+    <div className="space-y-8">
+      <div className="grid gap-4">
         <label className="flex flex-col gap-1 text-[13px] text-subtle">
-          Status
-          <select className="field-input !min-h-10 w-52 !py-2 text-[14px] text-fg" value={neu} onChange={(e) => setNeu(e.target.value)}>
-            {statusOptionen.map((o) => (
-              <option key={o.wert} value={o.wert}>
-                {o.label}
+          Zuständig
+          <select className={auswahl} value={zugewiesen ?? ""} onChange={(e) => anfrage(pfad, "PATCH", { zugewiesen: e.target.value || null }, "Zuweisung gespeichert.")}>
+            <option value="">Nicht zugewiesen</option>
+            {benutzer.map((b) => (
+              <option key={b} value={b}>
+                {b}
               </option>
             ))}
           </select>
         </label>
-        <Button className="!min-h-10 px-4 text-[14px]" disabled={laedt || neu === status} onClick={() => anfrage("PATCH", { status: neu }, "Status gespeichert.")}>
-          Speichern
-        </Button>
+        <div className="flex items-end gap-2">
+          <label className="flex flex-1 flex-col gap-1 text-[13px] text-subtle">
+            Status
+            <select className={auswahl} value={neu} onChange={(e) => setNeu(e.target.value)}>
+              {statusOptionen.map((o) => (
+                <option key={o.wert} value={o.wert}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button className="!min-h-10 px-4 text-[14px]" disabled={laedt || neu === status} onClick={() => anfrage(pfad, "PATCH", { status: neu }, "Status gespeichert.")}>
+            Speichern
+          </Button>
+        </div>
       </div>
+
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (await anfrage("POST", { rueckfrage: text }, "Rückfrage gesendet. Der Bürger wird per E-Mail informiert.")) setText("");
+          if (await anfrage(pfad, "POST", { rueckfrage: text }, "Rückfrage gesendet. Der Bürger wird benachrichtigt.")) setText("");
         }}
         className="space-y-2"
       >
-        <label htmlFor="rueckfrage" className="text-[14px] font-medium">
-          Rückfrage an den Bürger
-        </label>
-        <textarea id="rueckfrage" rows={3} className="field-input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} placeholder="Zum Beispiel: Bitte senden Sie uns noch eine Kopie Ihres Versicherungsscheins." />
+        <div className="flex items-end justify-between gap-2">
+          <label htmlFor="rueckfrage" className="text-[14px] font-medium">
+            Rückfrage an den Bürger
+          </label>
+          {textbausteine.length > 0 && (
+            <select aria-label="Textbaustein einfügen" className="field-input !min-h-9 w-48 !py-1 text-[13px]" value="" onChange={(e) => setText((t) => (t ? t + "\n\n" : "") + e.target.value)}>
+              <option value="">Textbaustein …</option>
+              {textbausteine.map((b) => (
+                <option key={b.titel} value={b.text}>
+                  {b.titel}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+        <textarea id="rueckfrage" rows={3} className="field-input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
         <Button type="submit" variant="glass" className="!min-h-10 px-4 text-[14px]" disabled={laedt || text.trim().length < 3}>
           Rückfrage senden
         </Button>
       </form>
+
+      <form
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const f = e.currentTarget;
+          if (await anfrage(`${pfad}/bescheid`, "POST", new FormData(f), "Bescheid digital zugestellt.")) f.reset();
+        }}
+        className="space-y-2"
+      >
+        <p className="text-[14px] font-medium">Bescheid digital zustellen</p>
+        <input name="titel" required minLength={3} maxLength={140} placeholder="Titel, z. B. Hundesteuerbescheid 2026" className="field-input" />
+        <textarea name="text" rows={2} maxLength={5000} placeholder="Begleittext (optional)" className="field-input" />
+        <input name="datei" type="file" accept="application/pdf" className="block text-[13px] text-muted file:mr-4 file:rounded-full file:border-0 file:bg-[var(--line)] file:px-4 file:py-2 file:text-[13px] file:text-fg" />
+        <label className="flex items-center gap-2 text-[13px] text-muted">
+          <input type="checkbox" name="erledigt" value="1" className="checkbox" /> Vorgang danach als erledigt markieren
+        </label>
+        <Button type="submit" variant="glass" className="!min-h-10 px-4 text-[14px]" disabled={laedt}>
+          Zustellen
+        </Button>
+      </form>
+
+      {zahlungMoeglich && (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (await anfrage(`${pfad}/zahlung`, "POST", { betrag: Number(betrag.replace(",", ".")), zweck }, "Zahlung angefordert.")) {
+              setBetrag("");
+              setZweck("");
+            }
+          }}
+          className="space-y-2"
+        >
+          <p className="text-[14px] font-medium">Gebühr anfordern</p>
+          <div className="grid grid-cols-[8rem_1fr] gap-2">
+            <input aria-label="Betrag in Euro" inputMode="decimal" placeholder="Betrag €" className="field-input" value={betrag} onChange={(e) => setBetrag(e.target.value)} required />
+            <input aria-label="Zweck" placeholder="Zweck, z. B. Gebühr Gewerbeanmeldung" className="field-input" value={zweck} onChange={(e) => setZweck(e.target.value)} required minLength={3} />
+          </div>
+          <Button type="submit" variant="glass" className="!min-h-10 px-4 text-[14px]" disabled={laedt}>
+            Anfordern
+          </Button>
+        </form>
+      )}
+
       <p aria-live="polite" className="text-[14px] text-muted">
         {meldung}
       </p>

@@ -32,6 +32,13 @@ export interface Anhang {
   datei?: File;
 }
 
+export interface SafeDatei {
+  id: string;
+  name: string;
+  typ: string;
+  groesse: number;
+}
+
 const ENTWURF_KEY = "upload-entwurf.v1";
 const EINWILLIGUNG_KEY = "upload-einwilligung.v1";
 
@@ -87,7 +94,7 @@ export function useUploads(tenant: GemeindeConfig, lang: Sprache) {
   const [anhaenge, setAnhaenge] = useState<Anhang[]>([]);
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [einwilligung, setEinwilligung] = useState(false);
-  const [wartend, setWartend] = useState<File[] | null>(null);
+  const [wartend, setWartend] = useState<(() => void) | null>(null);
   const xhrs = useRef(new Map<string, XMLHttpRequest>());
   const stand = useRef<Anhang[]>([]);
   stand.current = anhaenge;
@@ -206,7 +213,7 @@ export function useUploads(tenant: GemeindeConfig, lang: Sprache) {
     (dateien: File[]) => {
       if (!dateien.length) return;
       setHinweis(null);
-      if (!einwilligung) setWartend(dateien);
+      if (!einwilligung) setWartend(() => () => void verarbeiten(dateien));
       else void verarbeiten(dateien);
     },
     [einwilligung, verarbeiten],
@@ -217,9 +224,9 @@ export function useUploads(tenant: GemeindeConfig, lang: Sprache) {
       sessionStorage.setItem(EINWILLIGUNG_KEY, "1");
     } catch {}
     setEinwilligung(true);
-    if (wartend) void verarbeiten(wartend);
+    wartend?.();
     setWartend(null);
-  }, [wartend, verarbeiten]);
+  }, [wartend]);
 
   const ablehnen = useCallback(() => setWartend(null), []);
 
@@ -244,6 +251,39 @@ export function useUploads(tenant: GemeindeConfig, lang: Sprache) {
     if (a?.datei) hochladen(a);
   }, [hochladen]);
 
+  /** Datei aus dem Dokumentensafe übernehmen – sie liegt schon geprüft auf dem Server. */
+  const uebernehmeAusSafe = useCallback(
+    async (s: SafeDatei) => {
+      const liste = stand.current.filter((a) => a.status !== "fehler");
+      if (liste.length >= tenant.uploads.maxDateien) return setHinweis(uploadFehlertext("zu_viele", tenant, lang));
+      if (liste.some((a) => a.hash === `safe:${s.id}`)) return setHinweis(uploadFehlertext("duplikat", tenant, lang));
+      const lokalId = neueId(9);
+      setAnhaenge((l) => [...l, { lokalId, name: s.name, groesse: s.groesse, typ: s.typ as Dateityp, status: "laedt", fortschritt: 0.5, hash: `safe:${s.id}` }]);
+      try {
+        const r = await fetch(`/api/konto/safe/${encodeURIComponent(s.id)}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ entwurf: entwurfId() }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.fehler ?? "allgemein");
+        aendern(lokalId, { status: "fertig", fortschritt: 1, serverId: d.id, art: d.art, artSicher: d.artSicher, seiten: d.seiten });
+      } catch (e) {
+        aendern(lokalId, { status: "fehler", fehler: uploadFehlertext(e instanceof Error ? e.message : "allgemein", tenant, lang) });
+      }
+    },
+    [aendern, tenant, lang],
+  );
+
+  const ausSafe = useCallback(
+    (s: SafeDatei) => {
+      setHinweis(null);
+      if (!einwilligung) setWartend(() => () => void uebernehmeAusSafe(s));
+      else void uebernehmeAusSafe(s);
+    },
+    [einwilligung, uebernehmeAusSafe],
+  );
+
   /** Übergibt fertige Anhänge an die Nachricht und leert die Ablage. */
   const uebergeben = useCallback((): Anhang[] => {
     const fertig = stand.current.filter((a) => a.status === "fertig");
@@ -259,6 +299,7 @@ export function useUploads(tenant: GemeindeConfig, lang: Sprache) {
     einwilligen,
     ablehnen,
     hinzufuegen,
+    ausSafe,
     entfernen,
     erneut,
     uebergeben,

@@ -20,7 +20,7 @@ import { einblenden, feder, gestaffelt, schrittwechsel, uebergang } from "@/lib/
 import { tx } from "@/lib/i18n";
 import { Field } from "./Field";
 
-type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "pruefen" } | { typ: "fertig"; nummer: string };
+type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "pruefen" } | { typ: "fertig"; nummer: string; zahlung?: { betragCent: number; url: string } };
 
 export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbelegung?: Record<string, string> }) {
   const { tenant, lang, t, konto } = useTenant();
@@ -130,7 +130,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
       try {
         sessionStorage.removeItem(entwurfKey);
       } catch {}
-      gehe({ typ: "fertig", nummer: data.vorgangsnummer }, 1);
+      gehe({ typ: "fertig", nummer: data.vorgangsnummer, zahlung: data.zahlung }, 1);
     } catch (e) {
       setServerFehler((e as Error).message);
     } finally {
@@ -390,7 +390,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
           )}
 
           {/* ---------- Bestätigung ---------- */}
-          {phase.typ === "fertig" && <Bestaetigung leistung={leistung} nummer={phase.nummer} headingRef={headingRef} email={werte.email} />}
+          {phase.typ === "fertig" && <Bestaetigung leistung={leistung} nummer={phase.nummer} headingRef={headingRef} email={werte.email} zahlung={phase.zahlung} />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -402,11 +402,13 @@ function Bestaetigung({
   nummer,
   headingRef,
   email,
+  zahlung,
 }: {
   leistung: Leistung;
   nummer: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   email?: string;
+  zahlung?: { betragCent: number; url: string };
 }) {
   const { lang, t } = useTenant();
   const de = lang === "de";
@@ -441,6 +443,23 @@ function Bestaetigung({
           </button>
         </Glass>
       </motion.div>
+
+      {zahlung && (
+        <motion.div variants={einblenden} className="mx-auto mt-8 max-w-md">
+          <Glass className="flex flex-wrap items-center justify-between gap-4 rounded-[24px] p-6 text-left">
+            <span>
+              <span className="block text-[13px] text-subtle">{de ? "Gebühr" : "Fee"}</span>
+              <span className="text-[24px] font-semibold tabular-nums">
+                {new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(zahlung.betragCent / 100)}
+              </span>
+            </span>
+            <ButtonLink href={zahlung.url}>
+              <Icon name="card" className="size-4" />
+              {de ? "Jetzt online bezahlen" : "Pay online now"}
+            </ButtonLink>
+          </Glass>
+        </motion.div>
+      )}
 
       <motion.div variants={einblenden} className="mx-auto mt-10 max-w-md text-left">
         <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle">{de ? "So geht es weiter" : "What happens next"}</h2>

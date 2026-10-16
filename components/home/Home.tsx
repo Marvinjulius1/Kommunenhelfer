@@ -19,6 +19,7 @@ import { Vorschau } from "@/components/upload/AttachmentTray";
 import { ConsentSheet } from "@/components/upload/ConsentSheet";
 import { DropOverlay } from "@/components/upload/DropOverlay";
 import type { EinreichungErgebnis } from "@/components/upload/Einreichung";
+import { SafeSheet } from "@/components/upload/SafeSheet";
 import { ScanSheet } from "@/components/upload/ScanSheet";
 import { AnswerBlock, Denkt } from "./AnswerBlock";
 import { AskField, type AskFieldHandle } from "./AskField";
@@ -38,11 +39,12 @@ const SPEICHER = "gespraech.v2";
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function Home() {
-  const { tenant, lang, t } = useTenant();
+  const { tenant, lang, t, konto } = useTenant();
   const de = lang === "de";
   const [verlauf, setVerlauf] = useState<Eintrag[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [scan, setScan] = useState(false);
+  const [safe, setSafe] = useState(false);
   const [vorschauen, setVorschauen] = useState<Record<string, string | undefined>>({});
   const askRef = useRef<AskFieldHandle>(null);
   const letzterRef = useRef<HTMLDivElement>(null);
@@ -133,6 +135,7 @@ export function Home() {
       {uploadsAktiv && <DropOverlay aktiv onDateien={up.hinzufuegen} />}
       <ConsentSheet offen={up.einwilligungNoetig} onJa={up.einwilligen} onNein={up.ablehnen} />
       <ScanSheet offen={scan} onClose={() => setScan(false)} onFertig={(f) => up.hinzufuegen([f])} />
+      {konto && <SafeSheet offen={safe} onClose={() => setSafe(false)} onWahl={up.ausSafe} />}
 
       {/* Kopf: Wappen + Schrift. Im Gespräch klein und oben. */}
       <div className={gespraech ? "flex items-center justify-between gap-2 pb-6 pr-10 pt-[max(16px,env(safe-area-inset-top))]" : "flex flex-1 flex-col items-center justify-end pb-8 pt-16"}>
@@ -242,7 +245,7 @@ export function Home() {
           describedBy={gespraech ? "ki-hinweis" : undefined}
           uploads={
             uploadsAktiv
-              ? { anhaenge: up.anhaenge, laedt: up.laedt, onDateien: up.hinzufuegen, onScan: () => setScan(true), onEntfernen: up.entfernen, onErneut: up.erneut }
+              ? { anhaenge: up.anhaenge, laedt: up.laedt, onDateien: up.hinzufuegen, onScan: () => setScan(true), onSafe: konto ? () => setSafe(true) : undefined, onEntfernen: up.entfernen, onErneut: up.erneut }
               : undefined
           }
         />
