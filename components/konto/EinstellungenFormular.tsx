@@ -1,7 +1,7 @@
 "use client";
 
 /** Benachrichtigungen und persönliche Einstellungen. */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Glass } from "@/components/ui/Glass";
 import type { Einstellungen } from "@/lib/konto/types";
@@ -12,11 +12,16 @@ export function EinstellungenFormular({ start, bezirke, ortsteile }: { start: Ei
   const { tenant } = useTenant();
   const [e, setE] = useState(start);
   const [meldung, setMeldung] = useState<string | null>(null);
+  // erst im Browser prüfen – sonst unterscheidet sich die Server-Ausgabe (Hydration)
+  const [pushOk, setPushOk] = useState(true);
+  useEffect(() => setPushOk(pushMoeglich()), []);
 
   const speichern = async (neu: Partial<Einstellungen>) => {
     const ziel = { ...e, ...neu };
     setE(ziel);
-    const res = await fetch("/api/konto/einstellungen", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(neu) });
+    // undefined würde in JSON wegfallen – null entfernt eine Auswahl
+    const body = Object.fromEntries(Object.entries(neu).map(([k, v]) => [k, v === undefined ? null : v]));
+    const res = await fetch("/api/konto/einstellungen", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     setMeldung(res.ok ? "Gespeichert." : "Das hat nicht geklappt.");
   };
 
@@ -49,11 +54,11 @@ export function EinstellungenFormular({ start, bezirke, ortsteile }: { start: Ei
         {aktiv(tenant, "push") && (
           <Schalter
             id="e-push"
-            label="Push-Benachrichtigungen auf diesem Gerät"
-            hinweis={pushMoeglich() ? "Auch wenn das Portal geschlossen ist. Am besten nach „Zum Home-Bildschirm hinzufügen“." : "Auf diesem Gerät nicht verfügbar."}
+            label="Push-Benachrichtigungen"
+            hinweis={pushOk ? "Auch wenn das Portal geschlossen ist. Am besten nach „Zum Home-Bildschirm hinzufügen“." : "Auf diesem Gerät nicht verfügbar."}
             an={e.pushBenachrichtigung}
             onChange={pushUmschalten}
-            disabled={!pushMoeglich()}
+            disabled={!pushOk}
           />
         )}
       </Glass>

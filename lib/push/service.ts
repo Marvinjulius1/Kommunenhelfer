@@ -11,7 +11,7 @@ import webpush from "web-push";
 import type { GemeindeConfig } from "@/config/types";
 import { decryptJson, encryptJson, zweckSchluessel } from "@/lib/crypto";
 import { aktiv } from "@/lib/funktionen";
-import type { PushRecord } from "@/lib/records";
+import type { KontoRecord, PushRecord } from "@/lib/records";
 import { zaehle } from "@/lib/statistik";
 import { inTagen, store } from "@/lib/storage/store";
 
@@ -53,6 +53,19 @@ export async function abonniere(tenant: GemeindeConfig, abo: Abo, opt: { kontoId
   };
   await store().put("push", r);
   return r;
+}
+
+/** Hält die Push-Abos eines Kontos im Einklang mit seinen Einstellungen (Themen, Bezirk, Ortsteil). */
+export async function synchronisiereKonto(k: KontoRecord) {
+  const e = k.einstellungen;
+  for (const p of await store().list<PushRecord>("push", (x) => x.kontoId === k.id)) {
+    if (!e.pushBenachrichtigung) {
+      await store().delete("push", p.id);
+      continue;
+    }
+    const themen: PushRecord["themen"] = ["konto", "meldungen", ...(e.abfallErinnerung && e.abfallBezirk ? (["abfall"] as const) : [])];
+    await store().put("push", { ...p, themen, abfallBezirk: e.abfallBezirk, ortsteil: e.ortsteil });
+  }
 }
 
 export async function kuendige(endpoint: string) {

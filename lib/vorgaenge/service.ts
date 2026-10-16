@@ -7,7 +7,8 @@ import type { GemeindeConfig, Leistung } from "@/config/types";
 import { decryptJson, encryptJson, hashToken, safeEqualHex, vorgangsnummer, zugangscode } from "@/lib/crypto";
 import { tx } from "@/lib/i18n";
 import { sendMail } from "@/lib/mail";
-import type { DokumentMeta, Nachricht, UploadRecord, VorgangDaten, VorgangRecord, VorgangStatus } from "@/lib/records";
+import { entferneKontoDaten } from "@/lib/konto/service";
+import type { DokumentMeta, KontoRecord, Nachricht, PostfachRecord, SafeRecord, UploadRecord, VorgangDaten, VorgangRecord, VorgangStatus } from "@/lib/records";
 import { blobs } from "@/lib/storage/blobs";
 import { inTagen, store } from "@/lib/storage/store";
 import { zaehle } from "@/lib/statistik";
@@ -86,7 +87,9 @@ export async function erstelleVorgang(v: NeuerVorgang): Promise<{ vorgangsnummer
       `Vorgangsnummer: ${id}`,
       amt.bearbeitungshinweis ? tx(amt.bearbeitungshinweis, "de") : "",
       "",
-      "Den aktuellen Stand sehen Sie unter „Meine Anliegen“ auf dem Gerät, mit dem Sie das Anliegen gesendet haben.",
+      v.kontoId
+        ? "Den aktuellen Stand sehen Sie in Ihrem Bürgerkonto unter „Meine Anliegen“."
+        : "Den aktuellen Stand sehen Sie unter „Meine Anliegen“ auf dem Gerät, mit dem Sie das Anliegen gesendet haben.",
       "Über Ihr Anliegen entscheidet die zuständige Stelle. Der digitale Assistent hat Ihre Unterlagen lediglich vorsortiert.",
       "",
       "Freundliche Grüße",
@@ -151,7 +154,16 @@ export async function loescheAbgelaufene(): Promise<number> {
   await Promise.all([...vorgaenge.flatMap((v) => v.dokumente.map((d) => d.id)), ...uploads.map((u) => u.id)].map((id) => blobs.delete(id)));
   const termine = await s.purgeExpired("termine");
   const audit = await s.purgeExpired("audit");
-  return vorgaenge.length + uploads.length + termine.length + audit.length;
+  // Bürgerkonto und Zusatzdienste
+  const post = await s.purgeExpired<PostfachRecord>("postfach");
+  const safe = await s.purgeExpired<SafeRecord>("safe");
+  await Promise.all([...post.flatMap((p) => (p.dokument ? [p.dokument.id] : [])), ...safe.map((x) => x.id)].map((id) => blobs.delete(id)));
+  let weitere = 0;
+  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe"]) weitere += (await s.purgeExpired(c)).length;
+  // Konten nach Inaktivität: mit allen zugehörigen Daten entfernen
+  const konten = await s.purgeExpired<KontoRecord>("konten");
+  for (const k of konten) await entferneKontoDaten(k);
+  return vorgaenge.length + uploads.length + termine.length + audit.length + post.length + safe.length + weitere + konten.length;
 }
 
 let letzteBereinigung = 0;

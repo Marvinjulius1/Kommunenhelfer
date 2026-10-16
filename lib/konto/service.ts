@@ -12,7 +12,8 @@ import { createHmac, randomBytes } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import type { GemeindeConfig } from "@/config/types";
 import { decryptJson, encryptJson, zweckSchluessel } from "@/lib/crypto";
-import type { KontoRecord, SitzungRecord, TerminRecord, VorgangRecord } from "@/lib/records";
+import type { KontoRecord, PostfachRecord, SafeRecord, SitzungRecord, TerminRecord, VorgangRecord, ZahlungRecord } from "@/lib/records";
+import { blobs } from "@/lib/storage/blobs";
 import { pruefeSignatur, signiere } from "@/lib/signatur";
 import { inTagen, store } from "@/lib/storage/store";
 import type { Einstellungen, KontoSicht, Profil, Vertrauensniveau } from "./types";
@@ -151,25 +152,47 @@ export async function sitzungenVon(k: KontoRecord) {
 }
 
 /** Alle Vorgänge und Termine eines Kontos (geräteübergreifend). */
-export async function anliegenVon(k: KontoRecord) {
+export async function anliegenVon(k: Pick<KontoRecord, "id">) {
   const vorgaenge = await store().list<VorgangRecord>("vorgaenge", (v) => v.kontoId === k.id);
   const termine = await store().list<TerminRecord>("termine", (t) => t.kontoId === k.id);
   return { vorgaenge, termine };
 }
 
-/** DSGVO Art. 17: Konto löschen. Vorgänge bleiben (gesetzliche Aufbewahrung), werden aber vom Konto gelöst. */
-export async function loescheKonto(k: KontoRecord) {
+/**
+ * Entfernt ein Konto mit allen persönlichen Daten (auch ohne Anfrage-Kontext, z. B. Löschfrist).
+ * Vorgänge und Termine bleiben (gesetzliche Aufbewahrung), werden aber vom Konto gelöst.
+ * Zahlungen bleiben wegen haushaltsrechtlicher Aufbewahrung, ebenfalls ohne Kontobezug.
+ */
+export async function entferneKontoDaten(k: Pick<KontoRecord, "id">) {
   const s = store();
   for (const x of await s.list<SitzungRecord>("sitzungen", (y) => y.kontoId === k.id)) await s.delete("sitzungen", x.id);
   const { vorgaenge, termine } = await anliegenVon(k);
   for (const v of vorgaenge) await s.put("vorgaenge", { ...v, kontoId: undefined });
   for (const t of termine) await s.put("termine", { ...t, kontoId: undefined });
-  for (const sammlung of ["postfach", "zahlungen", "safe", "checklisten", "push"]) {
+  for (const z of await s.list<ZahlungRecord>("zahlungen", (x) => x.kontoId === k.id)) await s.put("zahlungen", { ...z, kontoId: undefined });
+  for (const p of await s.list<PostfachRecord>("postfach", (x) => x.kontoId === k.id)) {
+    // Post zu einem Vorgang bleibt für „Meine Anliegen“ (Zugangscode) erhalten
+    if (p.vorgangId) await s.put("postfach", { ...p, kontoId: undefined });
+    else {
+      if (p.dokument) await blobs.delete(p.dokument.id);
+      await s.delete("postfach", p.id);
+    }
+  }
+  for (const x of await s.list<SafeRecord>("safe", (y) => y.kontoId === k.id)) {
+    await blobs.delete(x.id);
+    await s.delete("safe", x.id);
+  }
+  for (const sammlung of ["checklisten", "push"]) {
     for (const r of await s.list<{ id: string; kontoId?: string; tenant: string; erstelltAm: string; loeschenAm: string }>(sammlung, (x) => x.kontoId === k.id)) {
       await s.delete(sammlung, r.id);
     }
   }
   await s.delete("konten", k.id);
+}
+
+/** DSGVO Art. 17: Konto auf Wunsch löschen und abmelden. */
+export async function loescheKonto(k: KontoRecord) {
+  await entferneKontoDaten(k);
   (await cookies()).delete(KONTO_COOKIE);
 }
 

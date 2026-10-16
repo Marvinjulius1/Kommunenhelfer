@@ -57,6 +57,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Berlin" });
   const audit = (await auditFuerVorgang(tenant.slug, v.id)).slice(0, 20);
   const post = (await postFuerVorgang(tenant.slug, v.id)).map(postSicht);
+  const mangelKat = v.mangel ? tenant.maengel?.kategorien.find((k) => k.id === v.mangel!.kategorie) : undefined;
   const zahlungen = await zahlungenVon((z) => z.tenant === tenant.slug && z.vorgangId === v.id);
   // Relative Links: gültig 5 Minuten, nur mit dieser Sitzung
   const links = Object.fromEntries(v.dokumente.map((dok) => [dok.id, dokumentLink("", v, dok.id, b.name, 5 * 60)]));
@@ -69,7 +70,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
       </Link>
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-semibold tracking-[-0.02em]">{l ? tx(l.titel, "de") : "Sonstiges Anliegen"}</h1>
+          <h1 className="text-[28px] font-semibold tracking-[-0.02em]">{l ? tx(l.titel, "de") : mangelKat ? `Mängelmeldung: ${tx(mangelKat.label, "de")}` : "Sonstiges Anliegen"}</h1>
           <p className="mt-1 text-[15px] text-muted">
             <span className="font-mono">{v.id}</span> · {amt ? tx(amt.name, "de") : v.amtId} · eingegangen {fmt.format(new Date(v.erstelltAm))} · {v.quelle === "upload" ? "Upload über Assistent" : v.quelle === "mangel" ? "Mängelmelder" : "Online-Antrag"}
             {v.zugewiesen ? ` · bei ${v.zugewiesen}` : ""}
@@ -102,6 +103,20 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
             </dl>
             {d.nachricht && <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">{d.nachricht}</p>}
           </Block>
+
+          {v.mangel && (
+            <Block titel="Ort des Mangels">
+              <p className="text-[15px]">{v.mangel.ort}</p>
+              {v.mangel.lat !== undefined && v.mangel.lng !== undefined && (
+                <p className="mt-2 text-[14px] text-muted">
+                  {v.mangel.lat}, {v.mangel.lng} ·{" "}
+                  <a href={`https://www.openstreetmap.org/?mlat=${v.mangel.lat}&mlon=${v.mangel.lng}#map=19/${v.mangel.lat}/${v.mangel.lng}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4">
+                    In Karte öffnen
+                  </a>
+                </p>
+              )}
+            </Block>
+          )}
 
           {d.werte && (
             <Block titel="Angaben im Formular">

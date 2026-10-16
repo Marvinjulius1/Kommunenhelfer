@@ -16,6 +16,7 @@ export function untertitel(tenant: Pick<GemeindeConfig, "texte">, lang: Sprache)
 }
 
 const de = {
+  menuDienste: "Dienste",
   menuTermine: "Termine",
   menuHilfe: "Hilfe",
   menuKontakt: "Kontakt",
@@ -55,6 +56,7 @@ const de = {
 export type Dict = typeof de;
 
 const en: Dict = {
+  menuDienste: "Services",
   menuTermine: "Appointments",
   menuHilfe: "Help",
   menuKontakt: "Contact",

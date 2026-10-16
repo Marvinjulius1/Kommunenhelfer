@@ -24,13 +24,18 @@ export async function vorgangExtras(tenant: GemeindeConfig, v: VorgangRecord, zu
   return { post, zahlungen };
 }
 
+function mangelLabel(tenant: GemeindeConfig, id?: string) {
+  const k = tenant.maengel?.kategorien.find((x) => x.id === id);
+  return k ? tx(k.label, "de") : (id ?? "");
+}
+
 export function vorgangSicht(tenant: GemeindeConfig, v: VorgangRecord) {
   const amt = tenant.aemter.find((a) => a.id === v.amtId);
   const l = tenant.leistungen.find((x) => x.id === v.leistungId);
   return {
     id: v.id,
     typ: "vorgang" as const,
-    titel: l ? tx(l.titel, "de") : v.quelle === "mangel" ? `Mängelmeldung: ${v.mangel?.kategorie ?? ""}` : "Eingereichte Unterlagen",
+    titel: l ? tx(l.titel, "de") : v.quelle === "mangel" ? `Mängelmeldung: ${mangelLabel(tenant, v.mangel?.kategorie)}` : "Eingereichte Unterlagen",
     leistungId: v.leistungId,
     amt: amt ? tx(amt.name, "de") : undefined,
     status: v.status,

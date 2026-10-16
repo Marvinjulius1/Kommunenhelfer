@@ -58,7 +58,7 @@ export function middleware(req: NextRequest) {
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("X-Frame-Options", "DENY");
-  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()");
+  res.headers.set("Permissions-Policy", "camera=(self), microphone=(self), geolocation=(self), interest-cohort=()");
   if (!dev) res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   if (setCookie) res.cookies.set("gemeinde", setCookie, { path: "/", sameSite: "lax", httpOnly: true });
   return res;

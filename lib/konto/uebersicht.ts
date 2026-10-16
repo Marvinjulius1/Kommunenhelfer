@@ -7,6 +7,8 @@ import type { GemeindeConfig } from "@/config/types";
 import type { IconName } from "@/components/ui/Icon";
 import type { KontoRecord } from "@/lib/records";
 import { aktiv } from "@/lib/funktionen";
+import { checklistenVon, checklisteSicht } from "@/lib/lebenslagen/service";
+import { aktuelleMeldungen } from "@/lib/meldungen/service";
 import { postFuerKonto } from "@/lib/postfach/service";
 import { safeVon } from "@/lib/safe/service";
 import { euro, zahlungenVon } from "@/lib/zahlung/service";
@@ -63,6 +65,41 @@ export async function kontoUebersicht(tenant: GemeindeConfig, k: KontoRecord) {
   }
   const safe = await safeVon(k);
   kacheln.push({ href: "/konto/dokumente", icon: "shield", titel: "Dokumentensafe", text: safe.length ? `${safe.length} Dokument${safe.length > 1 ? "e" : ""} sicher abgelegt` : "Unterlagen einmal ablegen, immer wieder verwenden" });
+
+  if (aktiv(tenant, "lebenslagen") && tenant.lebenslagen?.length) {
+    const listen = (await checklistenVon(k)).map((c) => checklisteSicht(tenant, c)).filter((c) => !!c);
+    const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+    const bald = new Date(Date.now() + 7 * 86400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+    let faellig = 0;
+    for (const c of listen)
+      for (const sc of c.schritte)
+        if (!sc.erledigt && sc.frist && sc.frist <= bald) {
+          faellig++;
+          if (faellig <= 3)
+            hinweise.push({
+              text: `${c.titel}: „${sc.titel}“ ${sc.frist < heute ? "ist überfällig" : `bis ${new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(sc.frist + "T12:00:00Z"))}`}.`,
+              href: `/lebenslagen/${c.lebenslageId}`,
+              link: "Zur Checkliste",
+            });
+        }
+    const offen = listen.reduce((s, c) => s + c.offen, 0);
+    kacheln.push({
+      href: listen.length === 1 ? `/lebenslagen/${listen[0].lebenslageId}` : "/lebenslagen",
+      icon: "tasks",
+      titel: "Meine Checklisten",
+      text: listen.length ? `${listen.map((c) => c.titel).join(", ")} · ${offen} offen` : "Umzug, Geburt, neu hier – alles Schritt für Schritt",
+      zahl: faellig,
+    });
+  }
+
+  const meldungen = await aktuelleMeldungen(tenant, k.einstellungen.ortsteil);
+  kacheln.push({
+    href: "/aktuelles",
+    icon: "megaphone",
+    titel: "Aktuelles",
+    text: meldungen.length ? meldungen[0].titel : `Meldungen${k.einstellungen.ortsteil ? ` für ${k.einstellungen.ortsteil}` : " aus Ihrer Gemeinde"}`,
+    zahl: meldungen.filter((m) => m.wichtig).length,
+  });
 
   kacheln.push(
     { href: "/konto/einstellungen", icon: "bell", titel: "Benachrichtigungen", text: k.einstellungen.pushBenachrichtigung ? "Push und E-Mail aktiv" : "E-Mail, Push, Wohnort" },

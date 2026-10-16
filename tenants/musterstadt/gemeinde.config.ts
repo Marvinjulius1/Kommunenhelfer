@@ -165,6 +165,22 @@ export default defineGemeinde({
         buchbarTage: 30,
       },
     },
+    {
+      id: "ordnungsamt",
+      name: "Ordnungsamt",
+      ort: "Rathaus, Erdgeschoss, Zimmer 0.20",
+      zustaendigkeiten: ["ordnungsamt", "parken", "halteverbot", "lärm", "gewerbe", "veranstaltung", "fundsache"],
+      bearbeitungshinweis: "Meldungen sehen wir uns in der Regel innerhalb von 2 Werktagen an.",
+      weiterleitung: { typ: "backoffice" },
+    },
+    {
+      id: "bauhof",
+      name: "Bauhof",
+      ort: "Industriestraße 4",
+      zustaendigkeiten: ["bauhof", "straße", "schlagloch", "straßenbeleuchtung", "laterne", "spielplatz", "grünanlage", "winterdienst", "müll"],
+      bearbeitungshinweis: "Wir prüfen Ihre Meldung und beheben den Mangel so schnell wie möglich.",
+      weiterleitung: { typ: "backoffice" },
+    },
   ],
 
   // -------------------------------------------------------------------------
@@ -703,6 +719,115 @@ export default defineGemeinde({
       frage: "Kann eine andere Person mein Anliegen erledigen?",
       antwort:
         "Bei vielen Anliegen ja, mit einer schriftlichen Vollmacht und Ihrem Ausweis. Ausweise und Pässe müssen Sie persönlich beantragen.",
+    },
+  ],
+
+  // -------------------------------------------------------------------------
+  // Wohnort, Abfall, Mängelmelder, Lebenslagen
+  // (Beispieldaten – Bezirke und Termine sind frei erfunden)
+  // -------------------------------------------------------------------------
+  ortsteile: ["Altstadt", "Nordviertel", "Südfeld", "Oberdorf"],
+
+  abfall: {
+    arten: [
+      { id: "rest", label: "Restmüll", hinweis: "Graue Tonne" },
+      { id: "bio", label: "Bioabfall", hinweis: "Braune Tonne" },
+      { id: "papier", label: "Altpapier", hinweis: "Blaue Tonne" },
+      { id: "gelb", label: "Gelber Sack", hinweis: "Verpackungen aus Kunststoff und Metall" },
+    ],
+    bezirke: [
+      {
+        id: "bezirk-1",
+        name: "Bezirk 1 – Altstadt",
+        strassen: ["Marktplatz", "Hauptstraße", "Kirchgasse", "Rathausplatz", "Schulstraße", "Mühlenweg"],
+        termine: {
+          rest: { start: "2026-01-05", intervallTage: 14 },
+          bio: { start: "2026-01-12", intervallTage: 14 },
+          papier: { start: "2026-01-07", intervallTage: 28 },
+          gelb: { start: "2026-01-09", intervallTage: 14 },
+        },
+      },
+      {
+        id: "bezirk-2",
+        name: "Bezirk 2 – Nordviertel",
+        strassen: ["Gartenweg", "Lindenallee", "Birkenweg", "Am Sportplatz", "Nordring"],
+        termine: {
+          rest: { start: "2026-01-06", intervallTage: 14 },
+          bio: { start: "2026-01-13", intervallTage: 14 },
+          papier: { start: "2026-01-14", intervallTage: 28 },
+          gelb: { start: "2026-01-08", intervallTage: 14 },
+        },
+      },
+      {
+        id: "bezirk-3",
+        name: "Bezirk 3 – Südfeld und Oberdorf",
+        strassen: ["Feldstraße", "Wiesengrund", "Bergstraße", "Industriestraße", "Oberdorfer Weg"],
+        termine: {
+          rest: { start: "2026-01-07", intervallTage: 14 },
+          bio: { start: "2026-01-14", intervallTage: 14 },
+          papier: { start: "2026-01-21", intervallTage: 28 },
+          gelb: { start: "2026-01-15", intervallTage: 14 },
+        },
+      },
+    ],
+    feiertagVerschiebung: true,
+  },
+
+  maengel: {
+    kategorien: [
+      { id: "strasse", label: "Schlagloch oder Straßenschaden", amtId: "bauhof" },
+      { id: "licht", label: "Straßenbeleuchtung defekt", amtId: "bauhof" },
+      { id: "muell", label: "Müll oder wilde Ablagerung", amtId: "bauhof" },
+      { id: "spielplatz", label: "Spielplatz oder Grünanlage", amtId: "bauhof" },
+      { id: "verkehr", label: "Verkehrsschild, Ampel, Falschparker", amtId: "ordnungsamt" },
+      { id: "sonstiges", label: "Etwas anderes", amtId: "ordnungsamt" },
+    ],
+  },
+
+  lebenslagen: [
+    {
+      id: "umzug",
+      titel: "Ich ziehe um",
+      kurz: "Alles, was bei einem Umzug nach oder innerhalb von Musterstadt zu erledigen ist.",
+      stichworte: ["umzug", "umziehen", "ziehe um", "neue wohnung", "wohnungswechsel"],
+      stichtag: "Tag des Einzugs",
+      schritte: [
+        { id: "anmelden", titel: "Wohnsitz anmelden", text: "Innerhalb von zwei Wochen nach dem Einzug – gesetzliche Pflicht.", leistungId: "wohnsitz-anmelden", tage: 14 },
+        { id: "geber", titel: "Wohnungsgeberbestätigung vom Vermieter holen", text: "Brauchen Sie für die Anmeldung.", tage: 0 },
+        { id: "abfall", titel: "Abfallkalender für die neue Adresse einrichten", href: "/abfall", tage: 7 },
+        { id: "hund", titel: "Hund in Musterstadt anmelden (falls vorhanden)", leistungId: "hund-anmelden", tage: 14 },
+        { id: "kfz", titel: "Fahrzeug ummelden", extern: "Zulassungsstelle des Landkreises", tage: 30 },
+        { id: "adressen", titel: "Bank, Versicherungen und Arbeitgeber informieren", extern: "Eigene Erledigung", tage: 14 },
+      ],
+    },
+    {
+      id: "geburt",
+      titel: "Wir bekommen ein Kind",
+      kurz: "Von der Geburtsurkunde bis zum Kindergeld – in der richtigen Reihenfolge.",
+      stichworte: ["geburt", "baby", "kind bekommen", "schwanger", "kindergeld", "elterngeld"],
+      stichtag: "Tag der Geburt",
+      schritte: [
+        { id: "beurkunden", titel: "Geburt beim Standesamt beurkunden lassen", text: "Meist meldet die Klinik die Geburt – bringen Sie die Unterlagen innerhalb einer Woche bei.", tage: 7 },
+        { id: "urkunde", titel: "Geburtsurkunden bestellen", text: "Sie brauchen sie für Kindergeld, Elterngeld und Krankenkasse.", leistungId: "geburtsurkunde", tage: 10 },
+        { id: "krankenkasse", titel: "Kind bei der Krankenkasse anmelden", extern: "Ihre Krankenkasse", tage: 30 },
+        { id: "kindergeld", titel: "Kindergeld beantragen", extern: "Familienkasse der Bundesagentur für Arbeit", tage: 60 },
+        { id: "elterngeld", titel: "Elterngeld beantragen", text: "Rückwirkend nur für 3 Monate – deshalb früh beantragen.", extern: "Elterngeldstelle des Landes", tage: 90 },
+        { id: "ausweis", titel: "Reisepass für das Kind (nur bei Reisen)", leistungId: "reisepass" },
+      ],
+    },
+    {
+      id: "neu-hier",
+      titel: "Neu in Musterstadt",
+      kurz: "Willkommen! Die wichtigsten Schritte für einen guten Start.",
+      stichworte: ["neu in", "neubürger", "zugezogen", "neu hier", "willkommen"],
+      stichtag: "Tag des Einzugs",
+      schritte: [
+        { id: "anmelden", titel: "Wohnsitz anmelden", leistungId: "wohnsitz-anmelden", tage: 14 },
+        { id: "konto", titel: "Bürgerkonto einrichten und Wohnort hinterlegen", href: "/konto/einstellungen", tage: 14 },
+        { id: "abfall", titel: "Abfallkalender einrichten", href: "/abfall", tage: 7 },
+        { id: "hund", titel: "Hund anmelden (falls vorhanden)", leistungId: "hund-anmelden", tage: 14 },
+        { id: "aktuelles", titel: "Meldungen aus Ihrem Ortsteil abonnieren", href: "/aktuelles" },
+      ],
     },
   ],
 

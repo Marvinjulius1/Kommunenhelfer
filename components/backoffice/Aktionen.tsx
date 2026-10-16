@@ -54,7 +54,7 @@ export function AbmeldenButton() {
   return (
     <button
       type="button"
-      className="pressable rounded-full px-4 py-2 text-[14px] text-muted hover:text-fg"
+      className="pressable rounded-full px-2 py-2 sm:px-4 text-[14px] text-muted hover:text-fg"
       onClick={async () => {
         await fetch("/api/backoffice/abmelden", { method: "POST" });
         router.replace("/backoffice/anmelden");

@@ -74,6 +74,7 @@ export function Header() {
   }
 
   const links = [
+    { href: "/dienste", label: t.menuDienste },
     { href: "/termine", label: t.menuTermine },
     ...(hatAnliegen ? [{ href: "/meine-anliegen", label: t.menuAnliegen }] : []),
     { href: "/hilfe", label: t.menuHilfe },

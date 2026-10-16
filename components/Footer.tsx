@@ -24,6 +24,9 @@ export function Footer() {
   return (
     <footer className="mx-auto w-full max-w-5xl px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-8 text-[12px] text-subtle sm:px-6">
       <nav aria-label={lang === "de" ? "Service und Rechtliches" : "Service and legal"} className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+        <Link className={cls} href="/dienste">
+          {t.menuDienste}
+        </Link>
         <Link className={cls} href="/kontakt">
           {t.menuKontakt}
         </Link>

@@ -109,7 +109,8 @@ export interface AuditRecord extends StoredRecord {
     | "zahlung_angefordert"
     | "zugewiesen"
     | "inhalt_geaendert"
-    | "meldung_veroeffentlicht";
+    | "meldung_veroeffentlicht"
+    | "meldung_entfernt";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
@@ -131,6 +132,8 @@ export interface KontoRecord extends StoredRecord {
   profil: Verschluesselt;
   einstellungen: import("@/lib/konto/types").Einstellungen;
   letzteAnmeldung: string;
+  /** Bereits versandte Erinnerungen (z. B. "ausweis-90:2027-03-01"), damit nichts doppelt kommt */
+  erinnerungen?: string[];
 }
 
 export interface SitzungRecord extends StoredRecord {
@@ -187,4 +190,41 @@ export interface PushRecord extends StoredRecord {
   themen: ("konto" | "abfall" | "meldungen")[];
   abfallBezirk?: string;
   ortsteil?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Lebenslagen, Meldungen, geplante Aufgaben
+// ---------------------------------------------------------------------------
+
+/** Persönliche Checkliste zu einer Lebenslage. Inhalt verschlüsselt – Lebenslagen sind sensibel (z. B. Geburt). */
+export interface ChecklisteRecord extends StoredRecord {
+  kontoId: string;
+  /** Verschlüsselt: ChecklisteInhalt */
+  inhalt: Verschluesselt;
+}
+
+export interface ChecklisteInhalt {
+  lebenslageId: string;
+  /** Stichtag (ISO-Datum) */
+  stichtag: string;
+  erledigt: string[];
+  /** Schritte, zu denen schon erinnert wurde */
+  erinnert: string[];
+}
+
+/** Öffentliche Meldung der Verwaltung (Straßensperrung, Wasserrohrbruch …) */
+export interface MeldungRecord extends StoredRecord {
+  titel: string;
+  text: string;
+  /** Ohne Angabe: gesamte Gemeinde */
+  ortsteil?: string;
+  gueltigBis: string;
+  autor: string;
+  wichtig: boolean;
+}
+
+/** Merker, dass eine geplante Aufgabe (z. B. Abfall-Erinnerung für einen Tag) erledigt ist. */
+export interface CronLaufRecord extends StoredRecord {
+  aufgabe: string;
+  ergebnis: number;
 }

@@ -88,13 +88,15 @@ export function AnswerBlock({ antwort, onOption, aktiv, vorschauen, nachricht, e
                     {a.label}
                   </ButtonLink>
                 );
-              case "link":
+              case "link": {
+                const intern = a.url.startsWith("/");
                 return (
-                  <ButtonLink key={i} href={a.url} variant="glass" external>
+                  <ButtonLink key={i} href={a.url} variant={intern && i === 0 ? "primary" : "glass"} external={!intern}>
                     {a.label}
-                    <Icon name="external" className="size-4" />
+                    <Icon name={intern ? "chevronRight" : "external"} className="size-4" />
                   </ButtonLink>
                 );
+              }
             }
           })}
         </motion.div>

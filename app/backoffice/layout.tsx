@@ -13,14 +13,24 @@ export default async function BackofficeLayout({ children }: { children: React.R
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-[var(--line)]">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:px-6">
           <Link href="/backoffice" className="flex items-center gap-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={tenant.wappen} alt="" width={120} height={140} className="h-8 w-auto" />
-            <span className="text-[15px] font-medium">{tenant.name}</span>
-            <span className="text-[15px] text-subtle">· Backoffice</span>
+            <span className="hidden text-[15px] font-medium sm:inline">{tenant.name}</span>
+            <span className="hidden text-[15px] text-subtle md:inline">· Backoffice</span>
           </Link>
           <div className="flex items-center gap-2 text-[14px] text-muted">
+            {b && (
+              <nav aria-label="Backoffice" className="flex items-center sm:mr-2 sm:gap-1">
+                <Link href="/backoffice" className="rounded-full px-2 py-1 hover:text-fg sm:px-3">
+                  Vorgänge
+                </Link>
+                <Link href="/backoffice/meldungen" className="rounded-full px-2 py-1 hover:text-fg sm:px-3">
+                  Meldungen
+                </Link>
+              </nav>
+            )}
             {b && <span className="hidden sm:inline">{b.name}</span>}
             {b && <AbmeldenButton />}
             <ThemeToggle />

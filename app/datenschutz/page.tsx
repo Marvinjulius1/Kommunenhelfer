@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Page, Section } from "@/components/ui/Page";
 import { tx } from "@/lib/i18n";
+import { MANGEL_AUFBEWAHRUNG_TAGE } from "@/lib/maengel/service";
 import { aktiveLeistungen, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Datenschutz" };
@@ -82,6 +83,17 @@ export default async function DatenschutzSeite() {
         <p>
           Im Dokumentensafe können Sie häufig benötigte Unterlagen (z. B. Ausweiskopie) ablegen und in Anträgen wiederverwenden. Die Dateien werden wie hochgeladene Unterlagen geprüft und verschlüsselt. Mitarbeitende der Verwaltung
           sehen den Safe nicht – nur Unterlagen, die Sie selbst einem Anliegen beifügen. Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO.
+        </p>
+      </Section>
+
+      <Section titel="Mängelmelder" id="maengel">
+        <p>
+          Wenn Sie einen Mangel melden, speichern wir Kategorie, Beschreibung, Ort und – freiwillig – ein Foto, Ihren Standort sowie Name und E-Mail-Adresse für Rückmeldungen. Den Standort fragt Ihr Gerät nur ab, wenn Sie auf „Meinen
+          Standort verwenden“ tippen. Aus Fotos entfernen wir vor dem Speichern automatisch Standort-, Zeit- und Gerätedaten.
+        </p>
+        <p>
+          In der öffentlichen Liste erscheinen nur Kategorie, Ortsangabe, auf etwa 100 Meter gerundete Koordinaten und der Bearbeitungsstand – nie Beschreibung, Foto oder Ihre Kontaktdaten. Meldungen werden nach{" "}
+          {MANGEL_AUFBEWAHRUNG_TAGE} Tagen gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. a und e DSGVO.
         </p>
       </Section>
 

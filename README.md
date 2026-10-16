@@ -312,6 +312,7 @@ Benutzer anlegen:
 ```bash
 npm run backoffice:benutzer -- anna musterstadt steueramt,standesamt
 # → JSON-Eintrag für BACKOFFICE_USERS (Passwort nur als scrypt-Hash)
+# Zusätzliche Rechte im Eintrag: "rollen": ["redaktion"] (Meldungen) oder ["admin"]
 ```
 
 Sitzungen: signiertes Cookie (`HttpOnly`, `SameSite=Strict`, `Secure`), 8 Stunden; zustandsändernde Anfragen werden zusätzlich auf gleiche Herkunft geprüft. Login mit Rate Limiting.
@@ -344,6 +345,32 @@ Technik: Profildaten verschlüsselt, E-Mail/eID-Pseudonym nur als HMAC-Index, Pa
 **Online-Bezahlung:** Leistungen erhalten in der Config `bezahlung: { betrag, mengeFeld?, weitere? }` (z. B. 12 € erste, 6 € jede weitere Urkunde). Nach dem Absenden erscheint „Jetzt online bezahlen“. Anbieter über `ZAHLUNG_ANBIETER` (`demo` | `epaybl`); die ePayBL-Anbindung ist als Adapter in `lib/zahlung/anbieter.ts` vorbereitet und braucht die Zugangsdaten des Landes.
 
 **Push:** Web Push (VAPID). Ohne `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` wird ein stabiles Schlüsselpaar aus `DATA_ENCRYPTION_KEY` abgeleitet.
+
+---
+
+## Dienste für den Alltag
+
+Alle Dienste sind unter `/dienste` gebündelt und lassen sich pro Gemeinde über `funktionen` abschalten.
+
+| Dienst | Seite | Config |
+|---|---|---|
+| **Abfallkalender** – Straßensuche, Feiertagsverschiebung, ICS-Export, Erinnerung am Vorabend | `/abfall` | `abfall` (Arten, Bezirke mit Straßen, Startdatum + Rhythmus) |
+| **Mängelmelder** – Kategorie, Foto (EXIF/GPS wird entfernt), Standort, Hinweis auf Doppelmeldungen, öffentliche Liste | `/maengel`, `/maengel/melden` | `maengel.kategorien` (je Kategorie ein Amt) |
+| **Lebenslagen** – Checklisten über alle Ämter mit Fristen; im Konto gespeichert, mit Erinnerung | `/lebenslagen` | `lebenslagen` (Schritte mit Leistung/Link und Frist in Tagen) |
+| **Aktuelles** – Meldungen der Verwaltung, optional je Ortsteil, mit Push | `/aktuelles`, Backoffice `/backoffice/meldungen` | `ortsteile`; Backoffice-Rolle `redaktion` |
+
+Der Assistent verweist auf diese Dienste deterministisch (z. B. „Schlagloch“ → Mängelmelder, „Wir bekommen ein Baby“ → Checkliste).
+
+### Tägliche Aufgaben (Cron)
+
+`GET /api/cron` mit `Authorization: Bearer $CRON_SECRET` – auf Vercel per `vercel.json` täglich um 16 Uhr UTC (Vercel sendet den Header automatisch, wenn `CRON_SECRET` gesetzt ist). Ohne `CRON_SECRET` nur im Demo-/Entwicklungsmodus aufrufbar.
+
+- Abfall-Erinnerung für morgen (Push je Bezirk, nur nachmittags)
+- Fristen aus Checklisten (Push und E-Mail **ohne** Inhalt – Lebenslagen wie eine Geburt gehören nicht in eine Mail)
+- Personalausweis läuft in 90 bzw. 30 Tagen ab
+- Löschfristen: Vorgänge, Postfach, Safe, Zahlungen, Push-Abos, Sitzungen, Checklisten, Meldungen, inaktive Konten (3 Jahre) mit allen Dateien
+
+Jede Aufgabe läuft pro Tag höchstens einmal.
 
 ---
 

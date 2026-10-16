@@ -22,6 +22,8 @@ export interface BoBenutzer {
   aemter: string[];
   hash: string;
   demo?: boolean;
+  /** Zusätzliche Rechte: "redaktion" (Meldungen), "admin" (Portal-Einstellungen, Statistik) */
+  rollen?: ("redaktion" | "admin")[];
 }
 
 export const SESSION_COOKIE = "bo_sitzung";
@@ -73,6 +75,11 @@ export async function aktuellerBenutzer(tenant: GemeindeConfig): Promise<BoBenut
 
 export function darfAmt(b: BoBenutzer, amtId: string): boolean {
   return b.aemter.includes("*") || b.aemter.includes(amtId);
+}
+
+/** Darf der Benutzer diese Rolle ausüben? Wer alle Ämter verwaltet ("*"), darf alles. */
+export function hatRolle(b: BoBenutzer, rolle: "redaktion" | "admin"): boolean {
+  return b.aemter.includes("*") || !!b.rollen?.includes(rolle) || (rolle === "redaktion" && !!b.rollen?.includes("admin"));
 }
 
 /** Schutz vor CSRF: zustandsändernde Anfragen nur von derselben Herkunft. */

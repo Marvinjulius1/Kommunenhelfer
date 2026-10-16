@@ -52,7 +52,7 @@ export default async function Vorgaenge({ searchParams }: { searchParams: Promis
                 <Link href={`/backoffice/vorgang/${v.id}`} className="block rounded-[16px]">
                   <Glass className="pressable grid items-center gap-2 rounded-[16px] px-6 py-4 text-[14px] md:grid-cols-[10rem_minmax(0,1fr)_11rem_11rem_8rem]">
                     <span className="font-mono">{v.id}</span>
-                    <span className="font-medium">{l ? tx(l.titel, "de") : v.quelle === "mangel" ? `Mängelmeldung: ${v.mangel?.kategorie ?? ""}` : "Sonstiges Anliegen"}</span>
+                    <span className="font-medium">{l ? tx(l.titel, "de") : v.quelle === "mangel" ? `Mängelmeldung: ${tx(tenant.maengel?.kategorien.find((k) => k.id === v.mangel?.kategorie)?.label ?? v.mangel?.kategorie ?? "", "de")}` : "Sonstiges Anliegen"}</span>
                     <span className="text-muted">
                       {a ? tx(a.name, "de") : v.amtId}
                       {v.zugewiesen && <span className="block text-[12px] text-subtle">bei {v.zugewiesen}</span>}

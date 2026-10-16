@@ -19,6 +19,7 @@ import type { GemeindeConfig, Leistung, Rueckfrage, Sprache } from "@/config/typ
 import { dict, formatEuro, tx, WOCHENTAGE } from "@/lib/i18n";
 import { aktiveLeistungen, findeLeistung } from "@/lib/tenant";
 import type { Aktion, Antwort, AssistentAnfrage } from "./types";
+import { dienstAntwort } from "./dienste";
 import { suche, type Treffer } from "./knowledge";
 import { enthaeltPhrase, istFrage, normalisiere, tokens } from "./text";
 import { getProvider } from "./providers";
@@ -511,6 +512,12 @@ export async function beantworte(tenant: GemeindeConfig, anfrage: AssistentAnfra
   const a = await analysiere(tenant, letzte, anfrage.kontextLeistungId);
 
   if (anfrage.entwurf && anfrage.dokumente?.length) return dokumentAntwort(tenant, a, anfrage.entwurf, lang);
+
+  // Portal-Dienste (Abfall, Mängelmelder, Lebenslagen …), wenn keine Leistung passt
+  if (!a.leistung && !a.rueckfrage && !a.smalltalk) {
+    const d = dienstAntwort(tenant, letzte, lang);
+    if (d) return d;
+  }
 
   // Eindeutige Fälle beantworten wir deterministisch aus der Konfiguration.
   const eindeutig = a.smalltalk || a.rueckfrage || (a.leistung && a.leistungEindeutig && !a.frage);
