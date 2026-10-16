@@ -100,6 +100,13 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
   wappenAlt: z.string().min(1),
   akzentfarbe: hex,
   akzentfarbeDunkel: hex.optional(),
+  funktionen: z
+    .object(
+      Object.fromEntries(
+        ["konto", "onlineAusweis", "zahlung", "maengelmelder", "abfall", "lebenslagen", "beteiligung", "ratsinfo", "warteschlange", "videoBeratung", "fundbuero", "ausweisStatus", "push", "vorlesen", "spracheingabe"].map((k) => [k, z.boolean().optional()]),
+      ) as Record<keyof NonNullable<GemeindeConfig["funktionen"]>, z.ZodOptional<z.ZodBoolean>>,
+    )
+    .optional(),
   sprachen: z.array(sprache).min(1),
   standardSprache: sprache,
   texte: z.object({ untertitel: ltext.optional(), platzhalter: ltext, begruessung: ltext }),

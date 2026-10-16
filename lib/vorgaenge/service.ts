@@ -10,6 +10,7 @@ import { sendMail } from "@/lib/mail";
 import type { DokumentMeta, Nachricht, UploadRecord, VorgangDaten, VorgangRecord, VorgangStatus } from "@/lib/records";
 import { blobs } from "@/lib/storage/blobs";
 import { inTagen, store } from "@/lib/storage/store";
+import { zaehle } from "@/lib/statistik";
 import { leiteWeiter } from "./weiterleitung";
 
 export const STATUS_LABEL: Record<VorgangStatus, string> = {
@@ -29,6 +30,10 @@ export interface NeuerVorgang {
   aufbewahrungTage: number;
   /** Basis-URL für Links (Backoffice) in Benachrichtigungen */
   basisUrl: string;
+  /** Bürgerkonto (falls angemeldet) */
+  kontoId?: string;
+  terminId?: string;
+  mangel?: VorgangRecord["mangel"];
 }
 
 export async function erstelleVorgang(v: NeuerVorgang): Promise<{ vorgangsnummer: string; zugangscode: string }> {
@@ -39,6 +44,9 @@ export async function erstelleVorgang(v: NeuerVorgang): Promise<{ vorgangsnummer
     id,
     tenant: v.tenant.slug,
     quelle: v.quelle,
+    kontoId: v.kontoId,
+    terminId: v.terminId,
+    mangel: v.mangel,
     leistungId: v.leistung?.id,
     leistungsschluessel: v.leistung?.leistungsschluessel,
     amtId: v.amtId,
@@ -53,6 +61,7 @@ export async function erstelleVorgang(v: NeuerVorgang): Promise<{ vorgangsnummer
     loeschenAm: inTagen(v.aufbewahrungTage),
   };
   await store().put("vorgaenge", record);
+  await zaehle(v.tenant.slug, "vorgaenge", 1, v.leistung?.id);
 
   // Weiterleitung an das Amt – Fehler blockieren den Eingang nicht (Vorgang liegt im Backoffice).
   const amt = v.tenant.aemter.find((a) => a.id === v.amtId)!;

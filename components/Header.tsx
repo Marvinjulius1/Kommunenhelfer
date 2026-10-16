@@ -11,13 +11,32 @@ import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { ladeAnliegen, onAnliegenChange } from "@/lib/client/anliegen";
+import { aktiv } from "@/lib/funktionen";
 import { feder } from "@/lib/motion";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTenant } from "./TenantProvider";
 import { Icon } from "./ui/Icon";
 
+/** Kleiner Zugang zum Bürgerkonto: Person-Icon bzw. Initialen, wenn angemeldet. */
+function KontoKnopf({ className = "" }: { className?: string }) {
+  const { konto, lang } = useTenant();
+  const label = konto ? (lang === "de" ? "Mein Konto" : "My account") : lang === "de" ? "Anmelden" : "Sign in";
+  return (
+    <Link href={konto ? "/konto" : "/konto/anmelden"} aria-label={label} title={label} className={`pressable grid size-10 place-items-center rounded-full text-subtle hover:text-fg ${className}`}>
+      {konto?.vorname ? (
+        <span className="grid size-7 place-items-center rounded-full bg-[var(--line)] text-[12px] font-semibold text-fg" aria-hidden="true">
+          {(konto.vorname[0] + (konto.nachname[0] ?? "")).toUpperCase()}
+        </span>
+      ) : (
+        <Icon name="user" className="size-[18px]" />
+      )}
+    </Link>
+  );
+}
+
 export function Header() {
   const { tenant, t } = useTenant();
+  const kontoAktiv = aktiv(tenant, "konto");
   const pathname = usePathname();
   const [offen, setOffen] = useState(false);
   const [hatAnliegen, setHatAnliegen] = useState(false);
@@ -46,8 +65,9 @@ export function Header() {
 
   if (pathname === "/") {
     return (
-      <header className="pointer-events-none fixed right-0 top-0 z-30 p-2 pt-[max(8px,env(safe-area-inset-top))] pr-[max(8px,env(safe-area-inset-right))]">
+      <header className="pointer-events-none fixed right-0 top-0 z-30 flex gap-1 p-2 pt-[max(8px,env(safe-area-inset-top))] pr-[max(8px,env(safe-area-inset-right))]">
         {skip}
+        {kontoAktiv && <KontoKnopf className="pointer-events-auto opacity-60 hover:opacity-100 focus-visible:opacity-100" />}
         <ThemeToggle className="pointer-events-auto opacity-60 hover:opacity-100 focus-visible:opacity-100" />
       </header>
     );
@@ -85,6 +105,7 @@ export function Header() {
               </li>
             ))}
           </ul>
+          {kontoAktiv && <KontoKnopf />}
           <ThemeToggle />
           <button
             type="button"

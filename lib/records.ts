@@ -41,7 +41,15 @@ export interface Nachricht {
 }
 
 export interface VorgangRecord extends StoredRecord {
-  quelle: "formular" | "upload";
+  quelle: "formular" | "upload" | "mangel";
+  /** Bürgerkonto, falls angemeldet eingereicht */
+  kontoId?: string;
+  /** Bearbeitung durch (Backoffice-Benutzer) */
+  zugewiesen?: string;
+  /** Verknüpfter Termin (Unterlagen-Check vor dem Termin) */
+  terminId?: string;
+  /** Öffentliche, nicht personenbezogene Angaben einer Mängelmeldung */
+  mangel?: { kategorie: string; lat?: number; lng?: number; ort: string; fotoId?: string };
   leistungId?: string;
   leistungsschluessel?: string;
   amtId: string;
@@ -75,6 +83,9 @@ export type TerminStatus = "gebucht" | "storniert";
 
 export interface TerminRecord extends StoredRecord {
   amtId: string;
+  kontoId?: string;
+  /** Video-Beratung: Link zum Videoraum */
+  videoLink?: string;
   leistungId?: string;
   /** "YYYY-MM-DDTHH:MM" Ortszeit Berlin */
   slot: string;
@@ -90,4 +101,28 @@ export interface AuditRecord extends StoredRecord {
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Bürgerkonto
+// ---------------------------------------------------------------------------
+
+export interface KontoRecord extends StoredRecord {
+  /** HMAC der E-Mail-Adresse – zum Auffinden, ohne die Adresse im Klartext zu speichern */
+  emailIndex?: string;
+  passwortHash?: string;
+  /** Pseudonym aus dem Online-Ausweis/BundID (gehasht) */
+  eidIndex?: string;
+  vertrauensniveau: "basis" | "hoch";
+  emailBestaetigt: boolean;
+  /** Verschlüsselt: Profil */
+  profil: Verschluesselt;
+  einstellungen: import("@/lib/konto/types").Einstellungen;
+  letzteAnmeldung: string;
+}
+
+export interface SitzungRecord extends StoredRecord {
+  kontoId: string;
+  /** Grobe Geräteangabe zur Anzeige ("Chrome auf Android") */
+  geraet: string;
 }

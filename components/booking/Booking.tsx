@@ -29,7 +29,7 @@ interface Auswahl {
 }
 
 export function Booking({ vorauswahl }: { vorauswahl?: string }) {
-  const { tenant, lang, t } = useTenant();
+  const { tenant, lang, t, konto } = useTenant();
   const de = lang === "de";
 
   const gruppen = useMemo(
@@ -51,8 +51,8 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
   const [slots, setSlots] = useState<Slot[] | null>(null);
   const [tag, setTag] = useState<string>();
   const [slot, setSlot] = useState<Slot>();
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState(konto ? `${konto.vorname} ${konto.nachname}`.trim() : "");
+  const [email, setEmail] = useState(konto?.email ?? "");
   const [hinweis, setHinweis] = useState("");
   const [einw, setEinw] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
         return;
       }
       if (!res.ok) throw new Error(res.status === 429 ? t.zuVieleAnfragen : t.fehlerAllgemein);
-      speichereAnliegen({
+      if (!konto) speichereAnliegen({
         id: data.id,
         code: data.zugangscode,
         typ: "termin",

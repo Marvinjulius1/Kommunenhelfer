@@ -11,6 +11,7 @@ import { zustaendigesAmt } from "@/lib/uploads/pruefung";
 import { uebernehmeUploads, uploadsImEntwurf } from "@/lib/uploads/service";
 import { erstelleVorgang, uploadsZuDokumenten } from "@/lib/vorgaenge/service";
 import { findeLeistung } from "@/lib/tenant";
+import { aktuellesKonto } from "@/lib/konto/service";
 
 export const runtime = "nodejs";
 
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
   } catch {
     return fehler("ungueltige_anfrage");
   }
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const leistung = body.leistungId ? findeLeistung(tenant, body.leistungId) : undefined;
   if (body.leistungId && !leistung) return fehler("leistung_unbekannt");
 
@@ -53,8 +54,10 @@ export async function POST(req: Request) {
   const amtWunsch = body.amtId && tenant.aemter.some((a) => a.id === body.amtId) ? body.amtId : undefined;
   const amt = zustaendigesAmt(tenant, leistung?.id, amtWunsch);
 
+  const konto = await aktuellesKonto(tenant);
   const ergebnis = await erstelleVorgang({
     tenant,
+    kontoId: konto?.id,
     quelle: "upload",
     leistung,
     amtId: amt.id,

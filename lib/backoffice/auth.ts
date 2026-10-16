@@ -10,9 +10,10 @@
  * mit BACKOFFICE_DEMO=1 (z. B. für eine Vorführung). Niemals mit echten Daten!
  */
 import "server-only";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import type { GemeindeConfig } from "@/config/types";
+import { demoModus } from "@/lib/demo";
+import { pruefePasswort as pruefeHash } from "@/lib/passwort";
 import { pruefeSignatur, signiere } from "@/lib/signatur";
 
 export interface BoBenutzer {
@@ -27,7 +28,7 @@ export const SESSION_COOKIE = "bo_sitzung";
 const SESSION_STUNDEN = 8;
 
 export function demoAktiv(): boolean {
-  return process.env.NODE_ENV !== "production" || process.env.BACKOFFICE_DEMO === "1";
+  return demoModus() || process.env.BACKOFFICE_DEMO === "1";
 }
 
 export function benutzerListe(): BoBenutzer[] {
@@ -41,19 +42,9 @@ export function benutzerListe(): BoBenutzer[] {
   return liste;
 }
 
-export function hashPasswort(passwort: string): string {
-  const salt = randomBytes(16);
-  const hash = scryptSync(passwort, salt, 32, { N: 16384, r: 8, p: 1 });
-  return `scrypt$16384$8$1$${salt.toString("base64")}$${hash.toString("base64")}`;
-}
-
 export function pruefePasswort(passwort: string, gespeichert: string): boolean {
   if (gespeichert === "demo") return passwort === "demo";
-  const [verfahren, N, r, p, salt, hash] = gespeichert.split("$");
-  if (verfahren !== "scrypt" || !hash) return false;
-  const soll = Buffer.from(hash, "base64");
-  const ist = scryptSync(passwort, Buffer.from(salt, "base64"), soll.length, { N: Number(N), r: Number(r), p: Number(p) });
-  return timingSafeEqual(ist, soll);
+  return pruefeHash(passwort, gespeichert);
 }
 
 export function findeBenutzer(tenant: GemeindeConfig, name: string): BoBenutzer | undefined {

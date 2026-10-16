@@ -9,6 +9,7 @@
  */
 import "server-only";
 import net from "node:net";
+import { demoModus } from "@/lib/demo";
 
 export type ScanErgebnis = { ok: true } | { ok: false; grund: "virus" | "scanner_fehlt" | "scanner_fehler" };
 
@@ -18,7 +19,7 @@ let gewarnt = false;
 export function modus(): "clamav" | "off" | "fehlt" {
   const v = process.env.VIRUS_SCAN;
   if (v === "clamav" || v === "off") return v;
-  return process.env.NODE_ENV === "production" ? "fehlt" : "off";
+  return demoModus() ? "off" : "fehlt";
 }
 
 export async function scanne(daten: Buffer): Promise<ScanErgebnis> {

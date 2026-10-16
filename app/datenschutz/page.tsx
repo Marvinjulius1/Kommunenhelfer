@@ -63,6 +63,17 @@ export default async function DatenschutzSeite() {
         </ul>
       </Section>
 
+      <Section titel="Bürgerkonto" id="konto">
+        <p>
+          Mit einem Bürgerkonto sehen Sie Ihre Anliegen, Termine, Bescheide und Zahlungen auf jedem Gerät, und Ihre Angaben werden in Formulare übernommen. Wir speichern Name, Kontaktdaten und – freiwillig – Anschrift, Bankverbindung und Angaben zu Ihrem Ausweis.
+          Alle Profildaten sind verschlüsselt; Ihre E-Mail-Adresse speichern wir zum Auffinden des Kontos nur als nicht umkehrbaren Prüfwert. Passwörter werden ausschließlich als scrypt-Hash gespeichert.
+        </p>
+        <p>
+          Bei der Anmeldung mit dem Online-Ausweis erhalten wir über die BundID nur Name, Geburtsdatum, Anschrift und ein Pseudonym. Ihr Konto wird 3 Jahre nach der letzten Anmeldung automatisch gelöscht. Sie können es jederzeit selbst löschen und alle
+          Daten herunterladen (Bereich „Sicherheit & Datenschutz“). Rechtsgrundlage: Art. 6 Abs. 1 lit. a DSGVO, § 3 OZG.
+        </p>
+      </Section>
+
       <Section titel="Hochgeladene Unterlagen" id="uploads">
         <p>
           Sie können im Assistenten Unterlagen hochladen (PDF, JPG, PNG, HEIC). Bevor Sie das erste Mal hochladen, bitten wir Sie um Ihre Einwilligung. Die Dateien werden verschlüsselt übertragen (TLS), auf Schadsoftware geprüft und

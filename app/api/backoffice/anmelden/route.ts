@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   } catch {
     return fehler("ungueltige_anfrage");
   }
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const b = findeBenutzer(tenant, body.name);
   if (!b || !pruefePasswort(body.passwort, b.hash)) {
     await protokolliere({ tenant: tenant.slug, benutzer: body.name.slice(0, 60), aktion: "anmeldung_fehlgeschlagen" });

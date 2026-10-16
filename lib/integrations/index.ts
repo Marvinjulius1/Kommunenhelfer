@@ -41,6 +41,9 @@ export interface AntragEinreichung {
   identitaet?: Identitaet;
   /** Öffentliche Basis-URL des Portals (für Links in Benachrichtigungen) */
   basisUrl: string;
+  kontoId?: string;
+  /** Mit dem Antrag hochgeladene Unterlagen */
+  dokumente?: import("@/lib/records").DokumentMeta[];
 }
 
 export interface EinreichungsErgebnis {

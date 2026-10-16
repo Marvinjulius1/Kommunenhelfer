@@ -7,6 +7,7 @@ import { tx } from "@/lib/i18n";
 import type { TerminRecord } from "@/lib/records";
 import { inTagen, store } from "@/lib/storage/store";
 import { findeLeistung } from "@/lib/tenant";
+import { zaehle } from "@/lib/statistik";
 import { berechneSlots, berlinZuDate } from "./slots";
 
 /** Anzahl gebuchter Termine je Slot. */
@@ -32,6 +33,7 @@ export interface Buchung {
   name: string;
   email: string;
   hinweis?: string;
+  kontoId?: string;
 }
 
 export async function buche(tenant: GemeindeConfig, b: Buchung) {
@@ -50,6 +52,7 @@ export async function buche(tenant: GemeindeConfig, b: Buchung) {
       id,
       tenant: tenant.slug,
       amtId: amt.id,
+      kontoId: b.kontoId,
       leistungId: leistung?.id,
       slot: b.slot,
       status: "gebucht",
@@ -63,6 +66,7 @@ export async function buche(tenant: GemeindeConfig, b: Buchung) {
     return { id, code };
   });
   if (!ergebnis) return { fehler: "slot_vergeben" as const };
+  await zaehle(tenant.slug, "termine", 1, leistung?.id);
 
   const [datum, zeit] = b.slot.split("T");
   const start = berlinZuDate(datum, zeit);
@@ -104,9 +108,12 @@ export async function buche(tenant: GemeindeConfig, b: Buchung) {
   return { id: ergebnis.id, zugangscode: ergebnis.code, slot: b.slot, amt: tx(amt.name, "de"), ort };
 }
 
-export async function storniere(tenant: GemeindeConfig, id: string, code: string): Promise<boolean> {
+/** Termin absagen – mit Zugangscode oder als angemeldeter Kontoinhaber. */
+export async function storniere(tenant: GemeindeConfig, id: string, code?: string, kontoId?: string): Promise<boolean> {
   const t = await store().get<TerminRecord>("termine", id);
-  if (!t || t.tenant !== tenant.slug || !safeEqualHex(t.tokenHash, hashToken(code))) return false;
+  if (!t || t.tenant !== tenant.slug) return false;
+  const berechtigt = code ? safeEqualHex(t.tokenHash, hashToken(code)) : !!kontoId && t.kontoId === kontoId;
+  if (!berechtigt) return false;
   await store().put("termine", { ...t, status: "storniert" });
   const { email, name } = decryptJson<{ email: string; name: string }>(t.daten);
   await sendMail(tenant, {

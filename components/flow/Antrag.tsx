@@ -22,8 +22,8 @@ import { Field } from "./Field";
 
 type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "pruefen" } | { typ: "fertig"; nummer: string };
 
-export function Antrag({ leistung }: { leistung: Leistung }) {
-  const { tenant, lang, t } = useTenant();
+export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbelegung?: Record<string, string> }) {
+  const { tenant, lang, t, konto } = useTenant();
   const formular = leistung.formular!;
   const schritte = formular.schritte;
   const reduce = useReducedMotion();
@@ -32,8 +32,10 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
   const startwerte = useMemo(() => {
     const w: Werte = {};
     for (const s of schritte) for (const f of s.felder) if (f.standard) w[f.id] = f.standard;
+    // Angemeldet: Daten aus dem Bürgerkonto übernehmen
+    for (const [k, v] of Object.entries(vorbelegung ?? {})) if (v) w[k] = v;
     return w;
-  }, [schritte]);
+  }, [schritte, vorbelegung]);
 
   const entwurfKey = `entwurf.${tenant.slug}.${leistung.id}`;
   const [phase, setPhase] = useState<Phase>({ typ: "start" });
@@ -124,7 +126,7 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
         return;
       }
       if (!res.ok) throw new Error(res.status === 429 ? t.zuVieleAnfragen : t.fehlerAllgemein);
-      speichereAnliegen({ id: data.vorgangsnummer, code: data.zugangscode, typ: "antrag", titel: tx(leistung.titel, lang), erstelltAm: new Date().toISOString() });
+      if (!konto) speichereAnliegen({ id: data.vorgangsnummer, code: data.zugangscode, typ: "antrag", titel: tx(leistung.titel, lang), erstelltAm: new Date().toISOString() });
       try {
         sessionStorage.removeItem(entwurfKey);
       } catch {}
@@ -197,6 +199,12 @@ export function Antrag({ leistung }: { leistung: Leistung }) {
                   <LeistungDetails leistung={leistung} />
                 </Glass>
               </motion.div>
+              {vorbelegung && Object.keys(vorbelegung).length > 0 && (
+                <motion.p variants={einblenden} className="mt-6 flex items-center gap-2 text-[14px] text-muted">
+                  <Icon name="user" className="size-4" />
+                  {de ? "Ihre Angaben aus dem Bürgerkonto sind bereits eingetragen." : "Your details from your account are already filled in."}
+                </motion.p>
+              )}
               <motion.p variants={einblenden} className="mt-6 text-[13px] leading-relaxed text-subtle">
                 {de
                   ? `Ihre Angaben werden verschlüsselt übertragen und gespeichert. Sie werden ausschließlich zur Bearbeitung Ihres Antrags verwendet und nach ${formular.aufbewahrungTage} Tagen aus dem Portal gelöscht.`

@@ -11,6 +11,7 @@ import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { artLabel } from "@/lib/uploads/pruefung";
 import { entferneUpload, nimmUploadAn } from "@/lib/uploads/service";
 import { bereinigeGelegentlich } from "@/lib/vorgaenge/service";
+import { zaehle } from "@/lib/statistik";
 
 export const runtime = "nodejs";
 
@@ -40,7 +41,7 @@ async function leseBody(req: Request, max: number): Promise<Buffer | "zu_gross">
 export async function POST(req: Request) {
   const rl = rateLimit(`upload:${clientKey(req)}`, 40, 10 * 60_000);
   if (!rl.ok) return tooMany(rl.retryAfter);
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const entwurf = new URL(req.url).searchParams.get("entwurf") ?? "";
   if (!ENTWURF.test(entwurf)) return fehler("ungueltige_anfrage");
   if (req.headers.get("x-einwilligung") !== "1") return fehler("einwilligung_fehlt", 403);
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
   if (!r.ok) return fehler(r.fehler, r.fehler === "scanner" ? 503 : 422);
 
   const u = r.record;
+  if (!r.duplikat) await zaehle(tenant.slug, "uploads");
   return Response.json(
     {
       id: u.id,
@@ -85,6 +87,6 @@ export async function DELETE(req: Request) {
   } catch {
     return fehler("ungueltige_anfrage");
   }
-  const ok = await entferneUpload(tenantAus(req), body.entwurf, body.id);
+  const ok = await entferneUpload(await tenantAus(req), body.entwurf, body.id);
   return ok ? Response.json({ ok: true }) : fehler("nicht_gefunden", 404);
 }

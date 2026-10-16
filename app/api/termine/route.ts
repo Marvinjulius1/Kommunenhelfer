@@ -6,6 +6,7 @@ import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { buche, storniere } from "@/lib/booking/service";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
+import { aktuellesKonto } from "@/lib/konto/service";
 
 export const runtime = "nodejs";
 
@@ -28,12 +29,14 @@ export async function POST(req: Request) {
   } catch {
     return fehler("ungueltige_anfrage");
   }
-  const r = await buche(tenantAus(req), body);
+  const tenant = await tenantAus(req);
+  const konto = await aktuellesKonto(tenant);
+  const r = await buche(tenant, { ...body, kontoId: konto?.id });
   if ("fehler" in r) return fehler(r.fehler!, r.fehler === "slot_vergeben" ? 409 : 404);
   return Response.json(r, { status: 201 });
 }
 
-const Absagen = z.object({ id: z.string().max(40), code: z.string().max(64) });
+const Absagen = z.object({ id: z.string().max(40), code: z.string().max(64).optional() });
 
 export async function DELETE(req: Request) {
   const rl = rateLimit(`termin-del:${clientKey(req)}`, 10, 10 * 60_000);
@@ -44,6 +47,8 @@ export async function DELETE(req: Request) {
   } catch {
     return fehler("ungueltige_anfrage");
   }
-  const ok = await storniere(tenantAus(req), body.id, body.code);
+  const tenant = await tenantAus(req);
+  const konto = body.code ? undefined : await aktuellesKonto(tenant);
+  const ok = await storniere(tenant, body.id, body.code, konto?.id);
   return ok ? Response.json({ ok: true }) : fehler("nicht_gefunden", 404);
 }

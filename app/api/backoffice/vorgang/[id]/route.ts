@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 
 async function vorbereiten(req: Request, id: string) {
   if (!gleicheHerkunft(req)) return { antwort: fehler("herkunft", 403) };
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const b = await aktuellerBenutzer(tenant);
   if (!b) return { antwort: fehler("nicht_angemeldet", 401) };
   const v = await ladeVorgang(tenant, id);

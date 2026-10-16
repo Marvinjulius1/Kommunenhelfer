@@ -9,6 +9,8 @@ import { ThemeScript } from "@/components/ThemeScript";
 import { onColor } from "@/lib/color";
 import { untertitel } from "@/lib/i18n";
 import { getLang, getNonce, getTenant } from "@/lib/tenant";
+import { aktiv } from "@/lib/funktionen";
+import { aktuellesKonto, sicht } from "@/lib/konto/service";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenant();
@@ -41,6 +43,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const tenant = await getTenant();
   const lang = await getLang(tenant);
   const nonce = await getNonce();
+  const kontoRecord = aktiv(tenant, "konto") ? await aktuellesKonto(tenant) : undefined;
+  const konto = kontoRecord ? sicht(kontoRecord) : null;
   const dunkel = tenant.akzentfarbeDunkel ?? tenant.akzentfarbe;
 
   // Akzentfarbe der Gemeinde als CSS-Variablen
@@ -57,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeScript nonce={nonce} />
       </head>
       <body className="flex min-h-dvh flex-col">
-        <TenantProvider tenant={tenant} lang={lang}>
+        <TenantProvider tenant={tenant} lang={lang} konto={konto}>
           <Providers>
             <Header />
             <main id="inhalt" tabIndex={-1} className="flex flex-1 flex-col outline-none">

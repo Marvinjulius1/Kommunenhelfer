@@ -17,7 +17,16 @@ export function getTenantBySlug(slug: string | null | undefined): GemeindeConfig
 
 export async function getTenant(): Promise<GemeindeConfig> {
   const h = await headers();
-  return getTenantBySlug(h.get("x-tenant"));
+  return mitAnpassungen(getTenantBySlug(h.get("x-tenant")));
+}
+
+/**
+ * Wendet Änderungen aus dem Admin-Bereich (Leistungen, Texte, Wissen) auf die
+ * Basis-Konfiguration an. Die Konfigurationsdatei bleibt die Grundlage.
+ */
+export async function mitAnpassungen(basis: GemeindeConfig): Promise<GemeindeConfig> {
+  const { wendeAnpassungenAn } = await import("@/lib/admin/anpassungen");
+  return wendeAnpassungenAn(basis);
 }
 
 export async function getLang(tenant: GemeindeConfig): Promise<Sprache> {

@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const rl = rateLimit(`slots:${clientKey(req)}`, 60, 60_000);
   if (!rl.ok) return tooMany(rl.retryAfter);
 
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const amtId = new URL(req.url).searchParams.get("amt");
   const amt = tenant.aemter.find((a) => a.id === amtId);
   if (!amt?.termine) return Response.json({ fehler: "amt_unbekannt" }, { status: 404 });

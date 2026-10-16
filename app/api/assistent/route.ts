@@ -7,6 +7,7 @@ import { z } from "zod";
 import { beantworte } from "@/lib/assistant/engine";
 import { fehler, langAus, leseJson, tenantAus } from "@/lib/api";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
+import { zaehle } from "@/lib/statistik";
 
 export const runtime = "nodejs";
 
@@ -35,7 +36,9 @@ export async function POST(req: Request) {
     return fehler("leere_anfrage");
   }
 
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const antwort = await beantworte(tenant, { ...body, lang: langAus(req, tenant, body.lang) });
+  await zaehle(tenant.slug, "assistent_anfragen", 1, antwort.leistungId);
+  await zaehle(tenant.slug, antwort.sicher ? "assistent_beantwortet" : "assistent_weissnicht");
   return Response.json(antwort, { headers: { "Cache-Control": "no-store" } });
 }

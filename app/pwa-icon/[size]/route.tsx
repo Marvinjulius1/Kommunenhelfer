@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request, { params }: { params: Promise<{ size: string }> }) {
   const size = Math.min(Math.max(Number((await params).size) || 512, 48), 1024);
   const maskable = new URL(req.url).searchParams.has("maskable");
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
 
   const datei = path.join(process.cwd(), "public", tenant.wappen.replace(/^\//, ""));
   const daten = await fs.readFile(datei);

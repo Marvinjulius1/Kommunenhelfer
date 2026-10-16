@@ -7,6 +7,7 @@ import { z } from "zod";
 import { basisUrl, fehler, langAus, leseJson, tenantAus } from "@/lib/api";
 import { validiereFormular } from "@/lib/flows/validate";
 import { gatewayFuer } from "@/lib/integrations";
+import { aktuellesKonto } from "@/lib/konto/service";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { findeLeistung } from "@/lib/tenant";
 import { tx } from "@/lib/i18n";
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
     return fehler("ungueltige_anfrage");
   }
 
-  const tenant = tenantAus(req);
+  const tenant = await tenantAus(req);
   const lang = langAus(req, tenant, body.lang);
   const leistung = findeLeistung(tenant, body.leistungId);
   if (!leistung?.online || !leistung.formular) return fehler("leistung_nicht_online", 404);
@@ -43,7 +44,8 @@ export async function POST(req: Request) {
   const pruefung = validiereFormular(leistung.formular, body.werte, lang);
   if (!pruefung.ok) return fehler("validierung", 422, { felder: pruefung.fehler });
 
-  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant) });
+  const konto = await aktuellesKonto(tenant);
+  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant), kontoId: konto?.id });
   const titel = tx(leistung.titel, lang);
   return Response.json({ ...ergebnis, titel }, { status: 201 });
 }

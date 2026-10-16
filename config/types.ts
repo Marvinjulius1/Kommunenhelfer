@@ -216,6 +216,39 @@ export interface Rueckfrage {
   optionen: { label: LText; leistungId: string }[];
 }
 
+/**
+ * Funktionen des Portals, die eine Gemeinde ein- oder ausschalten kann.
+ * Nicht gesetzte Werte nutzen die Standards aus lib/funktionen.ts.
+ */
+export interface Funktionen {
+  /** Bürgerkonto (Registrierung, Profil, Postfach …) */
+  konto: boolean;
+  /** Anmeldung mit dem Online-Ausweis / BundID */
+  onlineAusweis: boolean;
+  /** Online-Bezahlung von Gebühren */
+  zahlung: boolean;
+  maengelmelder: boolean;
+  abfall: boolean;
+  lebenslagen: boolean;
+  /** Umfragen und Ideen */
+  beteiligung: boolean;
+  ratsinfo: boolean;
+  /** Digitale Wartemarken und Live-Wartezeit */
+  warteschlange: boolean;
+  videoBeratung: boolean;
+  fundbuero: boolean;
+  ausweisStatus: boolean;
+  /** Push-Benachrichtigungen (Web Push) */
+  push: boolean;
+  /** Antworten vorlesen (läuft lokal im Browser) */
+  vorlesen: boolean;
+  /**
+   * Spracheingabe. Standard AUS: Browser wie Chrome verarbeiten Sprache auf
+   * Servern des Browser-Herstellers – vorher datenschutzrechtlich prüfen.
+   */
+  spracheingabe: boolean;
+}
+
 export interface GemeindeConfig {
   /** Technischer Kurzname, entspricht dem Ordnernamen und der Subdomain. */
   slug: string;
@@ -237,6 +270,9 @@ export interface GemeindeConfig {
 
   sprachen: Sprache[];
   standardSprache: Sprache;
+
+  /** Welche Portal-Funktionen diese Gemeinde anbietet (Standard: fast alle an). */
+  funktionen?: Partial<Funktionen>;
 
   texte: {
     /** Schrift unter dem Wappen auf der Startseite. Standard: "Bürgerservice online". */

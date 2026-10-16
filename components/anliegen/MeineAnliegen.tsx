@@ -34,45 +34,61 @@ const LABEL: Record<string, { de: string; en: string }> = {
 };
 
 export function MeineAnliegen() {
-  const { lang, t } = useTenant();
+  const { lang, t, konto } = useTenant();
   const de = lang === "de";
   const [lokal, setLokal] = useState<LokalesAnliegen[] | null>(null);
   const [status, setStatus] = useState<Record<string, Status>>({});
   const [laedt, setLaedt] = useState(false);
 
-  const laden = useCallback(async (eintraege: LokalesAnliegen[]) => {
-    if (!eintraege.length) return;
+  /**
+   * Quellen: (1) Konto – alle Anliegen geräteübergreifend, (2) dieses Gerät –
+   * Vorgangsnummer + Zugangscode für Anliegen ohne Konto.
+   */
+  const laden = useCallback(async () => {
     setLaedt(true);
     try {
-      const res = await fetch("/api/anliegen", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ eintraege: eintraege.map(({ id, code }) => ({ id, code })) }),
-      });
-      const d = await res.json();
-      setStatus(Object.fromEntries((d.eintraege as Status[]).map((s) => [s.id, s])));
+      const geraet = ladeAnliegen();
+      let liste: LokalesAnliegen[] = [];
+      const st: Record<string, Status> = {};
+      if (konto) {
+        const d = await fetch("/api/konto/anliegen").then((r) => r.json());
+        for (const e of d.eintraege as (Status & { titel: string; erstelltAm: string })[]) {
+          liste.push({ id: e.id, code: "", typ: e.typ === "termin" ? "termin" : "antrag", titel: e.titel, erstelltAm: e.erstelltAm });
+          st[e.id] = e;
+        }
+      }
+      const fehlend = geraet.filter((g) => !st[g.id]);
+      liste = [...liste, ...fehlend].sort((a, b) => b.erstelltAm.localeCompare(a.erstelltAm));
+      if (fehlend.length) {
+        const d = await fetch("/api/anliegen", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ eintraege: fehlend.map(({ id, code }) => ({ id, code })) }),
+        }).then((r) => r.json());
+        for (const e of d.eintraege as Status[]) st[e.id] = e;
+      }
+      setLokal(liste);
+      setStatus(st);
     } catch {
-      /* Status bleibt leer – Hinweis unten */
+      setLokal((l) => l ?? []);
     } finally {
       setLaedt(false);
     }
-  }, []);
+  }, [konto]);
 
   useEffect(() => {
-    const l = ladeAnliegen();
-    setLokal(l);
-    void laden(l);
+    void laden();
   }, [laden]);
 
   const absagen = async (a: LokalesAnliegen) => {
     if (!confirm(de ? "Möchten Sie diesen Termin wirklich absagen?" : "Do you really want to cancel this appointment?")) return;
-    const res = await fetch("/api/termine", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: a.id, code: a.code }) });
-    if (res.ok) void laden(lokal ?? []);
+    const res = await fetch("/api/termine", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ id: a.id, code: a.code || undefined }) });
+    if (res.ok) void laden();
   };
 
   const entfernen = (id: string) => {
     entferneAnliegen(id);
-    setLokal(ladeAnliegen());
+    void laden();
   };
 
   const fmt = (iso: string) => new Intl.DateTimeFormat(de ? "de-DE" : "en-GB", { dateStyle: "medium" }).format(new Date(iso));
@@ -86,7 +102,9 @@ export function MeineAnliegen() {
   if (!lokal.length)
     return (
       <Glass className="rounded-[24px] p-8 text-center">
-        <p className="text-[17px]">{de ? "Auf diesem Gerät sind noch keine Anliegen gespeichert." : "No requests are stored on this device yet."}</p>
+        <p className="text-[17px]">
+          {konto ? (de ? "Sie haben noch keine Anliegen." : "You have no requests yet.") : de ? "Auf diesem Gerät sind noch keine Anliegen gespeichert." : "No requests are stored on this device yet."}
+        </p>
         <p className="mt-2 text-[15px] text-muted">
           {de ? "Sobald Sie etwas einreichen oder einen Termin buchen, sehen Sie hier den aktuellen Stand." : "Once you submit something or book an appointment, you will see its status here."}
         </p>
@@ -137,7 +155,7 @@ export function MeineAnliegen() {
                 </ol>
               )}
 
-              {s?.typ === "vorgang" && !!s.nachrichten?.length && <Nachrichten eintrag={a} nachrichten={s.nachrichten} offen={st === "rueckfrage"} onGesendet={() => laden(lokal)} />}
+              {s?.typ === "vorgang" && !!s.nachrichten?.length && <Nachrichten eintrag={a} nachrichten={s.nachrichten} offen={st === "rueckfrage"} onGesendet={() => laden()} />}
 
               {s?.typ === "termin" && s.slot && <p className="mt-4 text-[15px]">{fmtSlot(s.slot)}</p>}
 
@@ -153,7 +171,7 @@ export function MeineAnliegen() {
                     {de ? "Termin absagen" : "Cancel appointment"}
                   </Button>
                 )}
-                {(st === "unbekannt" || st === "storniert" || st === "erledigt") && (
+                {a.code && (st === "unbekannt" || st === "storniert" || st === "erledigt") && (
                   <Button variant="quiet" className="!min-h-10 px-4 text-[14px]" onClick={() => entfernen(a.id)}>
                     {de ? "Aus der Liste entfernen" : "Remove from list"}
                   </Button>
@@ -194,7 +212,7 @@ function Nachrichten({
       const res = await fetch("/api/anliegen/antwort", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: eintrag.id, code: eintrag.code, text }),
+        body: JSON.stringify({ id: eintrag.id, code: eintrag.code || undefined, text }),
       });
       if (!res.ok) throw new Error();
       setText("");

@@ -40,14 +40,14 @@ interface Props {
 }
 
 export function Einreichung({ daten, vorschauen, nachricht: start, aktiv, ergebnis, onAbgesendet }: Props) {
-  const { tenant, lang, t } = useTenant();
+  const { tenant, lang, t, konto } = useTenant();
   const de = lang === "de";
   const [leistungId, setLeistungId] = useState(daten.leistungId ?? "");
   const [amtWahl, setAmtWahl] = useState(daten.amtId);
   const [arten, setArten] = useState<Record<string, string>>(Object.fromEntries(daten.dokumente.map((d) => [d.id, d.art])));
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefon, setTelefon] = useState("");
+  const [name, setName] = useState(konto ? `${konto.vorname} ${konto.nachname}`.trim() : "");
+  const [email, setEmail] = useState(konto?.email ?? "");
+  const [telefon, setTelefon] = useState(konto?.telefon ?? "");
   const [nachricht, setNachricht] = useState(start);
   const [bestaetigt, setBestaetigt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -88,7 +88,7 @@ export function Einreichung({ daten, vorschauen, nachricht: start, aktiv, ergebn
       if (res.status === 409) throw new Error(de ? "Einige Unterlagen sind nicht mehr verfügbar (nach 24 Stunden gelöscht). Bitte laden Sie sie erneut hoch." : "Some documents are no longer available. Please upload them again.");
       if (!res.ok) throw new Error(res.status === 429 ? t.zuVieleAnfragen : t.fehlerAllgemein);
       const l = tenant.leistungen.find((x) => x.id === leistungId);
-      speichereAnliegen({ id: d.vorgangsnummer, code: d.zugangscode, typ: "antrag", titel: l ? tx(l.titel, lang) : de ? "Eingereichte Unterlagen" : "Submitted documents", erstelltAm: new Date().toISOString() });
+      if (!konto) speichereAnliegen({ id: d.vorgangsnummer, code: d.zugangscode, typ: "antrag", titel: l ? tx(l.titel, lang) : de ? "Eingereichte Unterlagen" : "Submitted documents", erstelltAm: new Date().toISOString() });
       entwurfId(true); // neuer Entwurf für das nächste Anliegen
       onAbgesendet({ vorgangsnummer: d.vorgangsnummer, amt: d.amt, bearbeitungshinweis: d.bearbeitungshinweis, email: email.trim() });
     } catch (err) {
