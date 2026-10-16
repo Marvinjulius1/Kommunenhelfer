@@ -16,11 +16,14 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { anzeigeWert, istSichtbar, validiereSchritt, type Fehler, type Werte } from "@/lib/flows/validate";
 import { speichereAnliegen } from "@/lib/client/anliegen";
+import { entwurfId, useUploads } from "@/lib/client/uploads";
+import { artLabel } from "@/lib/uploads/pruefung";
 import { einblenden, feder, gestaffelt, schrittwechsel, uebergang } from "@/lib/motion";
 import { tx } from "@/lib/i18n";
 import { Field } from "./Field";
+import { abgedeckt, Unterlagen, zuordnung } from "./Unterlagen";
 
-type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "pruefen" } | { typ: "fertig"; nummer: string; zahlung?: { betragCent: number; url: string } };
+type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "unterlagen" } | { typ: "pruefen" } | { typ: "fertig"; nummer: string; zahlung?: { betragCent: number; url: string } };
 
 export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbelegung?: Record<string, string> }) {
   const { tenant, lang, t, konto } = useTenant();
@@ -28,6 +31,13 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
   const schritte = formular.schritte;
   const reduce = useReducedMotion();
   const de = lang === "de";
+  // Unterlagen-Schritt, wenn die Leistung Dokumente vorsieht
+  const hatDok = !!leistung.dokumente?.length && tenant.uploads.aktiv;
+  const up = useUploads(tenant, lang);
+  const [manuell, setManuell] = useState<Record<string, string>>({});
+  const [dokFehler, setDokFehler] = useState(false);
+  const gesamt = schritte.length + (hatDok ? 1 : 0) + 1;
+  const ausweisFehlt = !!leistung.erfordertOnlineAusweis && konto?.vertrauensniveau !== "hoch";
 
   const startwerte = useMemo(() => {
     const w: Werte = {};
@@ -89,13 +99,28 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
       requestAnimationFrame(() => summaryRef.current?.focus());
       return;
     }
-    if (phase.zurUebersicht || phase.index === schritte.length - 1) gehe({ typ: "pruefen" }, 1);
+    if (phase.zurUebersicht) gehe({ typ: "pruefen" }, 1);
+    else if (phase.index === schritte.length - 1) gehe(hatDok ? { typ: "unterlagen" } : { typ: "pruefen" }, 1);
     else gehe({ typ: "schritt", index: phase.index + 1 }, 1);
+  };
+
+  const fertigeAnhaenge = up.anhaenge.filter((a) => a.status === "fertig");
+  const zu = zuordnung(leistung, fertigeAnhaenge, manuell);
+  const fehlendePflicht = (leistung.dokumente ?? []).filter((d) => d.pflicht && !abgedeckt(fertigeAnhaenge.map((a) => zu[a.lokalId])).has(d.art));
+
+  const unterlagenWeiter = () => {
+    if (up.laedt || fehlendePflicht.length) {
+      setDokFehler(true);
+      return;
+    }
+    setDokFehler(false);
+    gehe({ typ: "pruefen" }, 1);
   };
 
   const zurueck = () => {
     if (phase.typ === "schritt") gehe(phase.index === 0 ? { typ: "start" } : { typ: "schritt", index: phase.index - 1 }, -1);
-    else if (phase.typ === "pruefen") gehe({ typ: "schritt", index: schritte.length - 1 }, -1);
+    else if (phase.typ === "unterlagen") gehe({ typ: "schritt", index: schritte.length - 1 }, -1);
+    else if (phase.typ === "pruefen") gehe(hatDok ? { typ: "unterlagen" } : { typ: "schritt", index: schritte.length - 1 }, -1);
   };
 
   const absenden = async () => {
@@ -115,6 +140,9 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
           werte,
           einwilligungen: Object.fromEntries(noetig.map((id) => [id, true])),
           lang,
+          ...(hatDok && fertigeAnhaenge.length
+            ? { entwurf: entwurfId(), dokumente: fertigeAnhaenge.map((a) => ({ id: a.serverId!, art: zu[a.lokalId] })) }
+            : {}),
         }),
       });
       const data = await res.json();
@@ -125,7 +153,14 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
         setPhase({ typ: "schritt", index: Math.max(0, idx), zurUebersicht: true });
         return;
       }
+      if (res.status === 409 || data.fehler === "unterlagen_fehlen") {
+        setDokFehler(true);
+        setPhase({ typ: "unterlagen" });
+        return;
+      }
+      if (res.status === 403 && data.fehler === "online_ausweis_noetig") throw new Error(de ? "Für diesen Antrag ist eine Anmeldung mit dem Online-Ausweis nötig." : "This application requires the online ID.");
       if (!res.ok) throw new Error(res.status === 429 ? t.zuVieleAnfragen : t.fehlerAllgemein);
+      if (hatDok) entwurfId(true);
       if (!konto) speichereAnliegen({ id: data.vorgangsnummer, code: data.zugangscode, typ: "antrag", titel: tx(leistung.titel, lang), erstelltAm: new Date().toISOString() });
       try {
         sessionStorage.removeItem(entwurfKey);
@@ -139,23 +174,18 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
   };
 
   const titel = tx(leistung.titel, lang);
-  const fortschritt = phase.typ === "schritt" ? (phase.index + 1) / (schritte.length + 1) : phase.typ === "pruefen" ? 1 : 0;
+  const nr = phase.typ === "schritt" ? phase.index + 1 : phase.typ === "unterlagen" ? schritte.length + 1 : gesamt;
+  const fortschritt = phase.typ === "schritt" || phase.typ === "unterlagen" || phase.typ === "pruefen" ? nr / gesamt : 0;
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 pb-10 sm:px-6">
       {/* Fortschritt */}
-      {(phase.typ === "schritt" || phase.typ === "pruefen") && (
+      {(phase.typ === "schritt" || phase.typ === "unterlagen" || phase.typ === "pruefen") && (
         <div className="mb-6">
           <div className="mb-2 flex items-center justify-between text-[13px] text-subtle">
             <span>{titel}</span>
             <span aria-live="polite">
-              {phase.typ === "schritt"
-                ? de
-                  ? `Schritt ${phase.index + 1} von ${schritte.length + 1}`
-                  : `Step ${phase.index + 1} of ${schritte.length + 1}`
-                : de
-                  ? `Schritt ${schritte.length + 1} von ${schritte.length + 1}`
-                  : `Step ${schritte.length + 1} of ${schritte.length + 1}`}
+              {de ? `Schritt ${nr} von ${gesamt}` : `Step ${nr} of ${gesamt}`}
             </span>
           </div>
           <div className="h-1 overflow-hidden rounded-full bg-[var(--line)]" aria-hidden="true">
@@ -213,12 +243,38 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
                   {t.datenschutz}
                 </Link>
               </motion.p>
-              <motion.div variants={einblenden} className="mt-8 flex flex-wrap gap-3">
-                <Button onClick={() => gehe({ typ: "schritt", index: 0 }, 1)} className="min-h-12 px-7 text-[16px]">
-                  {de ? "Antrag starten" : "Start application"}
-                  <Icon name="arrowRight" className="size-4" />
-                </Button>
-              </motion.div>
+              {ausweisFehlt ? (
+                <motion.div variants={einblenden} className="mt-8">
+                  <Glass className="rounded-[24px] p-6">
+                    <p className="flex items-start gap-3 text-[15px] leading-relaxed">
+                      <Icon name="id" className="mt-0.5 size-5 shrink-0" />
+                      {de
+                        ? "Dieser Antrag ist rechtlich nur mit sicherer Identifizierung möglich. Bitte melden Sie sich mit dem Online-Ausweis an (Personalausweis mit PIN und die AusweisApp)."
+                        : "This application requires secure identification. Please sign in with your online ID."}
+                    </p>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <ButtonLink href={`/konto/ausweis?weiter=/antrag/${leistung.id}`}>{de ? "Mit Online-Ausweis anmelden" : "Sign in with online ID"}</ButtonLink>
+                      {leistung.termin && (
+                        <ButtonLink href={`/termine?leistung=${leistung.id}`} variant="glass">
+                          {de ? "Stattdessen Termin buchen" : "Book an appointment instead"}
+                        </ButtonLink>
+                      )}
+                    </div>
+                  </Glass>
+                </motion.div>
+              ) : (
+                <motion.div variants={einblenden} className="mt-8 flex flex-wrap gap-3">
+                  <Button onClick={() => gehe({ typ: "schritt", index: 0 }, 1)} className="min-h-12 px-7 text-[16px]">
+                    {de ? "Antrag starten" : "Start application"}
+                    <Icon name="arrowRight" className="size-4" />
+                  </Button>
+                  {leistung.termin && (
+                    <ButtonLink href={`/termine?leistung=${leistung.id}`} variant="glass" className="min-h-12">
+                      {de ? "Lieber persönlich (Termin)" : "In person (appointment)"}
+                    </ButtonLink>
+                  )}
+                </motion.div>
+              )}
             </motion.div>
           )}
 
@@ -290,6 +346,40 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
             </form>
           )}
 
+          {/* ---------- Unterlagen ---------- */}
+          {phase.typ === "unterlagen" && (
+            <div>
+              <h1 ref={headingRef} tabIndex={-1} className="text-[28px] font-semibold tracking-[-0.025em] outline-none sm:text-[34px]">
+                {de ? "Unterlagen" : "Documents"}
+              </h1>
+              <p className="mt-2 text-[16px] text-muted">{de ? "Fotografieren oder hochladen – wir prüfen gleich, ob alles da ist." : "Take a photo or upload – we check right away whether everything is there."}</p>
+              <div className="mt-6">
+                <Unterlagen leistung={leistung} up={up} manuell={manuell} setManuell={setManuell} fehlerAnzeigen={dokFehler} />
+              </div>
+              {dokFehler && (up.laedt || fehlendePflicht.length > 0) && (
+                <p role="alert" className="mt-4 text-[15px] text-danger">
+                  {up.laedt
+                    ? de
+                      ? "Bitte warten Sie, bis alle Dateien hochgeladen sind."
+                      : "Please wait until all files are uploaded."
+                    : de
+                      ? `Es fehlt noch: ${fehlendePflicht.map((d) => artLabel(tenant, d.art, lang)).join(", ")}.`
+                      : `Still missing: ${fehlendePflicht.map((d) => artLabel(tenant, d.art, lang)).join(", ")}.`}
+                </p>
+              )}
+              <div className="mt-6 flex items-center justify-between gap-3">
+                <Button type="button" variant="glass" onClick={zurueck}>
+                  <Icon name="chevronLeft" className="size-4" />
+                  {t.zurueck}
+                </Button>
+                <Button type="button" onClick={unterlagenWeiter} className="px-7" aria-disabled={up.laedt}>
+                  {t.weiter}
+                  <Icon name="arrowRight" className="size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* ---------- Prüfen ---------- */}
           {phase.typ === "pruefen" && (
             <div>
@@ -327,6 +417,31 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
                     </dl>
                   </Glass>
                 ))}
+                {hatDok && (
+                  <Glass className="rounded-[24px] p-6">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <h2 className="text-[17px] font-semibold">{de ? "Unterlagen" : "Documents"}</h2>
+                      <button type="button" onClick={() => gehe({ typ: "unterlagen" }, -1)} className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[14px] font-medium text-accent pressable">
+                        <Icon name="edit" className="size-4" />
+                        {de ? "Ändern" : "Change"}
+                        <span className="sr-only">: {de ? "Unterlagen" : "Documents"}</span>
+                      </button>
+                    </div>
+                    {fertigeAnhaenge.length ? (
+                      <ul className="space-y-1 text-[15px]">
+                        {fertigeAnhaenge.map((a) => (
+                          <li key={a.lokalId} className="flex items-center gap-2">
+                            <Icon name="file" className="size-4 text-subtle" />
+                            <span className="truncate">{artLabel(tenant, zu[a.lokalId], lang)}</span>
+                            <span className="truncate text-[13px] text-subtle">{a.name}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-[15px] text-muted">{de ? "Keine Unterlagen beigefügt." : "No documents attached."}</p>
+                    )}
+                  </Glass>
+                )}
               </div>
 
               <fieldset className="mt-8 space-y-3" aria-describedby={einwFehler ? "einw-fehler" : undefined}>

@@ -10,6 +10,7 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
+import { UnterlagenCheck } from "./UnterlagenCheck";
 import { entferneAnliegen, ladeAnliegen, type LokalesAnliegen } from "@/lib/client/anliegen";
 import { einblenden, gestaffelt } from "@/lib/motion";
 
@@ -24,6 +25,7 @@ interface Status {
   post?: { id: string; art: string; titel: string; erstelltAm: string; gelesen: boolean; datei?: string; oeffnen: string }[];
   zahlungen?: { id: string; betragCent: number; zweck: string; status: string; url: string }[];
   videoLink?: string;
+  leistungId?: string;
 }
 
 const STUFEN = ["eingegangen", "in_bearbeitung", "erledigt"] as const;
@@ -206,6 +208,8 @@ export function MeineAnliegen() {
               {s?.typ === "vorgang" && !!s.nachrichten?.length && <Nachrichten eintrag={a} nachrichten={s.nachrichten} offen={st === "rueckfrage"} onGesendet={() => laden()} />}
 
               {s?.typ === "termin" && s.slot && <p className="mt-4 text-[15px]">{fmtSlot(s.slot)}</p>}
+
+              {s?.typ === "termin" && s.status === "gebucht" && !s.videoLink && <UnterlagenCheck terminId={a.id} leistungId={s.leistungId} />}
 
               {st === "unbekannt" && (
                 <p className="mt-4 text-[14px] text-muted">

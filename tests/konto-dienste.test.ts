@@ -37,7 +37,9 @@ describe("Zahlungszugang", () => {
     const t = zahlungZugang(z);
     expect(pruefeZahlungZugang(t, z.id)).toBe(true);
     expect(pruefeZahlungZugang(t, "Zanderer")).toBe(false);
-    expect(pruefeZahlungZugang(t.slice(0, -2) + "xx", z.id)).toBe(false);
+    // ein Zeichen mitten in der Signatur ändern (am Ende könnten nur Füllbits betroffen sein)
+    const i = t.length - 10;
+    expect(pruefeZahlungZugang(t.slice(0, i) + (t[i] === "A" ? "B" : "A") + t.slice(i + 1), z.id)).toBe(false);
     expect(pruefeZahlungZugang(null, z.id)).toBe(false);
   });
   it("bezahlt nur einmal", async () => {

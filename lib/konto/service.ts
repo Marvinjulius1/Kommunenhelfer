@@ -12,7 +12,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import type { GemeindeConfig } from "@/config/types";
 import { decryptJson, encryptJson, zweckSchluessel } from "@/lib/crypto";
-import type { KontoRecord, PostfachRecord, SafeRecord, SitzungRecord, TerminRecord, VorgangRecord, ZahlungRecord } from "@/lib/records";
+import type { AusweisRecord, KontoRecord, PostfachRecord, SafeRecord, SitzungRecord, TerminRecord, VorgangRecord, WarteRecord, ZahlungRecord } from "@/lib/records";
 import { blobs } from "@/lib/storage/blobs";
 import { pruefeSignatur, signiere } from "@/lib/signatur";
 import { inTagen, store } from "@/lib/storage/store";
@@ -182,6 +182,8 @@ export async function entferneKontoDaten(k: Pick<KontoRecord, "id">) {
     await blobs.delete(x.id);
     await s.delete("safe", x.id);
   }
+  for (const a of await s.list<AusweisRecord>("ausweise", (x) => x.kontoIds.includes(k.id))) await s.put("ausweise", { ...a, kontoIds: a.kontoIds.filter((id) => id !== k.id) });
+  for (const w of await s.list<WarteRecord>("wartenummern", (x) => x.kontoId === k.id)) await s.put("wartenummern", { ...w, kontoId: undefined });
   for (const sammlung of ["checklisten", "push"]) {
     for (const r of await s.list<{ id: string; kontoId?: string; tenant: string; erstelltAm: string; loeschenAm: string }>(sammlung, (x) => x.kontoId === k.id)) {
       await s.delete(sammlung, r.id);

@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { aktiv } from "@/lib/funktionen";
 import type { Amt, Leistung } from "@/config/types";
 import { useTenant } from "@/components/TenantProvider";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -54,10 +55,12 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
   const [name, setName] = useState(konto ? `${konto.vorname} ${konto.nachname}`.trim() : "");
   const [email, setEmail] = useState(konto?.email ?? "");
   const [hinweis, setHinweis] = useState("");
+  const [video, setVideo] = useState(false);
+  const videoMoeglich = !!auswahl && aktiv(tenant, "videoBeratung") && !!tenant.videoBeratung?.aemter.includes(auswahl.amt.id);
   const [einw, setEinw] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [sendet, setSendet] = useState(false);
-  const [fertig, setFertig] = useState<{ id: string; ort: string } | null>(null);
+  const [fertig, setFertig] = useState<{ id: string; ort: string; videoLink?: string } | null>(null);
   const kontaktRef = useRef<HTMLDivElement>(null);
   const zeitenRef = useRef<HTMLDivElement>(null);
 
@@ -96,7 +99,7 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
       const res = await fetch("/api/termine", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ amtId: auswahl.amt.id, leistungId: auswahl.leistung?.id, slot: slot.id, name, email, hinweis: hinweis || undefined, einwilligung: true }),
+        body: JSON.stringify({ amtId: auswahl.amt.id, leistungId: auswahl.leistung?.id, slot: slot.id, name, email, hinweis: hinweis || undefined, video: videoMoeglich && video, einwilligung: true }),
       });
       const data = await res.json();
       if (res.status === 409) {
@@ -113,7 +116,7 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
         titel: `${tx(auswahl.amt.name, lang)}${auswahl.leistung ? ` – ${tx(auswahl.leistung.titel, lang)}` : ""}`,
         erstelltAm: new Date().toISOString(),
       });
-      setFertig({ id: data.id, ort: data.ort });
+      setFertig({ id: data.id, ort: data.ort, videoLink: data.videoLink });
       window.scrollTo({ top: 0 });
     } catch (err) {
       setFehler((err as Error).message);
@@ -140,14 +143,21 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
             <p className="mt-1 text-[17px]">
               {slot.zeit} {de ? "Uhr" : ""}
             </p>
-            <p className="mt-4 flex items-start gap-2 text-[15px] text-muted">
-              <Icon name="location" className="mt-0.5 size-4 shrink-0" />
-              {fertig.ort}
-            </p>
+            {fertig.videoLink ? (
+              <p className="mt-4 flex items-start gap-2 text-[15px] text-muted">
+                <Icon name="video" className="mt-0.5 size-4 shrink-0" />
+                {de ? "Video-Beratung – den Link finden Sie in der E-Mail und unter „Meine Anliegen“." : "Video consultation – the link is in your email and under “My requests”."}
+              </p>
+            ) : (
+              <p className="mt-4 flex items-start gap-2 text-[15px] text-muted">
+                <Icon name="location" className="mt-0.5 size-4 shrink-0" />
+                {fertig.ort}
+              </p>
+            )}
             <p className="mt-2 text-[13px] text-subtle">
               {de ? "Buchungsnummer" : "Booking number"}: <span className="font-mono">{fertig.id}</span>
             </p>
-            {auswahl.leistung && auswahl.leistung.unterlagen.length > 0 && (
+            {!fertig.videoLink && auswahl.leistung && auswahl.leistung.unterlagen.length > 0 && (
               <div className="mt-5 border-t border-[var(--line)] pt-5">
                 <h2 className="mb-2 text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle">{de ? "Bitte mitbringen" : "Please bring"}</h2>
                 <ul className="prose-calm text-[15px]">
@@ -325,6 +335,24 @@ export function Booking({ vorauswahl }: { vorauswahl?: string }) {
                     </label>
                     <input id="b-mail" type="email" className="field-input mt-2" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} maxLength={200} required />
                   </div>
+                  {videoMoeglich && (
+                    <fieldset className="sm:col-span-2">
+                      <legend className="text-[15px] font-medium">{de ? "Wie möchten Sie den Termin wahrnehmen?" : "How would you like to attend?"}</legend>
+                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                        <label className="choice">
+                          <input type="radio" name="b-art" className="radio" checked={!video} onChange={() => setVideo(false)} />
+                          <span className="text-[15px]">{de ? "Vor Ort im Rathaus" : "In person"}</span>
+                        </label>
+                        <label className="choice">
+                          <input type="radio" name="b-art" className="radio" checked={video} onChange={() => setVideo(true)} />
+                          <span className="text-[15px]">
+                            {de ? "Per Video" : "By video"}
+                            <span className="block text-[13px] text-subtle">{de ? "Für Beratung und Fragen – im Browser, ohne Installation." : "For advice – in your browser, no installation."}</span>
+                          </span>
+                        </label>
+                      </div>
+                    </fieldset>
+                  )}
                   <div className="sm:col-span-2">
                     <label htmlFor="b-hinweis" className="text-[15px] font-medium">
                       {de ? "Benötigen Sie Unterstützung? (freiwillig)" : "Do you need assistance? (optional)"}

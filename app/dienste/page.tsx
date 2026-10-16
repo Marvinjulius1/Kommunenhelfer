@@ -50,11 +50,14 @@ export default async function DiensteSeite() {
     { href: "/leistungen", icon: "doc", titel: de ? "Anträge online" : "Online applications", text: de ? "Alle Leistungen von A bis Z" : "All services from A to Z" },
     { href: "/termine", icon: "calendar", titel: de ? "Termin buchen" : "Book an appointment", text: de ? "Im Rathaus – ohne Wartezeit" : "At the town hall – no waiting" },
     { href: "/meine-anliegen", icon: "search", titel: de ? "Meine Anliegen" : "My requests", text: de ? "Stand, Rückfragen, Bescheide" : "Status, questions, decisions" },
+    ...(an("warteschlange") ? [{ href: "/wartezeit", icon: "clock" as const, titel: de ? "Wartezeit & Wartenummer" : "Waiting times", text: de ? "Live sehen, Nummer online ziehen" : "Live, take a number online" }] : []),
+    ...(an("ausweisStatus") ? [{ href: "/ausweis-status", icon: "id" as const, titel: de ? "Ist mein Ausweis da?" : "Is my ID ready?", text: de ? "Status mit der Antragsnummer prüfen" : "Check with your application number" }] : []),
     ...(an("konto") ? [{ href: "/konto", icon: "user" as const, titel: de ? "Bürgerkonto" : "Citizen account", text: de ? "Postfach, Zahlungen, Dokumentensafe" : "Inbox, payments, document safe" }] : []),
   ];
   const alltag: Dienst[] = [
     ...(an("abfall") && tenant.abfall ? [{ href: "/abfall", icon: "leaf" as const, titel: de ? "Abfallkalender" : "Waste calendar", text: de ? "Abfuhrtermine und Erinnerung" : "Collection dates and reminders" }] : []),
     ...(an("maengelmelder") && tenant.maengel ? [{ href: "/maengel/melden", icon: "pin" as const, titel: de ? "Mangel melden" : "Report an issue", text: de ? "Schlagloch, Laterne, wilder Müll" : "Potholes, street lights, dumping" }] : []),
+    ...(an("fundbuero") ? [{ href: "/fundbuero", icon: "search" as const, titel: de ? "Fundbüro" : "Lost and found", text: de ? "Verloren? Hier suchen" : "Lost something? Search here" }] : []),
     { href: "/aktuelles", icon: "megaphone", titel: de ? "Aktuelles" : "News", text: de ? "Sperrungen und Hinweise" : "Closures and notices" },
   ];
   const lebenslagen: Dienst[] = an("lebenslagen")

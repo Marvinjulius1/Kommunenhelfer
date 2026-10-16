@@ -55,7 +55,7 @@ export function Header() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  if (pathname.startsWith("/backoffice")) return null;
+  if (pathname.startsWith("/backoffice") || pathname.startsWith("/wartezeit/anzeige")) return null;
 
   const skip = (
     <a href="#inhalt" className="sr-only-focusable glass fixed left-4 top-4 z-50 rounded-full px-4 py-2 text-sm font-medium">

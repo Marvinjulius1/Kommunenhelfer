@@ -80,10 +80,11 @@ describe("Erkennung der Dokumentart", () => {
 
 describe("Vollständigkeit und Zuständigkeit", () => {
   it("meldet fehlende Pflichtunterlagen", () => {
-    expect(fehlendeUnterlagen(musterstadt, "wohnsitz-anmelden", ["wohnungsgeberbestaetigung"]).map((d) => d.art)).toEqual(["personalausweis"]);
+    expect(fehlendeUnterlagen(musterstadt, "wohnsitz-anmelden", []).map((d) => d.art)).toEqual(["wohnungsgeberbestaetigung"]);
+    expect(fehlendeUnterlagen(musterstadt, "gewerbe-anmelden", ["sonstiges"]).map((d) => d.art)).toEqual(["personalausweis"]);
   });
   it("Reisepass ersetzt Personalausweis als Identitätsnachweis", () => {
-    expect(fehlendeUnterlagen(musterstadt, "wohnsitz-anmelden", ["wohnungsgeberbestaetigung", "reisepass"])).toEqual([]);
+    expect(fehlendeUnterlagen(musterstadt, "gewerbe-anmelden", ["reisepass"])).toEqual([]);
   });
   it("Leistung bestimmt das Amt, sonst Vorschlag, sonst Standard-Amt", () => {
     expect(zustaendigesAmt(musterstadt, "hund-anmelden", "standesamt").id).toBe("steueramt");

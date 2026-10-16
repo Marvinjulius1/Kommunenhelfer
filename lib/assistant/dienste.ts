@@ -65,6 +65,46 @@ function dienste(tenant: GemeindeConfig): Dienst[] {
       url: "/meine-anliegen",
       label: { de: "Zu meinen Anliegen", en: "My requests" },
     });
+  if (aktiv(tenant, "fundbuero"))
+    d.push({
+      stichworte: ["fundbuero", "fundsache", "gefunden", "verloren", "liegen lassen", "liegengelassen", "schluessel verloren", "handy verloren", "rucksack verloren", "lost and found"],
+      text: {
+        de: "Im **Fundbüro** sehen Sie, was abgegeben wurde – mit Suche nach Stichwort und Kategorie. Ist Ihr Gegenstand dabei, melden Sie sich mit „Das gehört mir“.",
+        en: "Search the **lost and found** for handed-in items.",
+      },
+      url: "/fundbuero",
+      label: { de: "Zum Fundbüro", en: "Lost and found" },
+    });
+  if (aktiv(tenant, "ausweisStatus"))
+    d.push({
+      stichworte: ["ausweis abholen", "ausweis fertig", "ausweis abholbereit", "pass abholen", "pass fertig", "ausweis da", "abholbereit"],
+      text: {
+        de: "Ob Ihr Personalausweis oder Reisepass abholbereit ist, sehen Sie mit der Antragsnummer unter **Ist mein Ausweis da?**. Mit Bürgerkonto benachrichtigen wir Sie automatisch.",
+        en: "Check whether your ID is ready under **Is my ID ready?**.",
+      },
+      url: "/ausweis-status",
+      label: { de: "Status prüfen", en: "Check status" },
+    });
+  if (aktiv(tenant, "warteschlange"))
+    d.push({
+      stichworte: ["wartezeit", "wie lange warten", "wartenummer", "ohne termin", "spontan vorbeikommen", "warteschlange", "voll im rathaus"],
+      text: {
+        de: "Die aktuelle **Wartezeit** im Rathaus sehen Sie live. Während der Öffnungszeiten können Sie online eine Wartenummer ziehen und erst losgehen, wenn Sie bald dran sind.",
+        en: "See live **waiting times** and take a number online.",
+      },
+      url: "/wartezeit",
+      label: { de: "Wartezeit ansehen", en: "Waiting times" },
+    });
+  if (aktiv(tenant, "videoBeratung") && tenant.videoBeratung)
+    d.push({
+      stichworte: ["videoberatung", "video beratung", "videotermin", "videocall", "online beratung", "per video"],
+      text: {
+        de: "Für Beratungen bieten einige Stellen **Video-Termine** an. Wählen Sie bei der Terminbuchung „Per Video“ – teilnehmen können Sie im Browser, ohne Installation.",
+        en: "Some offices offer **video appointments**. Choose “By video” when booking.",
+      },
+      url: "/termine",
+      label: { de: "Termin buchen", en: "Book appointment" },
+    });
   if (aktiv(tenant, "lebenslagen"))
     for (const l of tenant.lebenslagen ?? [])
       d.push({
@@ -79,8 +119,8 @@ function dienste(tenant: GemeindeConfig): Dienst[] {
   return d;
 }
 
-/** Passender Portal-Dienst zur Anfrage – oder undefined. */
-export function dienstAntwort(tenant: GemeindeConfig, text: string, lang: Sprache): Antwort | undefined {
+/** Passender Portal-Dienst zur Anfrage – oder undefined. `mehrwort`: Treffer über eine Wortgruppe (sehr eindeutig). */
+export function dienstAntwort(tenant: GemeindeConfig, text: string, lang: Sprache): (Antwort & { mehrwort: boolean }) | undefined {
   const n = normalisiere(text);
   const alle = new Set(tokens(text, true));
   let beste: { d: Dienst; score: number } | undefined;
@@ -90,5 +130,5 @@ export function dienstAntwort(tenant: GemeindeConfig, text: string, lang: Sprach
   }
   if (!beste) return undefined;
   const l = lang === "de" ? "de" : "en";
-  return { text: beste.d.text[l], aktionen: [{ typ: "link", url: beste.d.url, label: beste.d.label[l] }], quellen: [], sicher: true };
+  return { text: beste.d.text[l], aktionen: [{ typ: "link", url: beste.d.url, label: beste.d.label[l] }], quellen: [], sicher: true, mehrwort: beste.score >= 9 };
 }

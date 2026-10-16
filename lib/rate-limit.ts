@@ -33,9 +33,16 @@ export function rateLimit(key: string, limit: number, windowMs: number): RateLim
  * Client-IP für das Rate Limiting. Die IP wird nicht gespeichert oder geloggt,
  * sondern nur gehasht als Schlüssel im Arbeitsspeicher verwendet.
  */
+/**
+ * Client-Kennung für das Rate-Limit. Der erste Eintrag in X-Forwarded-For stammt vom
+ * Client selbst und ist fälschbar – maßgeblich ist, was der eigene Proxy setzt:
+ * X-Real-IP (Vercel, übliche nginx-Konfiguration) oder der zuletzt angehängte Eintrag.
+ */
 export function clientKey(req: Request): string {
-  const fwd = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return fwd || req.headers.get("x-real-ip") || "unknown";
+  const real = req.headers.get("x-real-ip")?.trim();
+  if (real) return real;
+  const fwd = req.headers.get("x-forwarded-for")?.split(",").map((s) => s.trim()).filter(Boolean);
+  return fwd?.at(-1) || "unknown";
 }
 
 export function tooMany(retryAfter: number) {

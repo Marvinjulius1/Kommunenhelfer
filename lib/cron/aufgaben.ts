@@ -16,7 +16,7 @@ import { tx } from "@/lib/i18n";
 import { checklisteSicht, inhalt, speichereCheckliste } from "@/lib/lebenslagen/service";
 import { sendMail } from "@/lib/mail";
 import { benachrichtige } from "@/lib/push/service";
-import type { ChecklisteRecord, CronLaufRecord, KontoRecord } from "@/lib/records";
+import type { ChecklisteRecord, CronLaufRecord, KontoRecord, TerminRecord } from "@/lib/records";
 import { inTagen, store } from "@/lib/storage/store";
 import type { Profil } from "@/lib/konto/types";
 import { loescheAbgelaufene } from "@/lib/vorgaenge/service";
@@ -124,6 +124,40 @@ export async function ausweisErinnerung(tenant: GemeindeConfig, jetzt = new Date
   });
 }
 
+/** Erinnerung am Vortag eines gebuchten Termins (E-Mail an die Buchungsadresse, Push ans Konto). */
+export async function terminErinnerung(tenant: GemeindeConfig, jetzt = new Date()) {
+  const morgen = plusTage(heuteBerlin(jetzt), 1);
+  return einmal(tenant.slug, `termine:${morgen}`, async () => {
+    let n = 0;
+    const termine = await store().list<TerminRecord>("termine", (t) => t.tenant === tenant.slug && t.status === "gebucht" && t.slot.startsWith(morgen));
+    for (const t of termine) {
+      const amt = tenant.aemter.find((a) => a.id === t.amtId);
+      const leistung = tenant.leistungen.find((l) => l.id === t.leistungId);
+      const zeit = t.slot.slice(11);
+      const d = decryptJson<{ name: string; email: string }>(t.daten);
+      const wo = t.videoLink ? `per Video: ${t.videoLink}` : `${amt ? tx(amt.name, "de") : ""}${amt?.ort ? `, ${tx(amt.ort, "de")}` : ""}`;
+      await sendMail(tenant, {
+        to: d.email,
+        subject: `Erinnerung: Ihr Termin morgen um ${zeit} Uhr`,
+        text: [
+          `Guten Tag ${d.name},`,
+          "",
+          `morgen um ${zeit} Uhr haben Sie Ihren Termin ${wo}.`,
+          !t.videoLink && leistung?.unterlagen.length ? `\nBitte denken Sie an:\n${leistung.unterlagen.map((u) => `- ${tx(u, "de")}`).join("\n")}` : "",
+          "",
+          "Sie können nicht? Bitte sagen Sie den Termin unter „Meine Anliegen“ ab – dann kann jemand anderes ihn nutzen.",
+          "",
+          "Freundliche Grüße",
+          tenant.email.absenderName,
+        ].join("\n"),
+      }).catch(() => undefined);
+      if (t.kontoId) await benachrichtige(tenant, { kontoIds: [t.kontoId], titel: `Morgen, ${zeit} Uhr: Ihr Termin`, text: t.videoLink ? "Video-Beratung – den Link finden Sie unter „Meine Anliegen“." : "Unterlagen-Check unter „Meine Anliegen“.", url: "/meine-anliegen" });
+      n++;
+    }
+    return n;
+  });
+}
+
 /** Alle Aufgaben für alle Gemeinden. */
 export async function taeglich(alle: GemeindeConfig[], jetzt = new Date()) {
   const ergebnis: Record<string, Record<string, number | string>> = {};
@@ -132,6 +166,7 @@ export async function taeglich(alle: GemeindeConfig[], jetzt = new Date()) {
       abfall: await abfallErinnerung(t, jetzt),
       checklisten: await checklistenErinnerung(t, jetzt),
       ausweis: await ausweisErinnerung(t, jetzt),
+      termine: await terminErinnerung(t, jetzt),
     };
   }
   ergebnis.loeschung = { entfernt: await loescheAbgelaufene() };

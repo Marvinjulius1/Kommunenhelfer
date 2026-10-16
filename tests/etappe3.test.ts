@@ -75,7 +75,7 @@ describe("Lebenslagen", () => {
     const s = schritte(musterstadt, umzug, "2026-11-01", ["geber"]);
     const anmelden = s.find((x) => x.id === "anmelden")!;
     expect(anmelden.frist).toBe("2026-11-15");
-    expect(anmelden.href).toBe("/termine?leistung=wohnsitz-anmelden");
+    expect(anmelden.href).toBe("/antrag/wohnsitz-anmelden");
     expect(s.find((x) => x.id === "geber")!.erledigt).toBe(true);
     expect(s.find((x) => x.id === "abfall")!.href).toBe("/abfall");
   });

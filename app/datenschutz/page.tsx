@@ -97,6 +97,26 @@ export default async function DatenschutzSeite() {
         </p>
       </Section>
 
+      <Section titel="Wartenummern, Ausweis-Status und Fundbüro" id="schalter">
+        <p>
+          Für eine Wartenummer speichern wir nur Amt, Nummer und Uhrzeiten – ohne Namen. Die Nummer wird nach zwei Tagen gelöscht. Sind Sie angemeldet, verknüpfen wir sie mit Ihrem Konto, um Sie per Push zu benachrichtigen.
+        </p>
+        <p>
+          Beim Ausweis-Status speichern wir die Antragsnummer nur als nicht umkehrbaren Prüfwert. Wenn Sie sich benachrichtigen lassen, merken wir uns dazu Ihr Konto bis zur Abholung (höchstens 6 Monate).
+        </p>
+        <p>
+          Wenn Sie eine Fundsache als Ihre melden, verarbeiten wir Ihre Kontaktdaten und die genannten Erkennungsmerkmale, um den Anspruch zu prüfen. Fundsachen werden nach der gesetzlichen Aufbewahrungsfrist von 6 Monaten
+          (§ 973 BGB) aus dem Portal entfernt.
+        </p>
+      </Section>
+
+      <Section titel="Video-Beratung" id="video">
+        <p>
+          Video-Termine finden über einen Videodienst auf Servern in der EU statt, den die Verwaltung selbst betreibt oder beauftragt. Jeder Termin hat einen eigenen, nicht erratbaren Raum. Gespräche werden nicht aufgezeichnet. Kamera
+          und Mikrofon gibt Ihr Browser erst nach Ihrer Zustimmung frei.
+        </p>
+      </Section>
+
       <Section titel="Online-Bezahlung" id="bezahlung">
         <p>
           Gebühren können Sie online bezahlen. Die Zahlung wickelt ein Zahlungsdienstleister im Auftrag der Verwaltung ab (z. B. ePayBL); Kartendaten oder Zugangsdaten zu Ihrem Bankkonto erreichen das Portal nicht. Wir speichern Betrag,

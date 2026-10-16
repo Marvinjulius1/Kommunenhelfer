@@ -17,6 +17,7 @@ const Buchen = z.object({
   name: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(200),
   hinweis: z.string().trim().max(300).optional(),
+  video: z.boolean().optional(),
   einwilligung: z.literal(true),
 });
 

@@ -313,6 +313,7 @@ Benutzer anlegen:
 npm run backoffice:benutzer -- anna musterstadt steueramt,standesamt
 # → JSON-Eintrag für BACKOFFICE_USERS (Passwort nur als scrypt-Hash)
 # Zusätzliche Rechte im Eintrag: "rollen": ["redaktion"] (Meldungen) oder ["admin"]
+# Wartenummern, Ausweis-Status und Fundbüro folgen den Ämtern des Benutzers.
 ```
 
 Sitzungen: signiertes Cookie (`HttpOnly`, `SameSite=Strict`, `Secure`), 8 Stunden; zustandsändernde Anfragen werden zusätzlich auf gleiche Herkunft geprüft. Login mit Rate Limiting.
@@ -359,6 +360,24 @@ Alle Dienste sind unter `/dienste` gebündelt und lassen sich pro Gemeinde über
 | **Lebenslagen** – Checklisten über alle Ämter mit Fristen; im Konto gespeichert, mit Erinnerung | `/lebenslagen` | `lebenslagen` (Schritte mit Leistung/Link und Frist in Tagen) |
 | **Aktuelles** – Meldungen der Verwaltung, optional je Ortsteil, mit Push | `/aktuelles`, Backoffice `/backoffice/meldungen` | `ortsteile`; Backoffice-Rolle `redaktion` |
 
+### Am Schalter und im Rathaus
+
+| Dienst | Seite | Backoffice |
+|---|---|---|
+| **Live-Wartezeit & Wartenummer** – Schätzung aus den heutigen Bearbeitungszeiten, Nummer online ziehen, Push kurz vorher (mit Konto) | `/wartezeit`, Aufrufanzeige `/wartezeit/anzeige` | `/backoffice/wartezeit` |
+| **Ist mein Ausweis da?** – Status mit Antragsnummer (nur als HMAC gespeichert), Benachrichtigung ins Postfach | `/ausweis-status` | `/backoffice/ausweise` |
+| **Fundbüro** – Suche, „Das gehört mir“ mit Erkennungsmerkmalen (interne Merkmale bleiben verschlüsselt) | `/fundbuero` | `/backoffice/fundbuero` |
+| **Video-Beratung** – bei der Buchung „Per Video“, eigener Raum je Termin | `/termine` | – |
+| **Unterlagen-Check** und Erinnerung am Vortag | `/meine-anliegen` | – |
+
+Video-Beratung: `videoBeratung: { url, aemter }` in der Config – `url` ist ein Jitsi-Server in der EU (selbst betrieben oder mit AV-Vertrag).
+
+### Online-Anträge mit Unterlagen und Online-Ausweis
+
+- Hat eine Leistung `dokumente`, bekommt der Antrag einen Schritt **Unterlagen** (Datei, Foto, Dokumentensafe). Die Erkennung schlägt die Art vor, Bürger können sie ändern. Pflichtunterlagen prüft der Server erneut.
+- `erfordertOnlineAusweis: true` lässt den Antrag nur nach Anmeldung mit dem Online-Ausweis zu (z. B. elektronische Wohnsitzanmeldung). Ohne Online-Ausweis wird auf die Terminbuchung verwiesen.
+- Weitere Leistungen der Beispielgemeinde stehen in `tenants/musterstadt/leistungen.ts` (Gewerbe, Halteverbot, Bewohnerparken, Sperrmüll, Tonne, Lastschrift, Übermittlungssperre, Melderegisterauskunft, Verlustanzeige, Kita, Bücherei, Raumbuchung, Vereinsförderung, Eheschließung, Sterbefall sowie Verweise auf Bauportal, Wohngeld, Kfz-Zulassung, Schwerbehindertenausweis).
+
 Der Assistent verweist auf diese Dienste deterministisch (z. B. „Schlagloch“ → Mängelmelder, „Wir bekommen ein Baby“ → Checkliste).
 
 ### Tägliche Aufgaben (Cron)
@@ -368,6 +387,7 @@ Der Assistent verweist auf diese Dienste deterministisch (z. B. „Schlagloch“
 - Abfall-Erinnerung für morgen (Push je Bezirk, nur nachmittags)
 - Fristen aus Checklisten (Push und E-Mail **ohne** Inhalt – Lebenslagen wie eine Geburt gehören nicht in eine Mail)
 - Personalausweis läuft in 90 bzw. 30 Tagen ab
+- Erinnerung am Vortag eines Termins (mit Unterlagen-Liste bzw. Video-Link)
 - Löschfristen: Vorgänge, Postfach, Safe, Zahlungen, Push-Abos, Sitzungen, Checklisten, Meldungen, inaktive Konten (3 Jahre) mit allen Dateien
 
 Jede Aufgabe läuft pro Tag höchstens einmal.
@@ -477,7 +497,7 @@ Vor dem Livegang: BITV-Test durch eine unabhängige Stelle, Test mit Screenreade
 
 - Strikte Content-Security-Policy mit Nonce, `frame-ancestors 'none'`, HSTS, `nosniff`, Permissions-Policy
 - Eingabevalidierung mit Zod + Feldregeln, Größenbegrenzung aller Anfragen
-- Rate Limiting pro Endpunkt (Assistent, Upload, Antrag, Vorgang, Termin, Status, Backoffice-Login)
+- Rate Limiting pro Endpunkt (Assistent, Upload, Antrag, Vorgang, Termin, Status, Backoffice-Login). Die Client-Adresse kommt aus `X-Real-IP` bzw. dem letzten Eintrag in `X-Forwarded-For` – der Reverse-Proxy muss diese Header setzen (Vercel und übliche nginx-Konfigurationen tun das).
 - Uploads: Inhaltsprüfung, aktive Inhalte, Virenscan, Größenlimits, bereinigte Dateinamen
 - Dokumentzugriff nur über kurzlebige, signierte URLs + rollenbasierte Rechte + Audit-Log
 - Doppelbuchungen werden serverseitig ausgeschlossen

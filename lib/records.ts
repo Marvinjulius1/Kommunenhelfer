@@ -110,7 +110,11 @@ export interface AuditRecord extends StoredRecord {
     | "zugewiesen"
     | "inhalt_geaendert"
     | "meldung_veroeffentlicht"
-    | "meldung_entfernt";
+    | "meldung_entfernt"
+    | "fund_erfasst"
+    | "fund_geaendert"
+    | "ausweis_status"
+    | "wartenummer_aufgerufen";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
@@ -227,4 +231,43 @@ export interface MeldungRecord extends StoredRecord {
 export interface CronLaufRecord extends StoredRecord {
   aufgabe: string;
   ergebnis: number;
+}
+
+// ---------------------------------------------------------------------------
+// Fundbüro, Ausweis-Status, Wartenummern
+// ---------------------------------------------------------------------------
+
+export interface FundRecord extends StoredRecord {
+  bezeichnung: string;
+  kategorie: string;
+  /** Öffentliche, nicht identifizierende Beschreibung (Erkennungsmerkmale bleiben intern) */
+  beschreibung: string;
+  fundort: string;
+  funddatum: string;
+  status: "offen" | "abgeholt";
+  /** Verschlüsselt: interne Merkmale zur Prüfung von Ansprüchen */
+  intern?: Verschluesselt;
+  erfasstVon: string;
+}
+
+/** Status eines beantragten Ausweises. Die Antragsnummer liegt nur als HMAC vor. */
+export interface AusweisRecord extends StoredRecord {
+  nummerIndex: string;
+  art?: "personalausweis" | "reisepass" | "kinderreisepass" | "eat";
+  status: "unbekannt" | "in_produktion" | "abholbereit" | "abgeholt";
+  kontoIds: string[];
+  abholbereitAm?: string;
+}
+
+export interface WarteRecord extends StoredRecord {
+  amtId: string;
+  datum: string;
+  nummer: number;
+  status: "wartend" | "aufgerufen" | "erledigt" | "nicht_erschienen" | "storniert";
+  tokenHash: string;
+  kontoId?: string;
+  aufgerufenAm?: string;
+  erledigtAm?: string;
+  schalter?: string;
+  vorgemerkt?: boolean;
 }

@@ -10,46 +10,10 @@
  *  ACHTUNG: Alle Gebühren, Adressen und Zeiten in dieser Datei sind
  *  frei erfundene Beispielwerte.
  */
-import { defineGemeinde, type Feld, type FormularSchritt } from "@/config/define";
+import { defineGemeinde } from "@/config/define";
 
-// ---------------------------------------------------------------------------
-// Wiederverwendbare Formular-Bausteine
-// ---------------------------------------------------------------------------
-
-const ORT = "Musterstadt";
-const PLZ = "12345";
-
-/** Persönliche Angaben – wird in mehreren Formularen genutzt. */
-const person: Feld[] = [
-  { id: "vorname", typ: "text", label: "Vorname", pflicht: true, autocomplete: "given-name", maxLaenge: 80, halb: true },
-  { id: "nachname", typ: "text", label: "Nachname", pflicht: true, autocomplete: "family-name", maxLaenge: 80, halb: true },
-  { id: "geburtsdatum", typ: "date", label: "Geburtsdatum", pflicht: true, autocomplete: "bday" },
-];
-
-const anschrift: Feld[] = [
-  { id: "strasse", typ: "text", label: "Straße und Hausnummer", pflicht: true, autocomplete: "street-address", maxLaenge: 120 },
-  { id: "plz", typ: "plz", label: "Postleitzahl", pflicht: true, autocomplete: "postal-code", standard: PLZ, halb: true },
-  { id: "ort", typ: "text", label: "Ort", pflicht: true, autocomplete: "address-level2", standard: ORT, halb: true },
-];
-
-const erreichbarkeit: Feld[] = [
-  {
-    id: "email",
-    typ: "email",
-    label: "E-Mail-Adresse",
-    hinweis: "Hierhin senden wir die Eingangsbestätigung.",
-    pflicht: true,
-    autocomplete: "email",
-  },
-  { id: "telefon", typ: "tel", label: "Telefon (freiwillig)", hinweis: "Nur für Rückfragen.", autocomplete: "tel" },
-];
-
-const kontaktSchritt: FormularSchritt = {
-  id: "kontakt",
-  titel: "Ihre Angaben",
-  beschreibung: "Wir benötigen Ihren Namen und Ihre Anschrift.",
-  felder: [...person, ...anschrift, ...erreichbarkeit],
-};
+import { erreichbarkeit, kontaktSchritt, ORT, person, PLZ } from "./bausteine";
+import { weitereLeistungen } from "./leistungen";
 
 // ---------------------------------------------------------------------------
 // Konfiguration
@@ -171,6 +135,32 @@ export default defineGemeinde({
       ort: "Rathaus, Erdgeschoss, Zimmer 0.20",
       zustaendigkeiten: ["ordnungsamt", "parken", "halteverbot", "lärm", "gewerbe", "veranstaltung", "fundsache"],
       bearbeitungshinweis: "Meldungen sehen wir uns in der Regel innerhalb von 2 Werktagen an.",
+      weiterleitung: { typ: "backoffice" },
+      termine: {
+        zeiten: {
+          di: [["09:00", "12:00"]],
+          do: [["14:00", "17:00"]],
+        },
+        slotMinuten: 20,
+        parallel: 1,
+        vorlaufTage: 1,
+        buchbarTage: 30,
+      },
+    },
+    {
+      id: "familie",
+      name: "Jugend und Familie",
+      ort: "Rathaus, 1. Obergeschoss, Zimmer 1.10",
+      zustaendigkeiten: ["kita", "kindergarten", "kinderbetreuung", "familie", "jugend"],
+      bearbeitungshinweis: "Kita-Plätze vergeben wir jedes Frühjahr für das neue Kitajahr.",
+      weiterleitung: { typ: "backoffice" },
+    },
+    {
+      id: "kultur",
+      name: "Kultur, Bücherei und Bürgerhaus",
+      ort: "Bürgerhaus, Marktplatz 3",
+      zustaendigkeiten: ["bücherei", "bibliothek", "bürgerhaus", "verein", "kultur", "veranstaltung"],
+      bearbeitungshinweis: "In der Regel melden wir uns innerhalb von 5 Werktagen.",
       weiterleitung: { typ: "backoffice" },
     },
     {
@@ -429,30 +419,95 @@ export default defineGemeinde({
       id: "wohnsitz-anmelden",
       aktiv: true,
       titel: { de: "Wohnsitz anmelden (Umzug)", en: "Register your address (moving)" },
-      kurz: "Nach einem Umzug nach oder innerhalb von Musterstadt müssen Sie sich innerhalb von zwei Wochen anmelden.",
+      kurz: "Nach einem Umzug nach oder innerhalb von Musterstadt müssen Sie sich innerhalb von zwei Wochen anmelden – online mit dem Online-Ausweis oder mit Termin im Bürgerbüro.",
       beschreibung:
-        "Die Anmeldung erfolgt persönlich im Bürgerbüro. Bitte buchen Sie dafür einen Termin. Auch Ihr Personalausweis wird dabei aktualisiert.",
-      stichworte: ["umzug", "umziehen", "anmelden", "ummelden", "ummeldung", "wohnsitz", "neue wohnung", "zuzug", "adresse ändern", "meldeadresse", "eingezogen"],
+        "Online geht es mit dem Personalausweis mit Online-Ausweisfunktion (PIN). Ihre neue Adresse wird anschließend auf dem Ausweis gespeichert: Den Aufkleber für die Rückseite schicken wir Ihnen per Post. Ohne Online-Ausweis buchen Sie bitte einen Termin.",
+      stichworte: ["umzug", "umziehen", "anmelden", "ummelden", "ummeldung", "wohnsitz", "neue wohnung", "zuzug", "adresse ändern", "meldeadresse", "eingezogen", "wohnsitzanmeldung"],
       unterlagen: [
-        "Personalausweis oder Reisepass aller Personen, die umziehen",
+        "Online: Personalausweis mit Online-Ausweisfunktion und PIN",
         "Wohnungsgeberbestätigung (erhalten Sie von Ihrer Vermieterin / Ihrem Vermieter)",
-        "Bei Kindern: Geburtsurkunde, falls kein Ausweis vorhanden ist",
+        "Im Bürgerbüro: Personalausweis oder Reisepass aller Personen, die umziehen; bei Kindern ggf. Geburtsurkunde",
       ],
       gebuehren: [{ bezeichnung: "Anmeldung", betrag: null }],
       ablauf: [
-        "Sie buchen online einen Termin im Bürgerbüro.",
-        "Sie bringen die Unterlagen mit.",
-        "Wir melden Sie an und aktualisieren Ihren Ausweis.",
-        "Sie erhalten eine Meldebestätigung.",
+        "Sie melden sich mit dem Online-Ausweis an.",
+        "Sie geben die neue Adresse ein und laden die Wohnungsgeberbestätigung hoch.",
+        "Wir prüfen die Anmeldung und schicken Ihnen die Meldebestätigung ins Postfach.",
+        "Den Adressaufkleber für Ihren Ausweis erhalten Sie per Post.",
       ],
       fristen: ["Innerhalb von 2 Wochen nach dem Einzug (§ 17 Bundesmeldegesetz)."],
       amtId: "buergerbuero",
-      dokumente: [
-        { art: "wohnungsgeberbestaetigung", pflicht: true },
-        { art: "personalausweis", pflicht: true, hinweis: "Oder Reisepass" },
-      ],
-      online: false,
+      dokumente: [{ art: "wohnungsgeberbestaetigung", pflicht: true }],
+      online: true,
+      erfordertOnlineAusweis: true,
       termin: true,
+      dauer: "ca. 5 Minuten",
+      formular: {
+        aufbewahrungTage: 90,
+        schritte: [
+          {
+            id: "person",
+            titel: "Ihre Angaben",
+            beschreibung: "Name und Geburtsdatum stammen aus Ihrem Online-Ausweis.",
+            felder: [...person, ...erreichbarkeit],
+          },
+          {
+            id: "neu",
+            titel: "Neue Wohnung",
+            felder: [
+              { id: "strasse", typ: "text", label: "Straße und Hausnummer", pflicht: true, autocomplete: "street-address", maxLaenge: 120 },
+              { id: "zusatz", typ: "text", label: "Adresszusatz (freiwillig)", hinweis: "z. B. Hinterhaus, 2. OG links", maxLaenge: 80 },
+              { id: "plz", typ: "plz", label: "Postleitzahl", pflicht: true, standard: PLZ, halb: true },
+              { id: "ort", typ: "text", label: "Ort", pflicht: true, standard: ORT, halb: true },
+              { id: "einzug", typ: "date", label: "Tag des Einzugs", pflicht: true, halb: true },
+              {
+                id: "wohnungsart",
+                typ: "radio",
+                label: "Diese Wohnung ist",
+                pflicht: true,
+                optionen: [
+                  { wert: "haupt", label: "meine einzige Wohnung bzw. Hauptwohnung" },
+                  { wert: "neben", label: "eine Nebenwohnung" },
+                ],
+              },
+            ],
+          },
+          {
+            id: "alt",
+            titel: "Bisherige Wohnung",
+            felder: [
+              { id: "altStrasse", typ: "text", label: "Straße und Hausnummer", pflicht: true, maxLaenge: 120 },
+              { id: "altPlz", typ: "plz", label: "Postleitzahl", pflicht: true, halb: true },
+              { id: "altOrt", typ: "text", label: "Ort", pflicht: true, maxLaenge: 80, halb: true },
+              {
+                id: "altBeibehalten",
+                typ: "radio",
+                label: "Behalten Sie die bisherige Wohnung?",
+                pflicht: true,
+                optionen: [
+                  { wert: "nein", label: "Nein" },
+                  { wert: "ja", label: "Ja, als Nebenwohnung" },
+                ],
+              },
+            ],
+          },
+          {
+            id: "weitere",
+            titel: "Ziehen weitere Personen mit um?",
+            beschreibung: "Familienangehörige können Sie hier mit anmelden. Volljährige benötigen dafür eine Vollmacht.",
+            felder: [
+              {
+                id: "mitziehende",
+                typ: "textarea",
+                label: "Name und Geburtsdatum der weiteren Personen (freiwillig)",
+                hinweis: "Eine Person pro Zeile, z. B. „Mia Muster, 03.05.2018“.",
+                maxLaenge: 1000,
+              },
+            ],
+          },
+        ],
+        bestaetigungen: [{ id: "richtig", label: "Ich versichere, dass meine Angaben richtig und vollständig sind (§ 17 BMG)." }],
+      },
       leistungsschluessel: "99115001000000",
       rechtsgrundlage: "§ 17 Bundesmeldegesetz (BMG)",
     },
@@ -663,12 +718,38 @@ export default defineGemeinde({
       termin: true,
       externerLink: { label: "Online beim Bundesamt für Justiz", url: "https://www.fuehrungszeugnis.bund.de" },
     },
+    ...weitereLeistungen,
   ],
 
   // -------------------------------------------------------------------------
   // Rückfragen bei mehrdeutigen Anliegen
   // -------------------------------------------------------------------------
+  // Video-Beratung über einen Jitsi-Server in der EU (Beispieladresse)
+  videoBeratung: { url: "https://meet.musterstadt.example", aemter: ["standesamt", "steueramt", "ordnungsamt"] },
+
+  // Beispiel-Fundsachen (im Echtbetrieb erfasst das Fundbüro im Backoffice)
+  fundsachen: [
+    { id: "1", bezeichnung: "Schlüsselbund mit 3 Schlüsseln", beschreibung: "Mit rotem Anhänger", fundort: "Marktplatz", funddatum: "2026-10-12", kategorie: "Schlüssel" },
+    { id: "2", bezeichnung: "Schwarzer Rucksack", beschreibung: "Mittelgroß, mit Laptopfach", fundort: "Bushaltestelle Bahnhof", funddatum: "2026-10-09", kategorie: "Tasche / Rucksack" },
+    { id: "3", bezeichnung: "Damenfahrrad", beschreibung: "Blau, 28 Zoll, mit Korb", fundort: "Schulstraße", funddatum: "2026-09-28", kategorie: "Fahrrad" },
+    { id: "4", bezeichnung: "Smartphone", beschreibung: "Mit dunkler Hülle", fundort: "Stadtpark", funddatum: "2026-10-14", kategorie: "Handy / Elektronik" },
+  ],
+
+  dokumentarten: [
+    { id: "fahrzeugschein", label: { de: "Fahrzeugschein (Zulassungsbescheinigung Teil I)", en: "Vehicle registration certificate" }, stichworte: ["zulassungsbescheinigung teil i", "fahrzeugschein", "zulassungsbescheinigung"] },
+    { id: "freistellungsbescheid", label: { de: "Freistellungsbescheid (Gemeinnützigkeit)", en: "Tax exemption notice" }, stichworte: ["freistellungsbescheid", "gemeinnützig", "körperschaftsteuer"] },
+  ],
+
   rueckfragen: [
+    {
+      id: "gewerbe",
+      stichworte: ["gewerbe", "gewerbeschein", "business"],
+      frage: { de: "Möchten Sie ein Gewerbe anmelden oder abmelden?", en: "Do you want to register or deregister a business?" },
+      optionen: [
+        { label: { de: "Gewerbe anmelden", en: "Register" }, leistungId: "gewerbe-anmelden" },
+        { label: { de: "Gewerbe abmelden", en: "Deregister" }, leistungId: "gewerbe-abmelden" },
+      ],
+    },
     {
       id: "umzug",
       stichworte: ["umzug", "umziehen", "ziehe um", "wohnung", "wegziehen", "neue adresse", "moving", "move"],

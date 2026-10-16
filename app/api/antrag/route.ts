@@ -14,6 +14,11 @@ import { betragFuer, legeZahlungAn, zahlungZugang } from "@/lib/zahlung/service"
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { findeLeistung } from "@/lib/tenant";
 import { tx } from "@/lib/i18n";
+import type { DokumentMeta } from "@/lib/records";
+import { dokumentarten } from "@/lib/uploads/dokumentarten";
+import { fehlendeUnterlagen } from "@/lib/uploads/pruefung";
+import { uebernehmeUploads, uploadsImEntwurf } from "@/lib/uploads/service";
+import { uploadsZuDokumenten } from "@/lib/vorgaenge/service";
 
 export const runtime = "nodejs";
 
@@ -22,6 +27,8 @@ const Schema = z.object({
   werte: z.record(z.string(), z.string().max(2000)),
   einwilligungen: z.record(z.string(), z.literal(true)),
   lang: z.string().max(5).optional(),
+  entwurf: z.string().regex(/^[A-Za-z0-9_-]{16,64}$/).optional(),
+  dokumente: z.array(z.object({ id: z.string().max(64), art: z.string().max(60) })).max(30).optional(),
 });
 
 export async function POST(req: Request) {
@@ -48,7 +55,26 @@ export async function POST(req: Request) {
   if (!pruefung.ok) return fehler("validierung", 422, { felder: pruefung.fehler });
 
   const konto = await aktuellesKonto(tenant);
-  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant), kontoId: konto?.id });
+  // Rechtlich nur mit sicherer Identifizierung (z. B. elektronische Wohnsitzanmeldung)
+  if (leistung.erfordertOnlineAusweis && konto?.vertrauensniveau !== "hoch") return fehler("online_ausweis_noetig", 403);
+
+  // Unterlagen: nur eigene, noch nicht abgesendete Uploads dieses Entwurfs
+  let dokumente: DokumentMeta[] | undefined;
+  let uploadIds: string[] = [];
+  if (leistung.dokumente?.length) {
+    const wahl = body.dokumente ?? [];
+    const imEntwurf = body.entwurf ? await uploadsImEntwurf(tenant, body.entwurf) : [];
+    const uploads = wahl.map((d) => imEntwurf.find((u) => u.id === d.id));
+    if (uploads.some((u) => !u)) return fehler("dokument_unbekannt", 409);
+    const erlaubt = new Set(dokumentarten(tenant).map((d) => d.id));
+    const arten = Object.fromEntries(wahl.map((d) => [d.id, erlaubt.has(d.art) ? d.art : "sonstiges"]));
+    if (fehlendeUnterlagen(tenant, leistung.id, Object.values(arten)).length) return fehler("unterlagen_fehlen", 422);
+    dokumente = uploadsZuDokumenten(uploads.map((u) => u!), arten);
+    uploadIds = uploads.map((u) => u!.id);
+  }
+
+  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant), kontoId: konto?.id, dokumente });
+  if (uploadIds.length) await uebernehmeUploads(uploadIds);
   const titel = tx(leistung.titel, lang);
 
   // Gebühr direkt online bezahlen (falls konfiguriert)

@@ -12,7 +12,7 @@ export function Footer() {
   const { tenant, lang, t } = useTenant();
   const pathname = usePathname();
   const router = useRouter();
-  if (pathname.startsWith("/backoffice")) return null;
+  if (pathname.startsWith("/backoffice") || pathname.startsWith("/wartezeit/anzeige")) return null;
 
   const cls = "rounded px-1 py-1 hover:text-fg";
   const andere = tenant.sprachen.filter((l) => l !== lang);

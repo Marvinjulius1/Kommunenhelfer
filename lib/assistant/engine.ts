@@ -513,10 +513,19 @@ export async function beantworte(tenant: GemeindeConfig, anfrage: AssistentAnfra
 
   if (anfrage.entwurf && anfrage.dokumente?.length) return dokumentAntwort(tenant, a, anfrage.entwurf, lang);
 
-  // Portal-Dienste (Abfall, Mängelmelder, Lebenslagen …), wenn keine Leistung passt
-  if (!a.leistung && !a.rueckfrage && !a.smalltalk) {
-    const d = dienstAntwort(tenant, letzte, lang);
-    if (d) return d;
+  // Portal-Dienste (Abfall, Mängelmelder, Lebenslagen …): wenn keine Leistung passt –
+  // oder wenn eine Wortgruppe eindeutig auf einen Dienst zeigt („Ist mein Ausweis fertig?“).
+  // Ein genauer Treffer in der Wissensbasis hat bei Einzelwörtern Vorrang („Hundemarke verloren“).
+  const d = a.smalltalk ? undefined : dienstAntwort(tenant, letzte, lang);
+  const top = a.treffer[0];
+  const wissenGut = !!top && top.score >= WISSEN_SCHWELLE && top.abdeckung >= WISSEN_ABDECKUNG;
+  const lebenslage = d?.aktionen[0]?.typ === "link" && d.aktionen[0].url.startsWith("/lebenslagen/") ? d.aktionen[0] : undefined;
+  if (d && !(a.rueckfrage && lebenslage)) {
+    const passt = d.mehrwort ? !a.leistungEindeutig : !a.leistung && !a.rueckfrage && !wissenGut;
+    if (passt) {
+      const { mehrwort: _, ...antwort } = d;
+      return antwort;
+    }
   }
 
   // Eindeutige Fälle beantworten wir deterministisch aus der Konfiguration.
@@ -525,5 +534,8 @@ export async function beantworte(tenant: GemeindeConfig, anfrage: AssistentAnfra
     const m = await modellAntwort(tenant, anfrage, a);
     if (m) return m;
   }
-  return lokaleAntwort(tenant, a, lang);
+  const r = lokaleAntwort(tenant, a, lang);
+  // Rückfrage zu einer Lebenslage (z. B. Umzug): passende Checkliste zusätzlich anbieten
+  if (lebenslage && r.optionen?.length) r.aktionen = [...r.aktionen, lebenslage];
+  return r;
 }
