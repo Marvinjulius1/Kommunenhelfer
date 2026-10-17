@@ -29,10 +29,11 @@ export interface StatistikTag extends StoredRecord {
   leistungen: Record<string, number>;
 }
 
-let kette: Promise<unknown> = Promise.resolve();
+// Prozessweit (globalThis): Next.js bündelt Routen getrennt, ein Modul-Zustand gäbe es sonst mehrfach.
+const g = globalThis as { __statistikKette?: Promise<unknown> };
 
 export function zaehle(tenant: string, z: Zaehler, n = 1, leistungId?: string): Promise<void> {
-  const p = kette.then(async () => {
+  const p = (g.__statistikKette ?? Promise.resolve()).then(async () => {
     const datum = new Date().toISOString().slice(0, 10);
     const id = `${tenant}:${datum}`;
     const alt = await store().get<StatistikTag>("statistik", id);
@@ -41,7 +42,7 @@ export function zaehle(tenant: string, z: Zaehler, n = 1, leistungId?: string): 
     if (leistungId) tag.leistungen[leistungId] = (tag.leistungen[leistungId] ?? 0) + 1;
     await store().put("statistik", tag);
   });
-  kette = p.catch(() => undefined);
+  g.__statistikKette = p.catch(() => undefined);
   return p.catch(() => undefined) as Promise<void>;
 }
 

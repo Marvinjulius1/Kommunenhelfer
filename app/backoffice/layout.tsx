@@ -13,21 +13,25 @@ export default async function BackofficeLayout({ children }: { children: React.R
   return (
     <div className="flex flex-1 flex-col">
       <header className="border-b border-[var(--line)]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-2 px-4 sm:h-16 sm:flex-nowrap sm:px-6">
-          <Link href="/backoffice" className="flex h-14 shrink-0 items-center gap-2 sm:h-auto">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-2 px-4 sm:px-6 lg:h-16 lg:flex-nowrap">
+          <Link href="/backoffice" className="flex h-14 shrink-0 items-center gap-2 lg:h-auto">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={tenant.wappen} alt="" width={120} height={140} className="h-8 w-auto" />
             <span className="text-[15px] font-medium">{tenant.name}</span>
-            <span className="hidden text-[15px] text-subtle md:inline">· Backoffice</span>
+            <span className="hidden text-[15px] text-subtle 2xl:inline">· Backoffice</span>
           </Link>
           {b && (
-            <nav aria-label="Backoffice" className="order-last -mx-2 flex w-[calc(100%+1rem)] items-center gap-1 overflow-x-auto pb-2 text-[14px] text-muted [scrollbar-width:none] sm:order-none sm:mx-0 sm:ml-auto sm:w-auto sm:pb-0">
+            <nav aria-label="Backoffice" className="order-last -mx-2 flex w-[calc(100%+1rem)] items-center gap-1 overflow-x-auto pb-2 text-[14px] text-muted [scrollbar-width:none] lg:order-none lg:mx-0 lg:ml-auto lg:w-auto lg:min-w-0 lg:pb-0">
               {[
                 ["/backoffice", "Vorgänge"],
                 ["/backoffice/wartezeit", "Wartezeit"],
                 ["/backoffice/ausweise", "Ausweise"],
                 ["/backoffice/fundbuero", "Fundbüro"],
                 ["/backoffice/meldungen", "Meldungen"],
+                ["/backoffice/beteiligung", "Beteiligung"],
+                ["/backoffice/statistik", "Statistik"],
+                ["/backoffice/vertretung", "Vertretung"],
+                ["/backoffice/admin", "Anpassen"],
               ].map(([href, label]) => (
                 <Link key={href} href={href} className="shrink-0 rounded-full px-3 py-1 hover:text-fg">
                   {label}
@@ -35,8 +39,8 @@ export default async function BackofficeLayout({ children }: { children: React.R
               ))}
             </nav>
           )}
-          <div className="flex items-center gap-2 text-[14px] text-muted">
-            {b && <span className="hidden lg:inline">{b.name}</span>}
+          <div className="flex shrink-0 items-center gap-2 text-[14px] text-muted">
+            {b && <span className="hidden 2xl:inline">{b.name}</span>}
             {b && <AbmeldenButton />}
             <ThemeToggle />
           </div>

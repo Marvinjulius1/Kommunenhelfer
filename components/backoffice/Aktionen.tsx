@@ -103,7 +103,7 @@ export function VorgangAktionen({
   id: string;
   status: string;
   statusOptionen: { wert: string; label: string }[];
-  benutzer: string[];
+  benutzer: { name: string; label: string }[];
   zugewiesen?: string;
   textbausteine: { titel: string; text: string }[];
   zahlungMoeglich: boolean;
@@ -141,8 +141,8 @@ export function VorgangAktionen({
           <select className={auswahl} value={zugewiesen ?? ""} onChange={(e) => anfrage(pfad, "PATCH", { zugewiesen: e.target.value || null }, "Zuweisung gespeichert.")}>
             <option value="">Nicht zugewiesen</option>
             {benutzer.map((b) => (
-              <option key={b} value={b}>
-                {b}
+              <option key={b.name} value={b.name}>
+                {b.label}
               </option>
             ))}
           </select>

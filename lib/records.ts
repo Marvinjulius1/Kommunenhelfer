@@ -62,7 +62,7 @@ export interface VorgangRecord extends StoredRecord {
   nachrichten: Verschluesselt;
   einwilligungAm: string;
   /** Ergebnis der Weiterleitung an das Amt */
-  weiterleitung?: { typ: string; ok: boolean; am: string };
+  weiterleitung?: { typ: string; ok: boolean; am: string; /** z. B. Submission-ID bei FIT-Connect */ referenz?: string };
 }
 
 /** Zwischengespeicherter Upload (vor dem Absenden, Löschung nach 24 h). */
@@ -114,7 +114,10 @@ export interface AuditRecord extends StoredRecord {
     | "fund_erfasst"
     | "fund_geaendert"
     | "ausweis_status"
-    | "wartenummer_aufgerufen";
+    | "wartenummer_aufgerufen"
+    | "beteiligung"
+    | "anpassung"
+    | "vertretung";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
@@ -270,4 +273,46 @@ export interface WarteRecord extends StoredRecord {
   erledigtAm?: string;
   schalter?: string;
   vorgemerkt?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Beteiligung, Vertretung
+// ---------------------------------------------------------------------------
+
+/** Umfrage. Stimmen nur als Summen; Teilnahme als HMAC je Umfrage (kein Rückschluss auf das Konto). */
+export interface UmfrageRecord extends StoredRecord {
+  titel: string;
+  beschreibung: string;
+  optionen: { id: string; label: string }[];
+  mehrfach: boolean;
+  bis: string;
+  ortsteil?: string;
+  ergebnisSofort: boolean;
+  nurOnlineAusweis: boolean;
+  stimmen: Record<string, number>;
+  teilnahmen: string[];
+  autor: string;
+  beendet?: boolean;
+}
+
+export interface IdeeRecord extends StoredRecord {
+  titel: string;
+  text: string;
+  kategorie: string;
+  ortsteil?: string;
+  /** HMAC des Kontos – zum Verhindern von Selbst-Unterstützung, nicht rückführbar */
+  autorIndex: string;
+  /** Konto für Benachrichtigungen (wird beim Löschen des Kontos entfernt) */
+  kontoId?: string;
+  status: "eingereicht" | "veroeffentlicht" | "abgelehnt" | "in_pruefung" | "umgesetzt";
+  antwort?: string;
+  unterstuetzer: string[];
+  geprueftVon?: string;
+}
+
+export interface VertretungRecord extends StoredRecord {
+  benutzer: string;
+  vertreter: string;
+  von: string;
+  bis: string;
 }

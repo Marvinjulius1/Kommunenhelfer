@@ -3,6 +3,7 @@
  *
  *  backoffice → nichts weiter zu tun, der Vorgang erscheint im Backoffice
  *  email      → Benachrichtigung OHNE personenbezogene Daten und OHNE Anhänge
+ *  fitconnect → FIT-Connect-Zustellpunkt (Ende-zu-Ende verschlüsselt, siehe lib/integrations/fitconnect.ts)
  *  webhook    → JSON mit Metadaten + kurzlebigen, signierten Dokument-Links,
  *               signiert mit HMAC-SHA256 (Header X-Signatur)
  */
@@ -13,6 +14,7 @@ import { decryptJson } from "@/lib/crypto";
 import { tx } from "@/lib/i18n";
 import { sendMail } from "@/lib/mail";
 import type { VorgangDaten, VorgangRecord } from "@/lib/records";
+import { fitConnectKonfiguriert, uebermittle } from "@/lib/integrations/fitconnect";
 import { signiere } from "@/lib/signatur";
 
 /** Gültigkeit externer Dokument-Links (Sekunden) */
@@ -23,12 +25,18 @@ export function dokumentLink(basisUrl: string, v: VorgangRecord, dokumentId: str
   return `${basisUrl}/api/dokument/${token}`;
 }
 
-export async function leiteWeiter(tenant: GemeindeConfig, amt: Amt, v: VorgangRecord, basisUrl: string): Promise<boolean> {
+export async function leiteWeiter(tenant: GemeindeConfig, amt: Amt, v: VorgangRecord, basisUrl: string): Promise<boolean | { referenz: string }> {
   const w = amt.weiterleitung ?? { typ: "backoffice" };
   const leistung = tenant.leistungen.find((l) => l.id === v.leistungId);
   const titel = leistung ? tx(leistung.titel, "de") : "Sonstiges Anliegen";
 
   if (w.typ === "backoffice") return true;
+
+  // FIT-Connect: Ende-zu-Ende verschlüsselt an den Zustellpunkt der Behörde
+  if (w.typ === "fitconnect") {
+    if (!fitConnectKonfiguriert()) throw new Error("FIT-Connect-Zugangsdaten fehlen (FIT_CONNECT_CLIENT_ID/SECRET)");
+    return { referenz: await uebermittle(tenant, v, w.destinationId) };
+  }
 
   if (w.typ === "email") {
     await sendMail(tenant, {

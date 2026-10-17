@@ -82,6 +82,7 @@ const amt = z.object({
       z.object({ typ: z.literal("backoffice") }),
       z.object({ typ: z.literal("email"), adresse: z.string().email() }),
       z.object({ typ: z.literal("webhook"), url: z.string().url(), secretEnv: z.string().regex(/^[A-Z0-9_]+$/) }),
+      z.object({ typ: z.literal("fitconnect"), destinationId: z.string().uuid() }),
     ])
     .optional(),
   bearbeitungshinweis: ltext.optional(),

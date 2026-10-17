@@ -105,6 +105,26 @@ function dienste(tenant: GemeindeConfig): Dienst[] {
       url: "/termine",
       label: { de: "Termin buchen", en: "Book appointment" },
     });
+  if (aktiv(tenant, "beteiligung"))
+    d.push({
+      stichworte: ["umfrage", "abstimmen", "abstimmung", "idee", "vorschlag", "verbesserungsvorschlag", "mitmachen", "beteiligung", "buergerbeteiligung", "meinung sagen"],
+      text: {
+        de: "Unter **Mitmachen** können Sie an Umfragen teilnehmen und eigene Ideen für die Stadt einreichen oder unterstützen. Dafür brauchen Sie ein Bürgerkonto – so zählt jede Stimme nur einmal.",
+        en: "Under **Get involved** you can vote in surveys and submit or support ideas.",
+      },
+      url: "/beteiligung",
+      label: { de: "Mitmachen", en: "Get involved" },
+    });
+  if (aktiv(tenant, "ratsinfo") && tenant.ratsinfo)
+    d.push({
+      stichworte: ["stadtrat", "gemeinderat", "ratssitzung", "sitzung", "tagesordnung", "beschluss", "ausschuss", "ratsinformation"],
+      text: {
+        de: "Wann der Rat tagt, die **Tagesordnungen** und die **Beschlüsse** finden Sie unter „Rat und Ausschüsse“. Die Sitzungen sind öffentlich.",
+        en: "Council meetings, agendas and decisions are listed under **Council**.",
+      },
+      url: "/ratsinfo",
+      label: { de: "Rat und Ausschüsse", en: "Council" },
+    });
   if (aktiv(tenant, "lebenslagen"))
     for (const l of tenant.lebenslagen ?? [])
       d.push({

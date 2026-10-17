@@ -60,6 +60,10 @@ export default async function DiensteSeite() {
     ...(an("fundbuero") ? [{ href: "/fundbuero", icon: "search" as const, titel: de ? "Fundbüro" : "Lost and found", text: de ? "Verloren? Hier suchen" : "Lost something? Search here" }] : []),
     { href: "/aktuelles", icon: "megaphone", titel: de ? "Aktuelles" : "News", text: de ? "Sperrungen und Hinweise" : "Closures and notices" },
   ];
+  const mitmachen: Dienst[] = [
+    ...(an("beteiligung") ? [{ href: "/beteiligung", icon: "users" as const, titel: de ? "Mitmachen" : "Get involved", text: de ? "Umfragen und Ideen" : "Surveys and ideas" }] : []),
+    ...(an("ratsinfo") && tenant.ratsinfo ? [{ href: "/ratsinfo", icon: "megaphone" as const, titel: de ? "Rat und Ausschüsse" : "Council", text: de ? "Sitzungen, Tagesordnungen, Beschlüsse" : "Meetings and decisions" }] : []),
+  ];
   const lebenslagen: Dienst[] = an("lebenslagen")
     ? (tenant.lebenslagen ?? []).map((l) => ({ href: `/lebenslagen/${l.id}`, icon: "tasks" as const, titel: tx(l.titel, lang), text: tx(l.kurz, lang) }))
     : [];
@@ -68,6 +72,7 @@ export default async function DiensteSeite() {
     <Page titel={de ? "Alle Dienste" : "All services"} intro={de ? `Was Sie bei der ${tenant.art} ${tenant.name} online erledigen können.` : `What you can do online.`} breit>
       <Gruppe titel={de ? "Erledigen" : "Get things done"} dienste={erledigen} />
       <Gruppe titel={de ? "Im Alltag" : "Everyday"} dienste={alltag} />
+      <Gruppe titel={de ? "Mitmachen" : "Participate"} dienste={mitmachen} />
       <Gruppe titel={de ? "Lebenslagen" : "Life events"} dienste={lebenslagen} />
     </Page>
   );

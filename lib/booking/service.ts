@@ -21,10 +21,11 @@ export async function belegung(tenant: string, amtId: string): Promise<Map<strin
 }
 
 // Buchungen werden nacheinander verarbeitet, damit ein Slot nicht doppelt vergeben wird.
-let kette: Promise<unknown> = Promise.resolve();
+// Prozessweit, damit auch getrennt gebündelte Routen dieselbe Reihenfolge nutzen.
+const g = globalThis as { __buchungsKette?: Promise<unknown> };
 function seriell<T>(fn: () => Promise<T>): Promise<T> {
-  const p = kette.then(fn, fn);
-  kette = p.catch(() => undefined);
+  const p = (g.__buchungsKette ?? Promise.resolve()).then(fn, fn);
+  g.__buchungsKette = p.catch(() => undefined);
   return p;
 }
 

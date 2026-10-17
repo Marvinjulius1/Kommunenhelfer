@@ -11,6 +11,7 @@ import { encryptJson } from "@/lib/crypto";
 import { tx } from "@/lib/i18n";
 import type { DokumentMeta, VorgangRecord } from "@/lib/records";
 import { blobs } from "@/lib/storage/blobs";
+import { zaehle } from "@/lib/statistik";
 import { store } from "@/lib/storage/store";
 import { bereinigeDateiname } from "@/lib/uploads/formate";
 import { pruefeDatei, type UploadFehler } from "@/lib/uploads/service";
@@ -71,6 +72,7 @@ export async function meldeMangel(
     kontoId: opt.kontoId,
     mangel: { kategorie: kat.id, ort: m.ort, lat: m.lat, lng: m.lng, fotoId: dokumente[0]?.id },
   });
+  await zaehle(tenant.slug, "maengel");
   const amt = tenant.aemter.find((a) => a.id === kat.amtId)!;
   return { ok: true, ...r, amt: tx(amt.name, "de") };
 }

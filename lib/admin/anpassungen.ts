@@ -18,7 +18,9 @@ export interface AnpassungRecord extends StoredRecord {
   geaendertVon?: string;
 }
 
-const cache = new Map<string, { zeit: number; daten: AnpassungRecord | undefined }>();
+// Prozessweit, damit ein Speichern den Cache aller Routen leert
+const g = globalThis as { __anpassungsCache?: Map<string, { zeit: number; daten: AnpassungRecord | undefined }> };
+const cache = (g.__anpassungsCache ??= new Map());
 
 export async function ladeAnpassungen(tenant: string): Promise<AnpassungRecord | undefined> {
   const c = cache.get(tenant);

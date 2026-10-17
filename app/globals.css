@@ -406,3 +406,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.55;
 }
 }
+
+/* Diagramm-Farben (Statistik). Validiert gegen die Flächen beider Modi. */
+@layer components {
+  .viz {
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+  }
+  :root[data-theme="dark"] .viz {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .viz {
+      --series-1: #3987e5;
+      --series-2: #d95926;
+    }
+  }
+}

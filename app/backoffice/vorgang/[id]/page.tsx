@@ -5,6 +5,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { auditFuerVorgang, protokolliere } from "@/lib/backoffice/audit";
 import { aktuellerBenutzer, benutzerListe, darfAmt } from "@/lib/backoffice/auth";
+import { aktiveVertretungen } from "@/lib/backoffice/vertretung";
 import { aktiv } from "@/lib/funktionen";
 import { postFuerVorgang, postSicht } from "@/lib/postfach/service";
 import { euro, zahlungenVon } from "@/lib/zahlung/service";
@@ -57,6 +58,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Berlin" });
   const audit = (await auditFuerVorgang(tenant.slug, v.id)).slice(0, 20);
   const post = (await postFuerVorgang(tenant.slug, v.id)).map(postSicht);
+  const abwesend = await aktiveVertretungen(tenant);
   const mangelKat = v.mangel ? tenant.maengel?.kategorien.find((k) => k.id === v.mangel!.kategorie) : undefined;
   const zahlungen = await zahlungenVon((z) => z.tenant === tenant.slug && z.vorgangId === v.id);
   // Relative Links: gültig 5 Minuten, nur mit dieser Sitzung
@@ -78,6 +80,11 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
         </div>
         <span className="rounded-full bg-[var(--line)] px-4 py-1 text-[13px]">{STATUS_LABEL[v.status]}</span>
       </div>
+      {v.weiterleitung?.ok && v.weiterleitung.referenz && (
+        <p className="mt-4 flex items-center gap-2 text-[14px] text-muted">
+          <Icon name="check" className="size-4" /> Per {v.weiterleitung.typ === "fitconnect" ? "FIT-Connect" : v.weiterleitung.typ} übermittelt · Referenz <span className="font-mono">{v.weiterleitung.referenz}</span>
+        </p>
+      )}
       {v.weiterleitung && !v.weiterleitung.ok && (
         <p className="mt-4 flex items-center gap-2 text-[14px] text-danger">
           <Icon name="alert" className="size-4" /> Die automatische Weiterleitung ({v.weiterleitung.typ}) ist fehlgeschlagen. Der Vorgang liegt vollständig hier vor.
@@ -180,7 +187,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
               statusOptionen={VORGANG_STATUS.map((s) => ({ wert: s, label: STATUS_LABEL[s] }))}
               benutzer={benutzerListe()
                 .filter((x) => (x.gemeinde === "*" || x.gemeinde === tenant.slug) && darfAmt(x, v.amtId))
-                .map((x) => x.name)}
+                .map((x) => ({ name: x.name, label: abwesend.has(x.name) ? `${x.name} (abwesend, Vertretung: ${abwesend.get(x.name)})` : x.name }))}
               zugewiesen={v.zugewiesen}
               textbausteine={tenant.textbausteine ?? []}
               zahlungMoeglich={aktiv(tenant, "zahlung")}

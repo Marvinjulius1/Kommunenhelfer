@@ -12,6 +12,7 @@ import { istFeiertag } from "@/lib/feiertage";
 import { tx } from "@/lib/i18n";
 import { benachrichtige } from "@/lib/push/service";
 import type { WarteRecord } from "@/lib/records";
+import { zaehle } from "@/lib/statistik";
 import { inTagen, store } from "@/lib/storage/store";
 
 const TAGE: Wochentag[] = ["so", "mo", "di", "mi", "do", "fr", "sa"];
@@ -106,6 +107,7 @@ export async function zieheNummer(tenant: GemeindeConfig, amt: Amt, kontoId?: st
       loeschenAm: inTagen(2),
     };
     await store().put("wartenummern", r);
+    await zaehle(tenant.slug, "wartemarken");
     return { record: r, token };
   });
 }

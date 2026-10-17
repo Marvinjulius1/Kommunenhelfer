@@ -724,6 +724,45 @@ export default defineGemeinde({
   // -------------------------------------------------------------------------
   // Rückfragen bei mehrdeutigen Anliegen
   // -------------------------------------------------------------------------
+  // Ratsinformationen. Mit `oparlUrl` werden die Sitzungen live aus dem
+  // Ratsinformationssystem geladen; die Einträge hier dienen dann nur als Ersatz.
+  ratsinfo: {
+    sitzungen: [
+      {
+        id: "rat-2026-11",
+        gremium: "Stadtrat",
+        datum: "2026-11-12T18:00:00+01:00",
+        ort: "Rathaus, Ratssaal",
+        tagesordnung: [
+          { titel: "Haushalt 2027 – erste Lesung", kurz: "Wofür die Stadt im nächsten Jahr Geld ausgeben will." },
+          { titel: "Neubau Kita Nordviertel", kurz: "Bau einer Kita mit 75 Plätzen an der Lindenallee." },
+          { titel: "Fragestunde für Einwohnerinnen und Einwohner", kurz: "Sie können Fragen an den Rat stellen." },
+        ],
+      },
+      {
+        id: "bau-2026-11",
+        gremium: "Bau- und Umweltausschuss",
+        datum: "2026-11-03T17:00:00+01:00",
+        ort: "Rathaus, Sitzungszimmer 2.01",
+        tagesordnung: [
+          { titel: "Sanierung Hauptstraße, Bauabschnitt 2", kurz: "Zeitplan und Umleitungen während der Bauarbeiten." },
+          { titel: "Neue Fahrradabstellanlagen am Bahnhof" },
+        ],
+      },
+      {
+        id: "rat-2026-09",
+        gremium: "Stadtrat",
+        datum: "2026-09-24T18:00:00+02:00",
+        ort: "Rathaus, Ratssaal",
+        tagesordnung: [
+          { titel: "Online-Bürgerportal", kurz: "Einführung des digitalen Bürgerservice.", beschluss: "Einstimmig beschlossen." },
+          { titel: "Änderung der Hundesteuersatzung", beschluss: "Mehrheitlich beschlossen (19 Ja, 4 Nein, 2 Enthaltungen)." },
+          { titel: "Spielplatz Stadtpark – Erneuerung der Geräte", beschluss: "Einstimmig beschlossen." },
+        ],
+      },
+    ],
+  },
+
   // Video-Beratung über einen Jitsi-Server in der EU (Beispieladresse)
   videoBeratung: { url: "https://meet.musterstadt.example", aemter: ["standesamt", "steueramt", "ordnungsamt"] },
 

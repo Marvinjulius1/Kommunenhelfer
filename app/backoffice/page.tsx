@@ -4,6 +4,7 @@ import { FilterSelect } from "@/components/backoffice/Aktionen";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { aktuellerBenutzer, darfAmt } from "@/lib/backoffice/auth";
+import { zustaendigFuer } from "@/lib/backoffice/vertretung";
 import { tx } from "@/lib/i18n";
 import { VORGANG_STATUS, type VorgangRecord } from "@/lib/records";
 import { store } from "@/lib/storage/store";
@@ -20,8 +21,10 @@ export default async function Vorgaenge({ searchParams }: { searchParams: Promis
   const { amt = "", status = "", wer = "" } = await searchParams;
 
   const aemter = tenant.aemter.filter((a) => darfAmt(b, a.id));
+  // Eigene Vorgänge plus die von Kolleginnen und Kollegen, die heute vertreten werden
+  const meine = await zustaendigFuer(tenant, b.name);
   const liste = (
-    await store().list<VorgangRecord>("vorgaenge", (v) => v.tenant === tenant.slug && darfAmt(b, v.amtId) && (!amt || v.amtId === amt) && (!status || v.status === status) && (!wer || (wer === "ich" ? v.zugewiesen === b.name : !v.zugewiesen)))
+    await store().list<VorgangRecord>("vorgaenge", (v) => v.tenant === tenant.slug && darfAmt(b, v.amtId) && (!amt || v.amtId === amt) && (!status || v.status === status) && (!wer || (wer === "ich" ? !!v.zugewiesen && meine.includes(v.zugewiesen) : !v.zugewiesen)))
   ).sort((x, y) => y.erstelltAm.localeCompare(x.erstelltAm));
 
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short", timeZone: "Europe/Berlin" });

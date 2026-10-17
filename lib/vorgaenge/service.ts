@@ -66,11 +66,13 @@ export async function erstelleVorgang(v: NeuerVorgang): Promise<{ vorgangsnummer
 
   // Weiterleitung an das Amt – Fehler blockieren den Eingang nicht (Vorgang liegt im Backoffice).
   const amt = v.tenant.aemter.find((a) => a.id === v.amtId)!;
-  const ok = await leiteWeiter(v.tenant, amt, record, v.basisUrl).catch((e) => {
+  const ergebnis = await leiteWeiter(v.tenant, amt, record, v.basisUrl).catch((e) => {
     console.error("[weiterleitung] fehlgeschlagen:", (e as Error).message);
     return false;
   });
-  await store().put("vorgaenge", { ...record, weiterleitung: { typ: amt.weiterleitung?.typ ?? "backoffice", ok, am: new Date().toISOString() } });
+  const ok = ergebnis !== false;
+  const referenz = typeof ergebnis === "object" ? ergebnis.referenz : undefined;
+  await store().put("vorgaenge", { ...record, weiterleitung: { typ: amt.weiterleitung?.typ ?? "backoffice", ok, am: new Date().toISOString(), referenz } });
 
   // Eingangsbestätigung an den Bürger
   if (!v.daten.kontakt.email) return { vorgangsnummer: id, zugangscode: code };
@@ -159,7 +161,7 @@ export async function loescheAbgelaufene(): Promise<number> {
   const safe = await s.purgeExpired<SafeRecord>("safe");
   await Promise.all([...post.flatMap((p) => (p.dokument ? [p.dokument.id] : [])), ...safe.map((x) => x.id)].map((id) => blobs.delete(id)));
   let weitere = 0;
-  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern"]) weitere += (await s.purgeExpired(c)).length;
+  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen"]) weitere += (await s.purgeExpired(c)).length;
   // Konten nach Inaktivität: mit allen zugehörigen Daten entfernen
   const konten = await s.purgeExpired<KontoRecord>("konten");
   for (const k of konten) await entferneKontoDaten(k);

@@ -110,6 +110,17 @@ export default async function DatenschutzSeite() {
         </p>
       </Section>
 
+      <Section titel="Umfragen und Ideen" id="beteiligung">
+        <p>
+          An Umfragen nehmen Sie mit Ihrem Bürgerkonto teil, damit jede Person nur einmal abstimmt. Gespeichert werden nur die Summen der Stimmen und ein nicht umkehrbarer Prüfwert, dass Sie teilgenommen haben – wie Sie
+          abgestimmt haben, lässt sich nicht nachvollziehen.
+        </p>
+        <p>
+          Ideen werden ohne Ihren Namen veröffentlicht, nachdem die Redaktion sie geprüft hat. Über Antworten der Verwaltung informieren wir Sie in Ihrem Postfach. Ideen werden nach zwei Jahren gelöscht, Umfrage-Ergebnisse ein Jahr nach
+          Ende. Rechtsgrundlage: Art. 6 Abs. 1 lit. a und e DSGVO.
+        </p>
+      </Section>
+
       <Section titel="Video-Beratung" id="video">
         <p>
           Video-Termine finden über einen Videodienst auf Servern in der EU statt, den die Verwaltung selbst betreibt oder beauftragt. Jeder Termin hat einen eigenen, nicht erratbaren Raum. Gespräche werden nicht aufgezeichnet. Kamera

@@ -58,7 +58,9 @@ export interface Terminangebot {
 export type Weiterleitung =
   | { typ: "backoffice" }
   | { typ: "email"; adresse: string }
-  | { typ: "webhook"; url: string; /** Name der Umgebungsvariable mit dem Signatur-Geheimnis */ secretEnv: string };
+  | { typ: "webhook"; url: string; /** Name der Umgebungsvariable mit dem Signatur-Geheimnis */ secretEnv: string }
+  /** FIT-Connect-Zustellpunkt der Behörde (Destination-ID aus dem DVDV / Self-Service-Portal) */
+  | { typ: "fitconnect"; destinationId: string };
 
 /** Ein Amt / ein Fachbereich. */
 export interface Amt {

@@ -394,6 +394,31 @@ Jede Aufgabe läuft pro Tag höchstens einmal.
 
 ---
 
+## Mitmachen, Ratsinfo und Verwaltung der Gemeinde
+
+| Bereich | Bürger | Backoffice |
+|---|---|---|
+| **Umfragen** – eine Stimme pro Konto (optional nur mit Online-Ausweis), Stimmen nur als Summen, Teilnahme als HMAC je Umfrage | `/beteiligung` | `/backoffice/beteiligung` (Rolle `redaktion`) |
+| **Ideen** – einreichen, unterstützen, Antwort der Verwaltung; Veröffentlichung erst nach Prüfung, ohne Namen | `/beteiligung` | `/backoffice/beteiligung` |
+| **Rat und Ausschüsse** – Sitzungen, Tagesordnung, Beschlüsse; live per OParl (`ratsinfo.oparlUrl`), sonst aus der Config | `/ratsinfo` | – |
+| **Portal anpassen** – Leistungen ein/aus, Kurztexte, Gebühren, Texte der Startseite; gespeichert wird nur die Abweichung, geprüft wie die Config | – | `/backoffice/admin` (Rolle `admin`) |
+| **Statistik** – nur Tageszähler, keine Personendaten | – | `/backoffice/statistik` (Rolle `admin`) |
+| **Abwesenheit und Vertretung** – die Vertretung sieht die Vorgänge unter „Mir zugewiesen“ | – | `/backoffice/vertretung` |
+
+### FIT-Connect
+
+Ein Amt kann Vorgänge per FIT-Connect an sein Fachverfahren übermitteln:
+
+```ts
+weiterleitung: { typ: "fitconnect", destinationId: "<UUID des Zustellpunkts>" }
+```
+
+Dazu `FIT_CONNECT_CLIENT_ID` und `FIT_CONNECT_CLIENT_SECRET` setzen (Self-Service-Portal der FITKO). Inhalte und Anlagen werden Ende-zu-Ende verschlüsselt (JWE, RSA-OAEP-256 + A256GCM); der Leistungsschlüssel (`leistungsschluessel`) bestimmt den Service-Typ. Der Vorgang bleibt zusätzlich im Portal (Status für Bürger), die Submission-ID steht im Backoffice.
+
+> **Status:** nach der öffentlichen Spezifikation umgesetzt, die Verschlüsselung ist durch einen Test abgesichert – die Übermittlung selbst ist aber **noch nicht gegen die FIT-Connect-Testumgebung geprüft**. Im Echtbetrieb müssen `FIT_CONNECT_TOKEN_URL` und `FIT_CONNECT_SUBMISSION_URL` gesetzt werden.
+
+---
+
 ## Design- und Motion-System
 
 - **Farben:** monoton und kühl. Hell `#F5F7F9` / Text `#1D2228`, Dunkel `#07090B` / Text `#E6E9ED`. Die Akzentfarbe der Gemeinde erscheint **nur in Details** (Fokusring, Primär-Buttons in Abläufen) – nie auf der Startseite.
@@ -528,7 +553,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 - **Backoffice ausbauen:** Termine verwalten, Texte und Wissensbasis pflegen
 - Datenbank-Adapter (PostgreSQL) und Redis-Rate-Limit für mehrere Instanzen
-- BundID-Anmeldung und FIT-Connect-Gateway
+- BundID-Anmeldung (SAML) und FIT-Connect gegen die Testumgebung prüfen
 - Weitere Sprachen inkl. **Leichte Sprache**
 - Daten aus dem Gespräch in Formulare übernehmen (z. B. Hundename)
 - ePayBL-Zugangsdaten des Landes anbinden (Adapter vorhanden)

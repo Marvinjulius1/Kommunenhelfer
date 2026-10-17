@@ -58,8 +58,9 @@ export interface SubmissionGateway {
 }
 
 /**
- * Wählt das Übermittlungsverfahren. Später z. B.:
- *   if (leistung.leistungsschluessel && process.env.FIT_CONNECT_CLIENT_ID) return fitConnectGateway();
+ * Wählt das Übermittlungsverfahren. Der Antrag wird immer zuerst im Portal gespeichert
+ * (Nachvollziehbarkeit, Status für Bürger); die Zustellung an Fachverfahren erfolgt pro Amt
+ * über `weiterleitung` – auch per FIT-Connect (siehe lib/integrations/fitconnect.ts).
  */
 export function gatewayFuer(_leistung: Leistung): SubmissionGateway {
   return localGateway;
