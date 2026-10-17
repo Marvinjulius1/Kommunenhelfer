@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Antwort, Nachricht } from "@/lib/assistant/types";
 import { entwurfId, useUploads } from "@/lib/client/uploads";
-import { untertitel, tx } from "@/lib/i18n";
+import { deutsch, tx, untertitel } from "@/lib/i18n";
 import { einblenden, feder, uebergang } from "@/lib/motion";
 import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
@@ -40,7 +40,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 export function Home() {
   const { tenant, lang, t, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [verlauf, setVerlauf] = useState<Eintrag[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [scan, setScan] = useState(false);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Page } from "@/components/ui/Page";
-import { dict, tx } from "@/lib/i18n";
+import { deutsch, dict, tx } from "@/lib/i18n";
 import { aktiveLeistungen, getLang, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Leistungen A–Z" };
@@ -13,7 +13,7 @@ export default async function LeistungenSeite() {
   const tenant = await getTenant();
   const lang = await getLang(tenant);
   const t = dict(lang);
-  const de = lang === "de";
+  const de = deutsch(lang);
   const liste = aktiveLeistungen(tenant).sort((a, b) => tx(a.titel, lang).localeCompare(tx(b.titel, lang), lang));
   return (
     <Page titel={t.alleLeistungen} intro={de ? "Was möchten Sie erledigen?" : "What would you like to do?"}>

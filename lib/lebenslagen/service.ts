@@ -1,7 +1,7 @@
 /** Lebenslagen: persönliche Checklisten mit Fristen im Bürgerkonto. */
 import "server-only";
 import { randomBytes } from "node:crypto";
-import type { GemeindeConfig, Lebenslage } from "@/config/types";
+import type { GemeindeConfig, Lebenslage, Sprache } from "@/config/types";
 import { decryptJson, encryptJson } from "@/lib/crypto";
 import { plusTage } from "@/lib/feiertage";
 import { tx } from "@/lib/i18n";
@@ -34,7 +34,7 @@ export function schrittLink(tenant: GemeindeConfig, s: Lebenslage["schritte"][nu
   return l.online && l.formular ? `/antrag/${l.id}` : l.termin ? `/termine?leistung=${l.id}` : "/leistungen";
 }
 
-export function schritte(tenant: GemeindeConfig, ll: Lebenslage, stichtag: string | undefined, erledigt: string[], lang: "de" | "en" = "de"): Schrittstand[] {
+export function schritte(tenant: GemeindeConfig, ll: Lebenslage, stichtag: string | undefined, erledigt: string[], lang: Sprache = "de"): Schrittstand[] {
   return ll.schritte.map((s) => ({
     id: s.id,
     titel: tx(s.titel, lang),

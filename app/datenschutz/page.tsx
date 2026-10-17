@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Page, Section } from "@/components/ui/Page";
+import { aktiv } from "@/lib/funktionen";
 import { tx } from "@/lib/i18n";
 import { MANGEL_AUFBEWAHRUNG_TAGE } from "@/lib/maengel/service";
 import { aktiveLeistungen, getTenant } from "@/lib/tenant";
@@ -126,6 +127,18 @@ export default async function DatenschutzSeite() {
           Video-Termine finden über einen Videodienst auf Servern in der EU statt, den die Verwaltung selbst betreibt oder beauftragt. Jeder Termin hat einen eigenen, nicht erratbaren Raum. Gespräche werden nicht aufgezeichnet. Kamera
           und Mikrofon gibt Ihr Browser erst nach Ihrer Zustimmung frei.
         </p>
+      </Section>
+
+      <Section titel="Vorlesen und Spracheingabe" id="sprache">
+        <p>
+          Die Vorlesefunktion nutzt die Sprachausgabe Ihres Geräts. Wir wählen bevorzugt Stimmen, die direkt auf Ihrem Gerät laufen; dann verlässt kein Text Ihr Gerät. Ob Ihr Gerät solche Stimmen anbietet, hängt vom Betriebssystem ab.
+        </p>
+        {aktiv(tenant, "spracheingabe") && (
+          <p>
+            Die Spracheingabe nutzt den Erkennungsdienst Ihres Browsers. In manchen Browsern (z. B. Google Chrome) wird Ihre Sprache dafür an den Hersteller des Browsers übertragen. Wir fragen Sie deshalb vor der ersten Nutzung. Die
+            Verwaltung erhält nur den erkannten Text, keine Tonaufnahme.
+          </p>
+        )}
       </Section>
 
       <Section titel="Online-Bezahlung" id="bezahlung">

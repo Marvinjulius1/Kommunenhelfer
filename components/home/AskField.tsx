@@ -11,8 +11,11 @@ import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
 import { AttachmentTray } from "@/components/upload/AttachmentTray";
 import type { Anhang } from "@/lib/client/uploads";
+import { kannSpracheingabe, useSpracheingabe } from "@/lib/client/sprache";
+import { aktiv } from "@/lib/funktionen";
 import { feder } from "@/lib/motion";
 import { ACCEPT } from "@/lib/uploads/formate";
+import { deutsch, LOCALE } from "@/lib/i18n";
 
 export interface AskFieldHandle {
   focus: () => void;
@@ -37,8 +40,8 @@ interface Props {
 }
 
 export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ onSubmit, disabled, placeholder, size = "hero", describedBy, uploads }, ref) {
-  const { lang, t } = useTenant();
-  const de = lang === "de";
+  const { tenant, lang, t } = useTenant();
+  const de = deutsch(lang);
   const [wert, setWert] = useState("");
   const [menue, setMenue] = useState(false);
   const [kameraGeraet, setKamera] = useState(false);
@@ -47,6 +50,26 @@ export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ on
   const taRef = useRef<HTMLTextAreaElement>(null);
   const dateiRef = useRef<HTMLInputElement>(null);
   const menueRef = useRef<HTMLDivElement>(null);
+
+  // Spracheingabe (nur wenn die Gemeinde sie eingeschaltet hat – siehe lib/client/sprache.ts)
+  const [sprachAn, setSprachAn] = useState(false);
+  useEffect(() => setSprachAn(aktiv(tenant, "spracheingabe") && kannSpracheingabe()), [tenant]);
+  const sprache = useSpracheingabe(LOCALE[lang], setWert);
+  const mikrofon = () => {
+    if (sprache.hoert) return sprache.stopp();
+    try {
+      if (!localStorage.getItem("spracheingabe-ok")) {
+        const ok = window.confirm(
+          de
+            ? "Für die Spracheingabe nutzt Ihr Browser einen Erkennungsdienst. Dabei kann Ihre Sprache an den Hersteller des Browsers (z. B. Google oder Apple) übertragen werden. Möchten Sie fortfahren?"
+            : "Voice input uses your browser's recognition service. Your voice may be sent to the browser vendor (e.g. Google or Apple). Continue?",
+        );
+        if (!ok) return;
+        localStorage.setItem("spracheingabe-ok", "1");
+      }
+    } catch {}
+    sprache.start();
+  };
 
   useImperativeHandle(ref, () => ({ focus: () => taRef.current?.focus({ preventScroll: true }) }));
 
@@ -206,6 +229,18 @@ export const AskField = forwardRef<AskFieldHandle, Props>(function AskField({ on
           } ${hero ? "py-3 text-[17px] sm:text-[19px]" : "py-2 text-[16px]"}`}
           style={{ outline: "none" }}
         />
+        {sprachAn && (
+          <button
+            type="button"
+            onClick={mikrofon}
+            aria-pressed={sprache.hoert}
+            aria-label={sprache.hoert ? (de ? "Spracheingabe beenden" : "Stop voice input") : t.spracheingabe}
+            title={t.spracheingabe}
+            className={`pressable grid shrink-0 place-items-center rounded-full ${sprache.hoert ? "bg-accent text-on-accent" : "text-subtle hover:text-fg"} ${hero ? "size-12" : "size-10"}`}
+          >
+            <Icon name="mic" className="size-5" />
+          </button>
+        )}
         <button
           type="submit"
           aria-label={uploads?.laedt ? (de ? "Senden – bitte warten, Dateien werden hochgeladen" : "Send – please wait, uploading") : t.senden}

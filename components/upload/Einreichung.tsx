@@ -15,7 +15,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { speichereAnliegen } from "@/lib/client/anliegen";
 import { entwurfId } from "@/lib/client/uploads";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { einblenden, gestaffelt, uebergang } from "@/lib/motion";
 import { dokumentarten } from "@/lib/uploads/dokumentarten";
 import { formatGroesse } from "@/lib/uploads/formate";
@@ -41,7 +41,7 @@ interface Props {
 
 export function Einreichung({ daten, vorschauen, nachricht: start, aktiv, ergebnis, onAbgesendet }: Props) {
   const { tenant, lang, t, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [leistungId, setLeistungId] = useState(daten.leistungId ?? "");
   const [amtWahl, setAmtWahl] = useState(daten.amtId);
   const [arten, setArten] = useState<Record<string, string>>(Object.fromEntries(daten.dokumente.map((d) => [d.id, d.art])));

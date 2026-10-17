@@ -5,7 +5,7 @@
  * mit denselben Feld-Definitionen aus der Gemeinde-Konfiguration ausgeführt.
  */
 import type { Feld, Formular, FormularSchritt, Sprache } from "@/config/types";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 
 export type Werte = Record<string, string>;
 export type Fehler = Record<string, string>;
@@ -64,7 +64,7 @@ export function ibanGueltig(raw: string): boolean {
 }
 
 export function validiereFeld(feld: Feld, roh: string | undefined, lang: Sprache = "de"): string | null {
-  const m = MSG[lang] ?? MSG.de;
+  const m = deutsch(lang) ? MSG.de : MSG.en;
   const wert = (roh ?? "").trim();
 
   if (feld.typ === "checkbox") {
@@ -152,11 +152,11 @@ export function validiereFormular(formular: Formular, eingabe: Record<string, un
 /** Anzeige eines Wertes in der Zusammenfassung (Optionen → Label, IBAN maskiert …). */
 export function anzeigeWert(feld: Feld, wert: string | undefined, lang: Sprache = "de"): string {
   if (!wert) return "–";
-  if (feld.typ === "checkbox") return wert === "true" ? (lang === "de" ? "Ja" : "Yes") : (lang === "de" ? "Nein" : "No");
+  if (feld.typ === "checkbox") return wert === "true" ? (deutsch(lang) ? "Ja" : "Yes") : (deutsch(lang) ? "Nein" : "No");
   if (feld.optionen) return tx(feld.optionen.find((o) => o.wert === wert)?.label, lang) || wert;
   if (feld.typ === "date") {
     const [y, mo, d] = wert.split("-");
-    return lang === "de" ? `${d}.${mo}.${y}` : `${d}/${mo}/${y}`;
+    return deutsch(lang) ? `${d}.${mo}.${y}` : `${d}/${mo}/${y}`;
   }
   if (feld.sensibel) {
     const clean = wert.replace(/\s+/g, "");

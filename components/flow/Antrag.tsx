@@ -19,7 +19,7 @@ import { speichereAnliegen } from "@/lib/client/anliegen";
 import { entwurfId, useUploads } from "@/lib/client/uploads";
 import { artLabel } from "@/lib/uploads/pruefung";
 import { einblenden, feder, gestaffelt, schrittwechsel, uebergang } from "@/lib/motion";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { Field } from "./Field";
 import { abgedeckt, Unterlagen, zuordnung } from "./Unterlagen";
 
@@ -30,7 +30,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
   const formular = leistung.formular!;
   const schritte = formular.schritte;
   const reduce = useReducedMotion();
-  const de = lang === "de";
+  const de = deutsch(lang);
   // Unterlagen-Schritt, wenn die Leistung Dokumente vorsieht
   const hatDok = !!leistung.dokumente?.length && tenant.uploads.aktiv;
   const up = useUploads(tenant, lang);
@@ -74,8 +74,11 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
     } catch {}
   }, [werte, entwurfKey, schritte]);
 
-  // Fokus nach Phasenwechsel auf die Überschrift (Screenreader & Tastatur)
+  // Fokus nach Phasenwechsel auf die Überschrift (Screenreader & Tastatur) – nicht beim ersten Laden
+  const letztePhase = useRef(phase);
   useEffect(() => {
+    if (letztePhase.current === phase) return;
+    letztePhase.current = phase;
     headingRef.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   }, [phase, reduce]);
@@ -526,7 +529,7 @@ function Bestaetigung({
   zahlung?: { betragCent: number; url: string };
 }) {
   const { lang, t } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [kopiert, setKopiert] = useState(false);
   return (
     <motion.div variants={gestaffelt(0.08, 0.1)} initial="hidden" animate="show" className="text-center">

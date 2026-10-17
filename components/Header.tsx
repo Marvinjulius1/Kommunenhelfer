@@ -16,11 +16,12 @@ import { feder } from "@/lib/motion";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTenant } from "./TenantProvider";
 import { Icon } from "./ui/Icon";
+import { deutsch } from "@/lib/i18n";
 
 /** Kleiner Zugang zum Bürgerkonto: Person-Icon bzw. Initialen, wenn angemeldet. */
 function KontoKnopf({ className = "" }: { className?: string }) {
   const { konto, lang } = useTenant();
-  const label = konto ? (lang === "de" ? "Mein Konto" : "My account") : lang === "de" ? "Anmelden" : "Sign in";
+  const label = konto ? (deutsch(lang) ? "Mein Konto" : "My account") : deutsch(lang) ? "Anmelden" : "Sign in";
   return (
     <Link href={konto ? "/konto" : "/konto/anmelden"} aria-label={label} title={label} className={`pressable grid size-10 place-items-center rounded-full text-subtle hover:text-fg ${className}`}>
       {konto?.vorname ? (

@@ -6,7 +6,7 @@
 import "server-only";
 import type { GemeindeConfig, Sprache } from "@/config/types";
 import { aktiv } from "@/lib/funktionen";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { enthaeltPhrase, normalisiere, tokens } from "./text";
 import type { Antwort } from "./types";
 
@@ -149,6 +149,6 @@ export function dienstAntwort(tenant: GemeindeConfig, text: string, lang: Sprach
     if (score > 0 && (!beste || score > beste.score)) beste = { d, score };
   }
   if (!beste) return undefined;
-  const l = lang === "de" ? "de" : "en";
+  const l = deutsch(lang) ? "de" : "en";
   return { text: beste.d.text[l], aktionen: [{ typ: "link", url: beste.d.url, label: beste.d.label[l] }], quellen: [], sicher: true, mehrwort: beste.score >= 9 };
 }

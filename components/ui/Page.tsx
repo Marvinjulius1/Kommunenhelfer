@@ -1,9 +1,12 @@
 /** Einheitlicher Rahmen für Inhaltsseiten (Hilfe, Kontakt, Datenschutz …). */
+import { Vorlesen } from "@/components/sprache/Vorlesen";
+
 export function Page({ titel, intro, children, breit }: { titel: string; intro?: string; children: React.ReactNode; breit?: boolean }) {
   return (
     <div className={`mx-auto w-full ${breit ? "max-w-4xl" : "max-w-2xl"} px-4 sm:px-6`}>
       <h1 className="text-[34px] font-semibold tracking-[-0.03em] sm:text-[44px]">{titel}</h1>
       {intro && <p className="mt-3 text-[17px] leading-relaxed text-muted">{intro}</p>}
+      <Vorlesen ziel="#inhalt" className="-ms-3 mt-3" />
       <div className="mt-10">{children}</div>
     </div>
   );

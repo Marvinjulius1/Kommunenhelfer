@@ -4,7 +4,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Page } from "@/components/ui/Page";
-import { dict, tx } from "@/lib/i18n";
+import { deutsch, dict, tx } from "@/lib/i18n";
 import { getLang, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Kontakt" };
@@ -14,7 +14,7 @@ export default async function KontaktSeite() {
   const lang = await getLang(tenant);
   const t = dict(lang);
   const k = tenant.kontakt;
-  const de = lang === "de";
+  const de = deutsch(lang);
   return (
     <Page titel={t.menuKontakt} intro={de ? "Wir sind gern persönlich für Sie da." : "We are happy to help you in person."} breit>
       <div className="grid gap-4 md:grid-cols-2">

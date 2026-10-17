@@ -7,6 +7,7 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { ladeTicket, TICKET_KEY } from "./Wartezeit";
+import { deutsch } from "@/lib/i18n";
 
 interface Position {
   nummer: string;
@@ -20,7 +21,7 @@ interface Position {
 
 export function WarteTicket({ id }: { id: string }) {
   const { lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [p, setP] = useState<Position | null>(null);
   const [fehlt, setFehlt] = useState(false);
   const token = useRef<string | null>(null);

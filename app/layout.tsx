@@ -7,7 +7,8 @@ import { ServiceWorker } from "@/components/ServiceWorker";
 import { TenantProvider } from "@/components/TenantProvider";
 import { ThemeScript } from "@/components/ThemeScript";
 import { onColor } from "@/lib/color";
-import { untertitel } from "@/lib/i18n";
+import { fuerBrowser } from "@/lib/config-browser";
+import { HTML_LANG, rtl, untertitel } from "@/lib/i18n";
 import { getLang, getNonce, getTenant } from "@/lib/tenant";
 import { aktiv } from "@/lib/funktionen";
 import { aktuellesKonto, sicht } from "@/lib/konto/service";
@@ -56,12 +57,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   } as React.CSSProperties;
 
   return (
-    <html lang={lang} style={vars} suppressHydrationWarning>
+    <html lang={HTML_LANG[lang]} dir={rtl(lang) ? "rtl" : "ltr"} style={vars} suppressHydrationWarning>
       <head>
         <ThemeScript nonce={nonce} />
       </head>
       <body className="flex min-h-dvh flex-col">
-        <TenantProvider tenant={tenant} lang={lang} konto={konto}>
+        <TenantProvider tenant={fuerBrowser(tenant, lang)} lang={lang} konto={konto}>
           <Providers>
             <Header />
             <main id="inhalt" tabIndex={-1} className="flex flex-1 flex-col outline-none">

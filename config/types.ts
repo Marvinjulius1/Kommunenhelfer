@@ -9,7 +9,8 @@
  */
 
 /** Unterstützte Oberflächensprachen. Erweiterbar (z. B. "tr", "uk", "ls" für Leichte Sprache). */
-export type Sprache = "de" | "en";
+/** de = Deutsch, ls = Leichte Sprache (Deutsch), en/tr/uk/ar/ru = Übersetzungen (ar: von rechts nach links) */
+export type Sprache = "de" | "en" | "tr" | "uk" | "ar" | "ru" | "ls";
 
 /**
  * Ein übersetzbarer Text. Entweder ein einfacher (deutscher) String

@@ -424,3 +424,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
   }
 }
+
+/* Schrift von rechts nach links: Absätze in anderer Sprache (z. B. deutsche Fachtexte)
+   bestimmen ihre Richtung selbst – Satzzeichen landen so an der richtigen Stelle. */
+@layer components {
+  [dir="rtl"] :is(p, li, dt, dd, h1, h2, h3, label, td, th, summary) {
+    unicode-bidi: plaintext;
+  }
+}

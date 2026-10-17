@@ -12,10 +12,11 @@ import { Icon } from "@/components/ui/Icon";
 import type { SafeDatei } from "@/lib/client/uploads";
 import { formatGroesse } from "@/lib/uploads/formate";
 import { Sheet } from "./Sheet";
+import { deutsch } from "@/lib/i18n";
 
 export function SafeSheet({ offen, onClose, onWahl }: { offen: boolean; onClose: () => void; onWahl: (d: SafeDatei) => void }) {
   const { lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [liste, setListe] = useState<SafeDatei[] | null>(null);
   const [fehler, setFehler] = useState(false);
 

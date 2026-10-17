@@ -16,7 +16,7 @@
 import "server-only";
 import { z } from "zod";
 import type { GemeindeConfig, Leistung, Rueckfrage, Sprache } from "@/config/types";
-import { dict, formatEuro, tx, WOCHENTAGE } from "@/lib/i18n";
+import { deutsch, dict, formatEuro, tx, WOCHENTAGE } from "@/lib/i18n";
 import { aktiveLeistungen, findeLeistung } from "@/lib/tenant";
 import type { Aktion, Antwort, AssistentAnfrage } from "./types";
 import { dienstAntwort } from "./dienste";
@@ -27,6 +27,17 @@ import { redact } from "./redact";
 import { decryptJson } from "@/lib/crypto";
 import { artLabel, fehlendeUnterlagen, zustaendigesAmt } from "@/lib/uploads/pruefung";
 import { uploadsImEntwurf } from "@/lib/uploads/service";
+
+/** Sprache der Antwort des Sprachmodells (Fakten wie Gebühren stammen weiter aus der Konfiguration). */
+const ANTWORTSPRACHE: Record<Sprache, string> = {
+  de: "auf Deutsch",
+  ls: "in Leichter Sprache: sehr kurze Sätze, ein Gedanke pro Satz, einfache Wörter, lange Wörter mit Bindestrich (z. B. Hunde-Steuer), keine Fremdwörter",
+  en: "in English",
+  tr: "auf Türkisch",
+  uk: "auf Ukrainisch",
+  ar: "auf Arabisch",
+  ru: "auf Russisch",
+};
 
 /** Ab hier gilt ein Wissensbasis-Treffer als gesichert (Punktzahl und Anteil gefundener Begriffe). */
 const WISSEN_SCHWELLE = 1.5;
@@ -66,7 +77,9 @@ async function analysiere(tenant: GemeindeConfig, text: string, kontextId?: stri
   // Leistungen bewerten: Mehrwort-Stichworte zählen stärker.
   let beste: { l: Leistung; score: number; woerter: string[] } | undefined;
   for (const l of aktiveLeistungen(tenant)) {
-    const gefunden = [...l.stichworte, tx(l.titel, "de")].filter((s) => enthaeltPhrase(alle, n, s));
+    // Titel in allen Sprachen der Gemeinde zählen als Stichwort (einfache Erkennung auch ohne Sprachmodell)
+    const titel = typeof l.titel === "string" ? [l.titel] : Object.values(l.titel).filter((t): t is string => !!t);
+    const gefunden = [...l.stichworte, ...titel].filter((s) => enthaeltPhrase(alle, n, s));
     // Gleiche Wortstämme nur einmal zählen ("Hund" / "Hunde"); Mehrwort-Treffer zählen stärker.
     const woerter = [...new Map(gefunden.map((w) => [tokens(w, true).sort().join(" "), w])).values()];
     const score = woerter.reduce((s, w) => s + tokens(w, true).length ** 2 * 2 + 1, 0);
@@ -132,11 +145,11 @@ function leistungAntwort(l: Leistung, lang: Sprache): Antwort {
   if (l.beschreibung) teile.push(tx(l.beschreibung, lang));
   const naechster =
     l.online && l.formular
-      ? lang === "de"
+      ? deutsch(lang)
         ? `Sie können das direkt hier online erledigen${l.dauer ? ` – das dauert ${tx(l.dauer, lang)}` : ""}.`
         : `You can do this online right here${l.dauer ? ` – it takes ${tx(l.dauer, lang)}` : ""}.`
       : l.termin
-        ? lang === "de"
+        ? deutsch(lang)
           ? "Dafür ist ein persönlicher Termin nötig. Sie können ihn direkt hier buchen."
           : "This requires an appointment in person. You can book it right here."
         : "";
@@ -152,7 +165,7 @@ function leistungAntwort(l: Leistung, lang: Sprache): Antwort {
 
 function aspektAntwort(l: Leistung, aspekt: Aspekt, lang: Sprache): Antwort {
   const titel = tx(l.titel, lang);
-  const de = lang === "de";
+  const de = deutsch(lang);
   const liste = (xs: string[]) => xs.map((x) => `- ${x}`).join("\n");
   let text: string;
   switch (aspekt) {
@@ -216,7 +229,7 @@ export function weissNicht(tenant: GemeindeConfig, lang: Sprache): Antwort {
   const k = tenant.kontakt;
   const d = dict(lang);
   const text =
-    lang === "de"
+    deutsch(lang)
       ? `Dazu habe ich leider keine gesicherten Informationen. Damit Sie keine falsche Auskunft erhalten, wenden Sie sich bitte direkt an uns${k.telefon ? ` – telefonisch unter ${k.telefon}` : ""}${k.email ? ` oder per E-Mail an ${k.email}` : ""}.\n\nSie können auch einen Termin buchen.`
       : `Unfortunately I have no reliable information on this. To make sure you get correct information, please contact us directly${k.telefon ? ` by phone at ${k.telefon}` : ""}${k.email ? ` or by email at ${k.email}` : ""}.\n\nYou can also book an appointment.`;
   return {
@@ -235,7 +248,7 @@ export function weissNicht(tenant: GemeindeConfig, lang: Sprache): Antwort {
 // ---------------------------------------------------------------------------
 
 function lokaleAntwort(tenant: GemeindeConfig, a: Analyse, lang: Sprache): Antwort {
-  const de = lang === "de";
+  const de = deutsch(lang);
   if (a.smalltalk === "gruss") return { text: tx(tenant.texte.begruessung, lang), aktionen: [], quellen: [], sicher: true };
   if (a.smalltalk === "dank")
     return { text: de ? "Gern geschehen. Kann ich noch etwas für Sie tun?" : "You're welcome. Is there anything else I can do?", aktionen: [], quellen: [], sicher: true };
@@ -338,7 +351,7 @@ function kontextFuerModell(tenant: GemeindeConfig, a: Analyse): string {
 function systemPrompt(tenant: GemeindeConfig, lang: Sprache): string {
   return `Sie sind der digitale Bürgerservice der ${tenant.art} ${tenant.name}. Sie helfen Bürgerinnen und Bürgern, ihr Anliegen zu erledigen.
 
-TON: freundlich, ruhig, kompetent, höflich (Sie-Form), einfache Sprache, kurze Sätze. Keine Emojis. Keine Floskeln. Antworten Sie ${lang === "de" ? "auf Deutsch" : "in English"}.
+TON: freundlich, ruhig, kompetent, höflich (Sie-Form), einfache Sprache, kurze Sätze. Keine Emojis. Keine Floskeln. Antworten Sie ${ANTWORTSPRACHE[lang]}.
 
 STRENGE REGELN:
 1. Antworten Sie AUSSCHLIESSLICH auf Grundlage des KONTEXTS unten. Nutzen Sie kein Allgemeinwissen über Gebühren, Fristen, Zuständigkeiten oder Recht.
@@ -408,7 +421,7 @@ async function modellAntwort(tenant: GemeindeConfig, anfrage: AssistentAnfrage, 
 // ---------------------------------------------------------------------------
 
 async function dokumentAntwort(tenant: GemeindeConfig, a: Analyse, entwurf: string, lang: Sprache): Promise<Antwort> {
-  const de = lang === "de";
+  const de = deutsch(lang);
   const uploads = (await uploadsImEntwurf(tenant, entwurf)).sort((x, y) => x.erstelltAm.localeCompare(y.erstelltAm));
   if (!uploads.length) {
     return {

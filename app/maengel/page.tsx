@@ -7,6 +7,7 @@ import { Page } from "@/components/ui/Page";
 import { aktiv } from "@/lib/funktionen";
 import { oeffentlicheMaengel } from "@/lib/maengel/service";
 import { getLang, getTenant } from "@/lib/tenant";
+import { deutsch } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Mängelmelder" };
 export const dynamic = "force-dynamic";
@@ -17,7 +18,7 @@ export default async function MaengelSeite() {
   const tenant = await getTenant();
   if (!aktiv(tenant, "maengelmelder") || !tenant.maengel) notFound();
   const lang = await getLang(tenant);
-  const de = lang === "de";
+  const de = deutsch(lang);
   const liste = await oeffentlicheMaengel(tenant, lang);
   const offen = liste.filter((m) => m.status !== "erledigt").length;
   return (

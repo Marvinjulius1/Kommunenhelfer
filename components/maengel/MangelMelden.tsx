@@ -14,14 +14,14 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { speichereAnliegen } from "@/lib/client/anliegen";
 import { uploadFehlertext } from "@/lib/client/uploads";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { einblenden } from "@/lib/motion";
 
 type Ergebnis = { vorgangsnummer: string; zugangscode: string; amt: string };
 
 export function MangelMelden() {
   const { tenant, lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const kategorien = tenant.maengel!.kategorien;
   const [kategorie, setKategorie] = useState("");
   const [beschreibung, setBeschreibung] = useState("");

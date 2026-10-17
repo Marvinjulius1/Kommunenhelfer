@@ -8,6 +8,7 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
+import { deutsch } from "@/lib/i18n";
 
 export interface AmtStand {
   amtId: string;
@@ -37,7 +38,7 @@ export function ladeTicket(): Ticket | null {
 
 export function Wartezeit({ start, demo }: { start: AmtStand[]; demo: boolean }) {
   const { lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const router = useRouter();
   const [aemter, setAemter] = useState(start);
   const [ticket, setTicket] = useState<Ticket | null>(null);

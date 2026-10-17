@@ -22,7 +22,8 @@ export function normalisiere(s: string): string {
     .replace(/ö/g, "oe")
     .replace(/ü/g, "ue")
     .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9\s]/g, " ")
+    // Buchstaben aller Schriften behalten (Türkisch, Kyrillisch, Arabisch), Satzzeichen entfernen
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
 }

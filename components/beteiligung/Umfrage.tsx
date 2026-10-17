@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
+import { deutsch } from "@/lib/i18n";
 
 export interface UmfrageDaten {
   id: string;
@@ -24,7 +25,7 @@ export interface UmfrageDaten {
 
 export function Umfrage({ start }: { start: UmfrageDaten }) {
   const { lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [u, setU] = useState(start);
   const [wahl, setWahl] = useState<string[]>([]);
   const [fehler, setFehler] = useState<string | null>(null);

@@ -3,7 +3,7 @@
 /** Ein einzelnes Formularfeld – barrierefrei (Label, Hinweis, Fehler per aria-describedby). */
 import type { Feld } from "@/config/types";
 import { useTenant } from "@/components/TenantProvider";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { Icon } from "@/components/ui/Icon";
 
 interface Props {
@@ -120,7 +120,7 @@ export function Field({ feld, wert, fehler, onChange, onBlur }: Props) {
     control = (
       <select {...gemeinsam} onChange={(e) => onChange(e.target.value)}>
         <option value="" disabled>
-          {lang === "de" ? "Bitte auswählen" : "Please choose"}
+          {deutsch(lang) ? "Bitte auswählen" : "Please choose"}
         </option>
         {feld.optionen.map((o) => (
           <option key={o.wert} value={o.wert}>

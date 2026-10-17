@@ -15,7 +15,7 @@ import { ConsentSheet } from "@/components/upload/ConsentSheet";
 import { SafeSheet } from "@/components/upload/SafeSheet";
 import { ScanSheet } from "@/components/upload/ScanSheet";
 import type { Anhang, useUploads } from "@/lib/client/uploads";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { dokumentarten } from "@/lib/uploads/dokumentarten";
 import { ACCEPT, formatGroesse } from "@/lib/uploads/formate";
 import { artLabel } from "@/lib/uploads/pruefung";
@@ -51,7 +51,7 @@ export function abgedeckt(arten: string[]): Set<string> {
 
 export function Unterlagen({ leistung, up, manuell, setManuell, fehlerAnzeigen }: { leistung: Leistung; up: Uploads; manuell: Record<string, string>; setManuell: (m: Record<string, string>) => void; fehlerAnzeigen: boolean }) {
   const { tenant, lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [scan, setScan] = useState(false);
   const [safe, setSafe] = useState(false);
   const gefragt = leistung.dokumente ?? [];

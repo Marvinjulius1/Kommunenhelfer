@@ -5,10 +5,11 @@ import { useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
 import { pushAbonnieren } from "@/lib/client/push";
+import { deutsch } from "@/lib/i18n";
 
 export function MeldungenAbo({ ortsteil }: { ortsteil?: string }) {
   const { lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [status, setStatus] = useState<string | null>(null);
   const [aktiv, setAktiv] = useState(false);
 

@@ -34,7 +34,13 @@ export function anwenden(basis: GemeindeConfig, a: AnpassungRecord | undefined):
   if (!a) return basis;
   return {
     ...basis,
-    texte: { ...basis.texte, ...(a.texte ?? {}) },
+    // Geänderte Texte ersetzen nur die deutsche Fassung – Übersetzungen bleiben erhalten
+    texte: Object.fromEntries(
+      Object.entries({ ...basis.texte, ...(a.texte ?? {}) }).map(([k, v]) => {
+        const alt = basis.texte[k as keyof typeof basis.texte];
+        return [k, typeof v === "string" && alt && typeof alt === "object" ? { ...alt, de: v } : v];
+      }),
+    ) as GemeindeConfig["texte"],
     leistungen: basis.leistungen.map((l) => (a.leistungen[l.id] ? { ...l, ...a.leistungen[l.id] } : l)),
   };
 }

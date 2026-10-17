@@ -5,7 +5,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Page } from "@/components/ui/Page";
 import { aktiv } from "@/lib/funktionen";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { getLang, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Lebenslagen" };
@@ -14,7 +14,7 @@ export default async function LebenslagenSeite() {
   const tenant = await getTenant();
   if (!aktiv(tenant, "lebenslagen") || !tenant.lebenslagen?.length) notFound();
   const lang = await getLang(tenant);
-  const de = lang === "de";
+  const de = deutsch(lang);
   return (
     <Page titel={de ? "Lebenslagen" : "Life events"} intro={de ? "Alles, was zu tun ist – über alle Ämter hinweg, in der richtigen Reihenfolge und mit Fristen." : "Everything you need to do – across all offices, in the right order, with deadlines."}>
       <ul className="space-y-3">

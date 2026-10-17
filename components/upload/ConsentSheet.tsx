@@ -6,10 +6,11 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { Sheet } from "./Sheet";
+import { deutsch } from "@/lib/i18n";
 
 export function ConsentSheet({ offen, onJa, onNein }: { offen: boolean; onJa: () => void; onNein: () => void }) {
   const { tenant, lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   return (
     <Sheet offen={offen} onClose={onNein} titel={de ? "Hinweis zum Datenschutz" : "Privacy notice"}>
       <div className="mb-4 grid size-10 place-items-center rounded-full bg-[var(--line)] text-muted">

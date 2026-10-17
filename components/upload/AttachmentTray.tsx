@@ -7,6 +7,7 @@ import { Icon } from "@/components/ui/Icon";
 import type { Anhang } from "@/lib/client/uploads";
 import { feder } from "@/lib/motion";
 import { FORMATE, formatGroesse } from "@/lib/uploads/formate";
+import { deutsch } from "@/lib/i18n";
 
 export function Vorschau({ src, typ, className = "size-12" }: { src?: string; typ?: string | null; className?: string }) {
   if (src)
@@ -24,7 +25,7 @@ export function Vorschau({ src, typ, className = "size-12" }: { src?: string; ty
 
 export function AttachmentTray({ anhaenge, onEntfernen, onErneut }: { anhaenge: Anhang[]; onEntfernen: (id: string) => void; onErneut: (id: string) => void }) {
   const { lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   if (!anhaenge.length) return null;
   return (
     <ul className="flex gap-2 overflow-x-auto px-2 pb-2 pt-2 [scrollbar-width:none]" aria-label={de ? "Angehängte Dateien" : "Attached files"}>

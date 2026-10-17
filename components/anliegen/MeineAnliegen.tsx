@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/Icon";
 import { UnterlagenCheck } from "./UnterlagenCheck";
 import { entferneAnliegen, ladeAnliegen, type LokalesAnliegen } from "@/lib/client/anliegen";
 import { einblenden, gestaffelt } from "@/lib/motion";
+import { deutsch } from "@/lib/i18n";
 
 interface Status {
   id: string;
@@ -40,7 +41,7 @@ const LABEL: Record<string, { de: string; en: string }> = {
 
 export function MeineAnliegen() {
   const { lang, t, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [lokal, setLokal] = useState<LokalesAnliegen[] | null>(null);
   const [status, setStatus] = useState<Record<string, Status>>({});
   const [laedt, setLaedt] = useState(false);
@@ -144,7 +145,7 @@ export function MeineAnliegen() {
                       st === "erledigt" || st === "gebucht" ? "bg-[color-mix(in_srgb,var(--success)_14%,transparent)] text-success" : "bg-[var(--line)] text-fg"
                     }`}
                   >
-                    {LABEL[st]?.[lang] ?? st}
+                    {LABEL[st]?.[deutsch(lang) ? "de" : "en"] ?? st}
                   </span>
                 )}
               </div>
@@ -154,7 +155,7 @@ export function MeineAnliegen() {
                   {STUFEN.map((x, i) => (
                     <li key={x} className="text-[12px] text-subtle" aria-current={i === stufe ? "step" : undefined}>
                       <div className={`mb-2 h-1 rounded-full ${i <= stufe ? "bg-fg/70" : "bg-[var(--line)]"}`} />
-                      <span className={i <= stufe ? "text-fg" : ""}>{LABEL[x][lang]}</span>
+                      <span className={i <= stufe ? "text-fg" : ""}>{LABEL[x][deutsch(lang) ? "de" : "en"]}</span>
                     </li>
                   ))}
                 </ol>
@@ -249,7 +250,7 @@ function Nachrichten({
   onGesendet: () => void;
 }) {
   const { lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [text, setText] = useState("");
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);

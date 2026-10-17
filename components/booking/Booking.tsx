@@ -14,7 +14,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { speichereAnliegen } from "@/lib/client/anliegen";
 import { einblenden, feder, gestaffelt } from "@/lib/motion";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { Calendar } from "./Calendar";
 
 interface Slot {
@@ -31,7 +31,7 @@ interface Auswahl {
 
 export function Booking({ vorauswahl }: { vorauswahl?: string }) {
   const { tenant, lang, t, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
 
   const gruppen = useMemo(
     () =>

@@ -7,6 +7,7 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
+import { deutsch } from "@/lib/i18n";
 
 export interface IdeeDaten {
   id: string;
@@ -24,7 +25,7 @@ export interface IdeeDaten {
 
 export function Ideen({ start, kategorien, ortsteile }: { start: IdeeDaten[]; kategorien: string[]; ortsteile: string[] }) {
   const { lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [liste, setListe] = useState(start);
   const [form, setForm] = useState(false);
   const [titel, setTitel] = useState("");

@@ -6,7 +6,7 @@
  */
 import "server-only";
 import { randomBytes } from "node:crypto";
-import type { GemeindeConfig } from "@/config/types";
+import type { GemeindeConfig, Sprache } from "@/config/types";
 import { encryptJson } from "@/lib/crypto";
 import { tx } from "@/lib/i18n";
 import type { DokumentMeta, VorgangRecord } from "@/lib/records";
@@ -93,7 +93,7 @@ export interface MangelOeffentlich {
 const runde = (x: number | undefined) => (x === undefined ? undefined : Math.round(x * 1000) / 1000);
 
 /** Öffentliche Liste: offene Meldungen und in den letzten 30 Tagen erledigte. */
-export async function oeffentlicheMaengel(tenant: GemeindeConfig, lang: "de" | "en" = "de"): Promise<MangelOeffentlich[]> {
+export async function oeffentlicheMaengel(tenant: GemeindeConfig, lang: Sprache = "de"): Promise<MangelOeffentlich[]> {
   const grenze = new Date(Date.now() - 30 * 86400_000).toISOString();
   const liste = await store().list<VorgangRecord>("vorgaenge", (v) => v.tenant === tenant.slug && v.quelle === "mangel" && !!v.mangel);
   return liste

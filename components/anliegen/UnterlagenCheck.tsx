@@ -3,11 +3,11 @@
 /** Unterlagen-Check vor dem Termin: abhaken, was schon bereitliegt (nur auf diesem Gerät gespeichert). */
 import { useEffect, useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 
 export function UnterlagenCheck({ terminId, leistungId }: { terminId: string; leistungId?: string }) {
   const { tenant, lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const leistung = tenant.leistungen.find((l) => l.id === leistungId);
   const key = `unterlagen-check.${terminId}`;
   const [haken, setHaken] = useState<number[]>([]);

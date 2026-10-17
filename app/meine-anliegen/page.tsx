@@ -3,6 +3,7 @@ import { MeineAnliegen } from "@/components/anliegen/MeineAnliegen";
 import { Page } from "@/components/ui/Page";
 import { aktuellesKonto } from "@/lib/konto/service";
 import { getLang, getTenant } from "@/lib/tenant";
+import { deutsch } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Meine Anliegen" };
 
@@ -10,7 +11,7 @@ export default async function AnliegenSeite() {
   const tenant = await getTenant();
   const lang = await getLang(tenant);
   const konto = await aktuellesKonto(tenant);
-  const de = lang === "de";
+  const de = deutsch(lang);
   return (
     <Page
       titel={de ? "Meine Anliegen" : "My requests"}

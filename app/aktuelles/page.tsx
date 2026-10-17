@@ -7,6 +7,7 @@ import { aktiv } from "@/lib/funktionen";
 import { aktuellesKonto } from "@/lib/konto/service";
 import { aktuelleMeldungen } from "@/lib/meldungen/service";
 import { getLang, getTenant } from "@/lib/tenant";
+import { deutsch } from "@/lib/i18n";
 
 export const metadata: Metadata = { title: "Aktuelles" };
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 export default async function AktuellesSeite({ searchParams }: { searchParams: Promise<{ ortsteil?: string }> }) {
   const tenant = await getTenant();
   const lang = await getLang(tenant);
-  const de = lang === "de";
+  const de = deutsch(lang);
   const k = await aktuellesKonto(tenant);
   const wunsch = (await searchParams).ortsteil;
   const ortsteil = tenant.ortsteile?.includes(wunsch ?? "") ? wunsch : wunsch === "alle" ? undefined : k?.einstellungen.ortsteil;

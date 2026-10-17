@@ -7,10 +7,11 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/upload/Sheet";
 import { speichereAnliegen } from "@/lib/client/anliegen";
+import { deutsch } from "@/lib/i18n";
 
 export function Anspruch({ fundId, bezeichnung }: { fundId: string; bezeichnung: string }) {
   const { lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [offen, setOffen] = useState(false);
   const [merkmale, setMerkmale] = useState("");
   const [name, setName] = useState(konto ? `${konto.vorname} ${konto.nachname}` : "");

@@ -10,10 +10,11 @@ import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { bilderZuPdf } from "@/lib/client/pdf";
 import { Sheet } from "./Sheet";
+import { deutsch } from "@/lib/i18n";
 
 export function ScanSheet({ offen, onClose, onFertig }: { offen: boolean; onClose: () => void; onFertig: (f: File) => void }) {
   const { lang } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [seiten, setSeiten] = useState<{ datei: File; url: string }[]>([]);
   const [arbeitet, setArbeitet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);

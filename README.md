@@ -2,7 +2,20 @@
 
 Ein ruhiges, barrierefreies Online-Rathaus. Bürgerinnen und Bürger beschreiben ihr Anliegen in **einem einzigen Eingabefeld** – oder laden direkt ihre Unterlagen hoch. Ein digitaler Assistent sortiert vor und führt Schritt für Schritt ans Ziel: Online-Antrag, Unterlagen an das zuständige Amt, Terminbuchung oder die richtige Ansprechperson. Die Ämter bearbeiten alles in einem schlichten Backoffice.
 
+Dazu kommt ein **Bürgerkonto für jede Bürgerin und jeden Bürger**: alle Anliegen auf jedem Gerät, Bescheide digital im Postfach, Gebühren online bezahlen, Dokumentensafe, Online-Ausweis – und Dienste für den Alltag vom Abfallkalender bis zum Mängelmelder.
+
 Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfigurationsdatei** und einen Ordner mit Wissenstexten beschrieben.
+
+### Funktionen auf einen Blick
+
+| Bereich | Funktionen |
+|---|---|
+| **Erledigen** | Assistent mit einem Eingabefeld · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
+| **Bürgerkonto** | Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
+| **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil |
+| **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · Rat und Ausschüsse (OParl) |
+| **Für alle** | 7 Sprachen inkl. Arabisch (von rechts nach links) und **Leichter Sprache** · Vorlesen · optional Spracheingabe · WCAG 2.1 AA |
+| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · Statistik · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
 
 ```
 Startseite → „Ich möchte meinen Hund anmelden“ → Unterlagen, Gebühren, Ablauf → Online-Antrag → Bestätigung → Meine Anliegen
@@ -19,14 +32,18 @@ Startseite → Büroklammer / Foto / Drag & Drop → Vorsortierung → Zusammenf
 4. [Der Assistent](#der-assistent)
 5. [Dokumenten-Upload](#dokumenten-upload)
 6. [Backoffice](#backoffice)
-7. [Design- und Motion-System](#design--und-motion-system)
-8. [Betrieb, Multi-Tenant und Hosting](#betrieb-multi-tenant-und-hosting)
-9. [PWA und native Apps (Capacitor)](#pwa-und-native-apps-capacitor)
-10. [Barrierefreiheit](#barrierefreiheit-wcag-21-aa--bitv-20)
-11. [Datenschutz und Sicherheit](#datenschutz-und-sicherheit)
-12. [Schnittstellen: BundID, FIT-Connect, XÖV](#schnittstellen-bundid-fit-connect-xöv)
-13. [Tests und Qualität](#tests-und-qualität)
-14. [Roadmap](#roadmap)
+7. [Bürgerkonto](#bürgerkonto)
+8. [Dienste für den Alltag](#dienste-für-den-alltag)
+9. [Mitmachen, Ratsinfo und Verwaltung der Gemeinde](#mitmachen-ratsinfo-und-verwaltung-der-gemeinde)
+10. [Sprachen, Leichte Sprache, Vorlesen](#sprachen-leichte-sprache-vorlesen)
+11. [Design- und Motion-System](#design--und-motion-system)
+12. [Betrieb, Multi-Tenant und Hosting](#betrieb-multi-tenant-und-hosting)
+13. [PWA und native Apps (Capacitor)](#pwa-und-native-apps-capacitor)
+14. [Barrierefreiheit](#barrierefreiheit-wcag-21-aa--bitv-20)
+15. [Datenschutz und Sicherheit](#datenschutz-und-sicherheit)
+16. [Schnittstellen: BundID, FIT-Connect, XÖV](#schnittstellen-bundid-fit-connect-xöv)
+17. [Tests und Qualität](#tests-und-qualität)
+18. [Roadmap](#roadmap)
 
 ---
 
@@ -419,6 +436,26 @@ Dazu `FIT_CONNECT_CLIENT_ID` und `FIT_CONNECT_CLIENT_SECRET` setzen (Self-Servic
 
 ---
 
+## Sprachen, Leichte Sprache, Vorlesen
+
+**Sprachen:** Deutsch, Leichte Sprache, Englisch, Türkisch, Ukrainisch, Arabisch, Russisch – auswählbar unten auf jeder Seite (`sprachen` in der Config). Arabisch wird von rechts nach links dargestellt (`dir="rtl"`, gespiegelte Pfeile, Absätze in anderer Sprache bestimmen ihre Richtung selbst).
+
+- Übersetzbare Texte sind `LText`: `{ de, ls?, en?, tr?, uk?, ar?, ru? }`. Fehlt eine Übersetzung, gilt: **Leichte Sprache → Deutsch**, **andere Sprachen → Englisch → Deutsch**.
+- Die Oberfläche (Menüs, Knöpfe, Hinweise) ist in allen sieben Sprachen übersetzt (`lib/i18n.ts`); viele Seitentexte gibt es auf Deutsch und Englisch. Inhalte der Gemeinde (Leistungen, Gebühren, Abläufe) erscheinen in der Sprache, in der sie gepflegt sind – Beispiel: `tenants/musterstadt/uebersetzungen.ts` (Titel aller Leistungen in allen Sprachen, wichtige Kurztexte in Leichter Sprache).
+- Bei Übersetzungen steht unten der Hinweis, dass nur die deutsche Fassung verbindlich ist.
+- **Assistent:** Ohne Sprachmodell erkennt er Anliegen auch an den übersetzten Titeln (z. B. „köpek kaydı“ → Hund anmelden), antwortet in anderen Sprachen aber auf Englisch. Mit Sprachmodell antwortet er in der gewählten Sprache – in Leichter Sprache mit kurzen Sätzen.
+- Der Browser erhält nur die gewählte Sprache (`lib/config-browser.ts`) – das hält die Seiten klein.
+
+> **Vor dem Livegang:** Übersetzungen fachlich prüfen lassen; Texte in Leichter Sprache von einer Prüfgruppe (Menschen mit Lernschwierigkeiten) prüfen lassen.
+
+**Leichte Sprache und Gebärdensprache (BITV 2.0 § 4):** `/leichte-sprache` erklärt Inhalte, Bedienung, Barrierefreiheit und Kontakt in Leichter Sprache und ist von jeder Seite verlinkt. Die ebenfalls vorgeschriebenen **Videos in Deutscher Gebärdensprache** muss die Gemeinde erstellen lassen; sie werden auf einer Seite `/gebaerdensprache` eingebunden.
+
+**Vorlesen:** Knopf auf allen Inhaltsseiten und unter jeder Antwort des Assistenten. Genutzt wird die Sprachausgabe des Geräts, bevorzugt Stimmen, die lokal laufen – dann verlässt kein Text das Gerät. Abschaltbar mit `funktionen.vorlesen: false`.
+
+**Spracheingabe:** Mikrofon im Eingabefeld, **standardmäßig aus** (`funktionen.spracheingabe: true` zum Einschalten). Die Erkennung übernimmt der Browser; in Chrome wird das Audio dafür an Google übertragen. Deshalb fragt das Portal vor der ersten Nutzung, und die Gemeinde muss die Funktion bewusst freigeben (Datenschutzhinweis erscheint dann automatisch).
+
+---
+
 ## Design- und Motion-System
 
 - **Farben:** monoton und kühl. Hell `#F5F7F9` / Text `#1D2228`, Dunkel `#07090B` / Text `#E6E9ED`. Die Akzentfarbe der Gemeinde erscheint **nur in Details** (Fokusring, Primär-Buttons in Abläufen) – nie auf der Startseite.
@@ -543,20 +580,19 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Tests und Qualität
 
-- `npm test` – Vitest: Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung (E-Mail ohne Daten, signierter Webhook, Fehlerfall), Löschkonzept, Config-Validierung, Signaturen, Formularregeln
+- `npm test` – 74 Tests (Vitest): Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
 - `npm run assistent:check` – 29 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
-- Lighthouse (Mobil): Startseite Performance 100, Barrierefreiheit 100, Best Practices 100, SEO 100
+- `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
+- Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100
 
 ---
 
 ## Roadmap
 
-- **Backoffice ausbauen:** Termine verwalten, Texte und Wissensbasis pflegen
-- Datenbank-Adapter (PostgreSQL) und Redis-Rate-Limit für mehrere Instanzen
-- BundID-Anmeldung (SAML) und FIT-Connect gegen die Testumgebung prüfen
-- Weitere Sprachen inkl. **Leichte Sprache**
+- **Für den Echtbetrieb anbinden:** BundID (SAML) statt Test-Identität, ePayBL-Zugangsdaten des Landes, FIT-Connect gegen die Testumgebung prüfen, ClamAV, SMTP
+- Datenbank-Adapter (PostgreSQL), S3-Objektspeicher in der EU und Redis-Rate-Limit für mehrere Instanzen
+- Backoffice: Termine verwalten, Wissensbasis pflegen
+- Übersetzungen der Seitentexte und Leistungsinhalte in alle Sprachen; Gebärdensprach-Videos
 - Daten aus dem Gespräch in Formulare übernehmen (z. B. Hundename)
-- ePayBL-Zugangsdaten des Landes anbinden (Adapter vorhanden)
-- Status-Benachrichtigung per E-Mail bei Änderungen
 - Texterkennung (OCR) für fotografierte Dokumente auf eigenem Server, um die Erkennung der Dokumentart zu verbessern
 - Fortsetzbare Uploads in Teilen (tus-Protokoll) für sehr große Dateien

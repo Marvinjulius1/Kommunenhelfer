@@ -14,7 +14,7 @@ import { abfuhren, findeBezirk, sucheStrasse, type Abfuhr } from "@/lib/abfall/k
 import { plusTage } from "@/lib/feiertage";
 import { pushAbonnieren } from "@/lib/client/push";
 import { aktiv } from "@/lib/funktionen";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { einblenden, gestaffelt } from "@/lib/motion";
 
 const MERKER = "abfall-bezirk.v1";
@@ -23,7 +23,7 @@ const FARBE: Record<string, string> = { rest: "#6b7280", bio: "#8a5a2b", papier:
 
 export function AbfallKalender({ start }: { start: { bezirk?: string; erinnerung: boolean } | null }) {
   const { tenant, lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const cfg = tenant.abfall!;
   const listId = useId();
   const [eingabe, setEingabe] = useState("");

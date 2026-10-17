@@ -13,8 +13,11 @@ import type { GemeindeConfig } from "./types";
 import { contrast } from "@/lib/color";
 import { STANDARD_DOKUMENTARTEN } from "@/lib/uploads/dokumentarten";
 
-const sprache = z.enum(["de", "en"]);
-const ltext = z.union([z.string(), z.object({ de: z.string(), en: z.string().optional() })]);
+const sprache = z.enum(["de", "en", "tr", "uk", "ar", "ru", "ls"]);
+const ltext = z.union([
+  z.string(),
+  z.object({ de: z.string(), en: z.string().optional(), tr: z.string().optional(), uk: z.string().optional(), ar: z.string().optional(), ru: z.string().optional(), ls: z.string().optional() }),
+]);
 const zeit = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Zeit im Format HH:MM");
 const wochenplan = z.partialRecord(z.enum(["mo", "di", "mi", "do", "fr", "sa", "so"]), z.array(z.tuple([zeit, zeit])));
 const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Farbe als #RRGGBB");

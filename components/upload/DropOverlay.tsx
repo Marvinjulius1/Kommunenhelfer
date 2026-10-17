@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
 import { uebergang } from "@/lib/motion";
+import { deutsch } from "@/lib/i18n";
 
 export function DropOverlay({ onDateien, aktiv }: { onDateien: (f: File[]) => void; aktiv: boolean }) {
   const { lang } = useTenant();
@@ -59,7 +60,7 @@ export function DropOverlay({ onDateien, aktiv }: { onDateien: (f: File[]) => vo
         >
           <div className="glass flex flex-col items-center gap-4 rounded-[32px] px-12 py-10 text-center">
             <Icon name="upload" className="size-8 text-muted" />
-            <p className="text-[17px] font-medium">{lang === "de" ? "Dateien hier ablegen" : "Drop files here"}</p>
+            <p className="text-[17px] font-medium">{deutsch(lang) ? "Dateien hier ablegen" : "Drop files here"}</p>
             <p className="text-[13px] text-subtle">PDF, JPG, PNG, HEIC</p>
           </div>
         </motion.div>

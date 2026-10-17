@@ -2,6 +2,8 @@
  * Erlaubte Dateiformate und Erkennung am INHALT (Magic Bytes), nicht an der Endung.
  * Gemeinsam für Browser (Vorprüfung) und Server (verbindlich).
  */
+import type { Sprache } from "@/config/types";
+import { deutsch } from "@/lib/i18n";
 export const FORMATE = {
   "application/pdf": { endung: "pdf", label: "PDF" },
   "image/jpeg": { endung: "jpg", label: "JPG" },
@@ -53,8 +55,8 @@ export function bereinigeDateiname(roh: string, typ: Dateityp): string {
   return `${basis || "Dokument"}.${FORMATE[typ].endung}`;
 }
 
-export function formatGroesse(bytes: number, lang: "de" | "en" = "de"): string {
+export function formatGroesse(bytes: number, lang: Sprache = "de"): string {
   const mb = bytes / (1024 * 1024);
-  const fmt = new Intl.NumberFormat(lang === "de" ? "de-DE" : "en-GB", { maximumFractionDigits: mb < 10 ? 1 : 0 });
+  const fmt = new Intl.NumberFormat(deutsch(lang) ? "de-DE" : "en-GB", { maximumFractionDigits: mb < 10 ? 1 : 0 });
   return mb >= 1 ? `${fmt.format(mb)} MB` : `${fmt.format(Math.max(1, Math.round(bytes / 1024)))} KB`;
 }

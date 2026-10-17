@@ -61,9 +61,12 @@ export type IconName = keyof typeof paths;
 
 const STRICH = 1.5;
 
+/** Richtungs-Symbole werden bei Schrift von rechts nach links (Arabisch) gespiegelt. */
+const RICHTUNG = new Set<string>(["chevronRight", "chevronLeft", "arrowRight", "arrowLeft"]);
+
 export function Icon({ name, className = "size-5" }: { name: IconName; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={STRICH} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className={RICHTUNG.has(name) ? `${className} rtl:-scale-x-100` : className} fill="none" stroke="currentColor" strokeWidth={STRICH} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d={paths[name]} />
     </svg>
   );

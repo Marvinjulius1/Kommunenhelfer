@@ -13,6 +13,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { plusTage } from "@/lib/feiertage";
 import { einblenden, gestaffelt } from "@/lib/motion";
+import { deutsch } from "@/lib/i18n";
 
 interface Schritt {
   id: string;
@@ -42,7 +43,7 @@ export function LebenslageCheckliste({
   gespeichert?: Gespeichert;
 }) {
   const { lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [id, setId] = useState(gespeichert?.id);
   const [stichtag, setStichtag] = useState(gespeichert?.stichtag ?? "");
   const [erledigt, setErledigt] = useState<Set<string>>(new Set(gespeichert?.schritte.filter((s) => s.erledigt).map((s) => s.id)));

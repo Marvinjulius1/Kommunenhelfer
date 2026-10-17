@@ -9,6 +9,7 @@ import { useMemo, useRef, useState } from "react";
 import { useTenant } from "@/components/TenantProvider";
 import { Icon } from "@/components/ui/Icon";
 import { feder } from "@/lib/motion";
+import { deutsch } from "@/lib/i18n";
 
 interface Props {
   verfuegbar: Map<string, number>; // Datum → Anzahl freier Termine
@@ -20,7 +21,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
 
 export function Calendar({ verfuegbar, gewaehlt, onWaehle }: Props) {
   const { lang } = useTenant();
-  const locale = lang === "de" ? "de-DE" : "en-GB";
+  const locale = deutsch(lang) ? "de-DE" : "en-GB";
   const tage = [...verfuegbar.keys()].sort();
   const erster = tage[0] ? new Date(tage[0] + "T12:00:00") : new Date();
   const letzter = tage.at(-1) ? new Date(tage.at(-1)! + "T12:00:00") : new Date();
@@ -69,10 +70,10 @@ export function Calendar({ verfuegbar, gewaehlt, onWaehle }: Props) {
           {new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(monat)}
         </h3>
         <div className="flex gap-1">
-          <button type="button" onClick={() => wechsel(-1)} disabled={!kannZurueck} aria-label={lang === "de" ? "Vorheriger Monat" : "Previous month"} className="grid size-10 place-items-center rounded-full pressable disabled:opacity-30">
+          <button type="button" onClick={() => wechsel(-1)} disabled={!kannZurueck} aria-label={deutsch(lang) ? "Vorheriger Monat" : "Previous month"} className="grid size-10 place-items-center rounded-full pressable disabled:opacity-30">
             <Icon name="chevronLeft" className="size-4" />
           </button>
-          <button type="button" onClick={() => wechsel(1)} disabled={!kannVor} aria-label={lang === "de" ? "Nächster Monat" : "Next month"} className="grid size-10 place-items-center rounded-full pressable disabled:opacity-30">
+          <button type="button" onClick={() => wechsel(1)} disabled={!kannVor} aria-label={deutsch(lang) ? "Nächster Monat" : "Next month"} className="grid size-10 place-items-center rounded-full pressable disabled:opacity-30">
             <Icon name="chevronRight" className="size-4" />
           </button>
         </div>
@@ -117,7 +118,7 @@ export function Calendar({ verfuegbar, gewaehlt, onWaehle }: Props) {
                 data-datum={key}
                 onClick={() => onWaehle(key)}
                 aria-pressed={aktiv}
-                aria-label={`${label}, ${frei} ${lang === "de" ? (frei === 1 ? "freier Termin" : "freie Termine") : "free slots"}`}
+                aria-label={`${label}, ${frei} ${deutsch(lang) ? (frei === 1 ? "freier Termin" : "freie Termine") : "free slots"}`}
                 className={`relative grid aspect-square place-items-center rounded-full text-[15px] font-medium ${
                   aktiv ? "bg-accent text-on-accent" : "text-fg pressable"
                 }`}

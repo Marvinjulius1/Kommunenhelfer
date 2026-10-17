@@ -9,7 +9,9 @@ import { Icon } from "@/components/ui/Icon";
 import { Markdown } from "@/components/ui/Markdown";
 import { Einreichung, type EinreichungErgebnis } from "@/components/upload/Einreichung";
 import { einblenden, gestaffelt } from "@/lib/motion";
+import { Vorlesen } from "@/components/sprache/Vorlesen";
 import { LeistungDetails } from "./LeistungDetails";
+import { deutsch } from "@/lib/i18n";
 
 interface Props {
   antwort: Antwort;
@@ -30,6 +32,7 @@ export function AnswerBlock({ antwort, onOption, aktiv, vorschauen, nachricht, e
     <motion.article variants={gestaffelt(0.06)} initial="hidden" animate="show" className="space-y-4">
       <motion.div variants={einblenden}>
         <Markdown text={antwort.text} className="text-[17px] leading-[1.6] text-fg" />
+        <Vorlesen text={antwort.text} className="-ms-3 mt-1" />
       </motion.div>
 
       {leistung && (
@@ -116,7 +119,7 @@ export function Denkt() {
   const { lang } = useTenant();
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} role="status">
-      <span className="sr-only">{lang === "de" ? "Antwort wird erstellt" : "Preparing answer"}</span>
+      <span className="sr-only">{deutsch(lang) ? "Antwort wird erstellt" : "Preparing answer"}</span>
       <div className="denkt flex h-6 items-center gap-1.5" aria-hidden="true">
         <span />
         <span />

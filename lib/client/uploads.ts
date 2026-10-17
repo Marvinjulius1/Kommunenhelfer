@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { GemeindeConfig, Sprache } from "@/config/types";
 import { formatGroesse, typAusDatei, type Dateityp } from "@/lib/uploads/formate";
+import { deutsch } from "@/lib/i18n";
 
 export type AnhangStatus = "laedt" | "fertig" | "fehler";
 
@@ -68,7 +69,7 @@ async function hashDatei(f: File): Promise<string> {
 /** Ruhige, verständliche Fehlertexte – nie technisch. */
 export function uploadFehlertext(code: string, tenant: GemeindeConfig, lang: Sprache): string {
   const u = tenant.uploads;
-  const de = lang === "de";
+  const de = deutsch(lang);
   const t: Record<string, [string, string]> = {
     zu_gross: [`Das Dokument ist zu groß. Maximal ${u.maxDateiMB} MB pro Datei.`, `The document is too large. Maximum ${u.maxDateiMB} MB per file.`],
     gesamt_zu_gross: [`Zusammen dürfen die Dateien höchstens ${u.maxGesamtMB} MB groß sein.`, `Together the files may be at most ${u.maxGesamtMB} MB.`],

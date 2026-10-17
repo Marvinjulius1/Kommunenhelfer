@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Page } from "@/components/ui/Page";
 import { aktiv } from "@/lib/funktionen";
-import { tx } from "@/lib/i18n";
+import { deutsch, tx } from "@/lib/i18n";
 import { getLang, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Alle Dienste" };
@@ -43,7 +43,7 @@ function Gruppe({ titel, dienste }: { titel: string; dienste: Dienst[] }) {
 export default async function DiensteSeite() {
   const tenant = await getTenant();
   const lang = await getLang(tenant);
-  const de = lang === "de";
+  const de = deutsch(lang);
   const an = (f: Parameters<typeof aktiv>[1]) => aktiv(tenant, f);
 
   const erledigen: Dienst[] = [

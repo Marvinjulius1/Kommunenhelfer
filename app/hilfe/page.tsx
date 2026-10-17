@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Page, Section } from "@/components/ui/Page";
-import { dict, tx } from "@/lib/i18n";
+import { deutsch, dict, tx } from "@/lib/i18n";
 import { getLang, getTenant } from "@/lib/tenant";
 
 export const metadata: Metadata = { title: "Hilfe" };
@@ -12,7 +12,7 @@ export default async function HilfeSeite() {
   const tenant = await getTenant();
   const lang = await getLang(tenant);
   const t = dict(lang);
-  const de = lang === "de";
+  const de = deutsch(lang);
   return (
     <Page titel={t.menuHilfe} intro={de ? "Antworten auf häufige Fragen und wie dieses Portal funktioniert." : "Answers to common questions and how this portal works."}>
       {tenant.faq.length > 0 && (

@@ -7,12 +7,13 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
+import { deutsch } from "@/lib/i18n";
 
 type Ergebnis = { status: "unbekannt" | "in_produktion" | "abholbereit" | "abgeholt"; text: string };
 
 export function AusweisStatus() {
   const { lang, konto } = useTenant();
-  const de = lang === "de";
+  const de = deutsch(lang);
   const [nummer, setNummer] = useState("");
   const [ergebnis, setErgebnis] = useState<Ergebnis | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);

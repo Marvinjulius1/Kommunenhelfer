@@ -14,6 +14,7 @@ import { defineGemeinde } from "@/config/define";
 
 import { erreichbarkeit, kontaktSchritt, ORT, person, PLZ } from "./bausteine";
 import { weitereLeistungen } from "./leistungen";
+import { TEXTE, uebersetze } from "./uebersetzungen";
 
 // ---------------------------------------------------------------------------
 // Konfiguration
@@ -28,17 +29,10 @@ export default defineGemeinde({
   akzentfarbe: "#1A5FB4",
   akzentfarbeDunkel: "#7DB3F0",
 
-  sprachen: ["de", "en"],
+  sprachen: ["de", "ls", "en", "tr", "uk", "ar", "ru"],
   standardSprache: "de",
 
-  texte: {
-    untertitel: { de: "Bürgerservice online", en: "Online citizen services" },
-    platzhalter: { de: "Wie kann ich Ihnen helfen?", en: "How can I help you?" },
-    begruessung: {
-      de: "Guten Tag. Beschreiben Sie Ihr Anliegen in einem Satz – ich zeige Ihnen den Weg.",
-      en: "Hello. Describe your request in one sentence – I will show you the way.",
-    },
-  },
+  texte: TEXTE,
 
   kontakt: {
     bezeichnung: "Stadtverwaltung Musterstadt – Bürgerbüro",
@@ -189,7 +183,7 @@ export default defineGemeinde({
   // -------------------------------------------------------------------------
   // Leistungen
   // -------------------------------------------------------------------------
-  leistungen: [
+  leistungen: uebersetze([
     {
       id: "hund-anmelden",
       aktiv: true,
@@ -719,7 +713,7 @@ export default defineGemeinde({
       externerLink: { label: "Online beim Bundesamt für Justiz", url: "https://www.fuehrungszeugnis.bund.de" },
     },
     ...weitereLeistungen,
-  ],
+  ]),
 
   // -------------------------------------------------------------------------
   // Rückfragen bei mehrdeutigen Anliegen
