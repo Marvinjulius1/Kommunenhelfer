@@ -7,6 +7,9 @@ import { aktuellerBenutzer } from "@/lib/backoffice/auth";
 import { getTenant } from "@/lib/tenant";
 
 const VERWALTUNG: [string, string][] = [
+  ["/backoffice/kita", "Kita-Plätze"],
+  ["/backoffice/veranstaltungen", "Veranstaltungen & Ehrenamt"],
+  ["/backoffice/parken", "Verwarnungsgeld"],
   ["/backoffice/bericht", "Wirkungsbericht"],
   ["/backoffice/statistik", "Statistik"],
   ["/backoffice/formulare", "Formulare"],

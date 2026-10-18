@@ -40,7 +40,7 @@ function dienste(tenant: GemeindeConfig): Dienst[] {
       label: { de: "Zum Abfallkalender", en: "Open waste calendar" },
     });
   d.push({
-    stichworte: ["strassensperrung", "sperrung", "gesperrt", "umleitung", "baustelle", "stoerung", "aktuelles", "neuigkeiten", "wasserrohrbruch"],
+    stichworte: ["strassensperrung", "sperrung", "gesperrt", "umleitung", "baustelle", "stoerung", "aktuelles", "neuigkeiten", "wasserrohrbruch", "warnung", "unwetter", "hochwasser", "stromausfall"],
     text: { de: "Aktuelle Sperrungen, Störungen und Hinweise der Verwaltung finden Sie unter **Aktuelles**.", en: "Current closures and notices are listed under **News**." },
     url: "/aktuelles",
     label: { de: "Aktuelles ansehen", en: "View news" },
@@ -136,6 +136,62 @@ function dienste(tenant: GemeindeConfig): Dienst[] {
         url: `/lebenslagen/${l.id}`,
         label: { de: "Zur Checkliste", en: "Open checklist" },
       });
+  if (aktiv(tenant, "kita") && tenant.kitas?.length)
+    d.push({
+      stichworte: ["kitaplatz", "kita platz", "krippenplatz", "kindergartenplatz", "warteliste kita", "kita warteliste", "wunsch kita", "betreuungsplatz"],
+      text: { de: "In der **Kita-Platz-Börse** wählen Sie bis zu drei Wunsch-Kitas, sehen Ihren Platz auf der Warteliste und sagen ein Angebot mit einem Klick zu.", en: "In the **childcare exchange** you choose up to three day-care centres and see your place on the waiting list." },
+      url: "/kita",
+      label: { de: "Zur Kita-Platz-Börse", en: "Find a childcare place" },
+    });
+  if (aktiv(tenant, "parken"))
+    d.push({
+      stichworte: ["knoellchen", "strafzettel", "verwarnungsgeld", "verwarnung", "falschparken", "parkverstoss", "bussgeld parken", "zettel windschutzscheibe"],
+      text: { de: "Ein **Verwarnungsgeld** sehen Sie mit Aktenzeichen und Kennzeichen nach. Sie können es direkt online bezahlen oder Stellung nehmen.", en: "Look up a **parking fine** with the reference and number plate, pay online or respond." },
+      url: "/parken",
+      label: { de: "Verwarnungsgeld ansehen", en: "View parking fine" },
+    });
+  if (aktiv(tenant, "friedhof") && tenant.friedhoefe?.length)
+    d.push({
+      stichworte: ["friedhof", "friedhoefe", "grabart", "grabarten", "ruhezeit", "urnengrab", "baumbestattung", "grabgebuehr"],
+      text: { de: "Grabarten, Ruhezeiten und Gebühren finden Sie auf der Seite **Friedhöfe**. Dort können Sie auch das Nutzungsrecht einer Grabstelle online verlängern.", en: "Grave types, rest periods and fees are on the **cemeteries** page." },
+      url: "/friedhof",
+      label: { de: "Zu den Friedhöfen", en: "Cemeteries" },
+    });
+  if (aktiv(tenant, "karte") && tenant.karte)
+    d.push({
+      stichworte: ["stadtkarte", "defibrillator", "defi", "oeffentliche toilette", "toilette", "wertstoffhof wo", "ladesaeule", "spielplatz in der naehe"],
+      text: { de: "Auf der **Stadtkarte** finden Sie Wertstoffhof, Defibrillatoren, Toiletten, Spielplätze, Ladesäulen und aktuelle Baustellen.", en: "The **town map** shows recycling centre, defibrillators, toilets, playgrounds and roadworks." },
+      url: "/karte",
+      label: { de: "Stadtkarte öffnen", en: "Open map" },
+    });
+  if (aktiv(tenant, "veranstaltungen"))
+    d.push({
+      stichworte: ["veranstaltung", "veranstaltungen", "ferienprogramm", "was ist los", "stadtfest", "weihnachtsmarkt", "veranstaltungskalender", "kurs anmelden", "stadtfuehrung"],
+      text: { de: "Alle **Veranstaltungen** – Feste, Kurse, Führungen und das Ferienprogramm – finden Sie im Veranstaltungskalender, oft mit Anmeldung direkt im Portal.", en: "All **events** – festivals, courses, tours and the holiday programme." },
+      url: "/veranstaltungen",
+      label: { de: "Veranstaltungen ansehen", en: "View events" },
+    });
+  if (aktiv(tenant, "veranstaltungen") && tenant.vereine?.length)
+    d.push({
+      stichworte: ["verein", "vereine", "sportverein", "vereinsverzeichnis", "musikverein"],
+      text: { de: "Im **Vereinsverzeichnis** finden Sie alle Vereine und können sie direkt anschreiben.", en: "The **club directory** lists all clubs." },
+      url: "/vereine",
+      label: { de: "Zu den Vereinen", en: "Clubs" },
+    });
+  if (aktiv(tenant, "ehrenamt"))
+    d.push({
+      stichworte: ["ehrenamt", "ehrenamtlich", "freiwilligenarbeit", "mithelfen", "helfer gesucht", "engagieren"],
+      text: { de: "In der **Ehrenamtsbörse** suchen Vereine, Schulen und die Stadt Unterstützung – von zwei Stunden bis regelmäßig.", en: "The **volunteering exchange** lists where help is needed." },
+      url: "/ehrenamt",
+      label: { de: "Zur Ehrenamtsbörse", en: "Volunteer" },
+    });
+  if (aktiv(tenant, "buergerhaushalt"))
+    d.push({
+      stichworte: ["buergerhaushalt", "beteiligungshaushalt", "buergerbudget", "mitentscheiden"],
+      text: { de: "Beim **Bürgerhaushalt** verteilen Sie ein Budget auf die Projekte, die Ihnen am wichtigsten sind.", en: "In the **participatory budget** you decide which projects get funded." },
+      url: "/buergerhaushalt",
+      label: { de: "Zum Bürgerhaushalt", en: "Participatory budget" },
+    });
   return d;
 }
 

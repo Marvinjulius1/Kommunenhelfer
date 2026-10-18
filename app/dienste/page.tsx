@@ -59,10 +59,20 @@ export default async function DiensteSeite() {
     ...(an("maengelmelder") && tenant.maengel ? [{ href: "/maengel/melden", icon: "pin" as const, titel: de ? "Mangel melden" : "Report an issue", text: de ? "Schlagloch, Laterne, wilder Müll" : "Potholes, street lights, dumping" }] : []),
     ...(an("fundbuero") ? [{ href: "/fundbuero", icon: "search" as const, titel: de ? "Fundbüro" : "Lost and found", text: de ? "Verloren? Hier suchen" : "Lost something? Search here" }] : []),
     { href: "/aktuelles", icon: "megaphone", titel: de ? "Aktuelles" : "News", text: de ? "Sperrungen und Hinweise" : "Closures and notices" },
+    ...(an("karte") && tenant.karte ? [{ href: "/karte", icon: "pin" as const, titel: de ? "Stadtkarte" : "Town map", text: de ? "Wertstoffhof, Defibrillatoren, Baustellen" : "Recycling, defibrillators, roadworks" }] : []),
+    ...(an("parken") ? [{ href: "/parken", icon: "card" as const, titel: de ? "Parken & Verwarnungsgeld" : "Parking & fines", text: de ? "Bezahlen, Stellung nehmen, Parkausweis" : "Pay, respond, parking permit" }] : []),
+    ...(an("friedhof") && tenant.friedhoefe?.length ? [{ href: "/friedhof", icon: "leaf" as const, titel: de ? "Friedhöfe" : "Cemeteries", text: de ? "Grabarten, Gebühren, Nutzungsrecht verlängern" : "Grave types, fees, extensions" }] : []),
+  ];
+  const familie: Dienst[] = [
+    ...(an("kita") && tenant.kitas?.length ? [{ href: "/kita", icon: "users" as const, titel: de ? "Kita-Platz" : "Childcare place", text: de ? "Wunsch-Kitas wählen, Warteliste sehen" : "Choose day-care, see waiting list" }] : []),
+    ...(an("veranstaltungen") ? [{ href: "/veranstaltungen", icon: "calendar" as const, titel: de ? "Veranstaltungen" : "Events", text: de ? "Feste, Kurse, Ferienprogramm – mit Anmeldung" : "Festivals, courses, holiday programme" }] : []),
+    ...(an("veranstaltungen") && tenant.vereine?.length ? [{ href: "/vereine", icon: "heart" as const, titel: de ? "Vereine" : "Clubs", text: de ? "Sport, Kultur, Musik, Soziales" : "Sports, culture, music, social" }] : []),
   ];
   const mitmachen: Dienst[] = [
     ...(an("beteiligung") ? [{ href: "/beteiligung", icon: "users" as const, titel: de ? "Mitmachen" : "Get involved", text: de ? "Umfragen und Ideen" : "Surveys and ideas" }] : []),
-    ...(an("ratsinfo") && tenant.ratsinfo ? [{ href: "/ratsinfo", icon: "megaphone" as const, titel: de ? "Rat und Ausschüsse" : "Council", text: de ? "Sitzungen, Tagesordnungen, Beschlüsse" : "Meetings and decisions" }] : []),
+    ...(an("buergerhaushalt") ? [{ href: "/buergerhaushalt", icon: "euro" as const, titel: de ? "Bürgerhaushalt" : "Participatory budget", text: de ? "Mitentscheiden, wofür Geld ausgegeben wird" : "Decide how money is spent" }] : []),
+    ...(an("ehrenamt") ? [{ href: "/ehrenamt", icon: "heart" as const, titel: de ? "Ehrenamt" : "Volunteering", text: de ? "Mit anpacken – hier wird Hilfe gesucht" : "Lend a hand" }] : []),
+    ...(an("ratsinfo") && tenant.ratsinfo ? [{ href: "/ratsinfo", icon: "megaphone" as const, titel: de ? "Rat und Ausschüsse" : "Council", text: de ? "Sitzungen, Beschlüsse, Livestream" : "Meetings, decisions, livestream" }] : []),
   ];
   const lebenslagen: Dienst[] = an("lebenslagen")
     ? (tenant.lebenslagen ?? []).map((l) => ({ href: `/lebenslagen/${l.id}`, icon: "tasks" as const, titel: tx(l.titel, lang), text: tx(l.kurz, lang) }))
@@ -72,6 +82,7 @@ export default async function DiensteSeite() {
     <Page titel={de ? "Alle Dienste" : "All services"} intro={de ? `Was Sie bei der ${tenant.art} ${tenant.name} online erledigen können.` : `What you can do online.`} breit>
       <Gruppe titel={de ? "Erledigen" : "Get things done"} dienste={erledigen} />
       <Gruppe titel={de ? "Im Alltag" : "Everyday"} dienste={alltag} />
+      <Gruppe titel={de ? "Familie und Freizeit" : "Family and leisure"} dienste={familie} />
       <Gruppe titel={de ? "Mitmachen" : "Participate"} dienste={mitmachen} />
       <Gruppe titel={de ? "Lebenslagen" : "Life events"} dienste={lebenslagen} />
     </Page>

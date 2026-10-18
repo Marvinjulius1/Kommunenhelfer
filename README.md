@@ -12,8 +12,9 @@ Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfig
 |---|---|
 | **Erledigen** | Assistent mit einem Eingabefeld · Status per SMS/E-Mail auch ohne Konto · Zufriedenheit mit einem Klick · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
 | **Bürgerkonto** | **„Was steht bei mir an?“** (Ausweis läuft ab, Hundesteuer fällig, Kind wird 3 …) · Mein Haushalt · Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
-| **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil |
-| **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · Rat und Ausschüsse (OParl) |
+| **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil · **Warnungen** (Banner, NINA) · **Stadtkarte** · **Parken & Verwarnungsgeld** · **Friedhöfe** |
+| **Familie & Freizeit** | **Kita-Platz-Börse** mit Warteliste · **Veranstaltungen & Ferienprogramm** mit Anmeldung · **Vereinsverzeichnis** · **Ehrenamtsbörse** |
+| **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · **Bürgerhaushalt** · Rat und Ausschüsse (OParl) mit Livestream |
 | **Für alle** | 7 Sprachen inkl. Arabisch (von rechts nach links) und **Leichter Sprache** · Vorlesen · optional Spracheingabe · WCAG 2.1 AA |
 | **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · **Formular-Baukasten** · **Entwürfe für Rückfragen und Bescheide** · **Auslastungsprognose** · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
 
@@ -434,6 +435,21 @@ Jede Aufgabe läuft pro Tag höchstens einmal.
 | **Fristen und Wiedervorlage** | `/backoffice` (Filter „Frist“), Vorgang | Bearbeitungsfrist in Werktagen ohne Feiertage und Schließtage (`bearbeitungTage` je Leistung oder Amt, Standard 10). Überschrittene Fristen und fällige Wiedervorlagen stehen oben. |
 | **Wirkungsbericht** | `/backoffice/bericht` (Rolle `admin`) | Online-Anteil, eingesparte Arbeitszeit und Gegenwert, Bearbeitungsdauer, Fristquote, Zufriedenheit, häufigste Anliegen, Vergleich zum Vorzeitraum. „Als PDF speichern“ über den Druckdialog. Annahmen offen ausgewiesen und per `wirkung` anpassbar. |
 
+### Familie, Freizeit und Alltag
+
+| Dienst | Bürger | Backoffice | Konfiguration / Datenschutz |
+|---|---|---|---|
+| **Kita-Platz-Börse** | `/kita` – bis zu 3 Wunsch-Kitas, Platz auf der Warteliste, Angebot annehmen | Verwaltung → Kita-Plätze (Amt mit Zuständigkeit `kita`): Platz anbieten (14 Tage Frist), absagen | `kitas` · Daten des Kindes verschlüsselt, Löschung 1 Jahr nach Beginn. Rangfolge = Eingang; die Vergabe entscheidet weiterhin die Kita. |
+| **Veranstaltungen & Ferienprogramm** | `/veranstaltungen` – Anmeldung mit Warteliste, automatisches Nachrücken, Kalenderdatei, Abmeldelink | Verwaltung → Veranstaltungen (Rolle `redaktion`): anlegen, Teilnehmerliste als CSV | `veranstaltungen` (feste Termine) · Kontaktdaten verschlüsselt, Löschung 30 Tage nach dem Termin |
+| **Vereine** | `/vereine` – Nachricht an den Verein, dessen Adresse verborgen bleibt | – | `vereine` |
+| **Ehrenamtsbörse** | `/ehrenamt` – „Ich helfe mit“ | Gesuche anlegen, Rückmeldungen sehen | `ehrenamt` · Weiterleitung per E-Mail, Löschung nach 90 Tagen |
+| **Bürgerhaushalt** | `/buergerhaushalt` – Budget auf Projekte verteilen | Beteiligung → Bürgerhaushalt anlegen, beenden | Eine Teilnahme je Konto (HMAC), nur Summen; optional nur mit Online-Ausweis |
+| **Parken & Verwarnungsgeld** | `/parken` – mit Aktenzeichen + Kennzeichen nachsehen, online bezahlen oder Stellung nehmen (wird ein Vorgang) | Verwaltung → Verwarnungsgeld: Fälle erfassen (im Echtbetrieb Import aus dem Fachverfahren) | Kennzeichen nur als HMAC, Rate-Limit gegen Durchprobieren |
+| **Friedhöfe** | `/friedhof` – Grabarten, Ruhezeiten, Gebühren; Nutzungsrecht online verlängern (mit Bezahlung je Jahr) | Vorgänge | `friedhoefe` + Leistung `grabnutzung-verlaengern` |
+| **Warnungen** | Banner auf allen Seiten, `/aktuelles` | Meldungen mit Warnstufe (Hinweis/Warnung/Gefahr), Art und Ort; „Gefahr“ geht immer als Push raus | Amtliche Warnungen über NINA mit `ars` (Regionalschlüssel) – serverseitig abgerufen und zwischengespeichert |
+| **Stadtkarte** | `/karte` – Ebenen, Liste als barrierefreie Alternative, Tastatur | – | `karte`, `orte` + Kitas, Friedhöfe, Meldungen mit Ort, offene Mängel. Kacheln über `/api/karte/kachel` (Zwischenspeicher 30 Tage, nur Umkreis der Gemeinde) – keine Bürger-IP an Dritte. Eigener Kachelserver: `KARTE_KACHEL_URL`. |
+| **Livestream** | Ratsinfo: „Live“-Kennzeichen, Link zu Livestream bzw. Aufzeichnung (neues Fenster, keine eingebetteten Fremdinhalte) | – | `ratsinfo.sitzungen[].livestream` / `aufzeichnung` |
+
 ### Werkzeuge für die Sachbearbeitung
 
 | Funktion | Wo | Hinweise |
@@ -600,8 +616,8 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Tests und Qualität
 
-- `npm test` – 96 Tests (Vitest): Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
-- `npm run assistent:check` – 29 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
+- `npm test` – 105 Tests (Vitest): Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
+- `npm run assistent:check` – 34 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
 - `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
 - Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100
 

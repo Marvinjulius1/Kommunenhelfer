@@ -30,6 +30,12 @@ const faelle = [
   ["Wann hat das Rathaus geöffnet?", { text: "Dienstag" }],
   ["Grünschnitt entsorgen", { text: "Wertstoffhof" }],
   ["Hallo", { text: "Guten Tag" }],
+  // Portal-Dienste (Etappe 9)
+  ["Ich habe ein Knöllchen bekommen", { text: "Verwarnungsgeld" }],
+  ["Wo ist der nächste Defibrillator?", { text: "Stadtkarte" }],
+  ["Gibt es ein Ferienprogramm?", { text: "Ferienprogramm" }],
+  ["Ich möchte mich ehrenamtlich engagieren", { text: "Ehrenamtsbörse" }],
+  ["Welche Grabarten gibt es auf dem Friedhof?", { text: "Friedhöfe" }],
   // Ehrlich bleiben: keine erfundenen Auskünfte
   ["Wie beantrage ich BAföG?", { unsicher: true }],
   ["Darf mein Nachbar seinen Hund im Garten bellen lassen?", { unsicher: true }],

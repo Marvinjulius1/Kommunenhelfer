@@ -66,7 +66,7 @@ export function Header() {
 
   if (pathname === "/") {
     return (
-      <header className="pointer-events-none fixed right-0 top-0 z-30 flex gap-1 p-2 pt-[max(8px,env(safe-area-inset-top))] pr-[max(8px,env(safe-area-inset-right))]">
+      <header className="pointer-events-none fixed right-0 top-[var(--warnbanner,0px)] z-30 flex gap-1 p-2 pt-[max(8px,env(safe-area-inset-top))] pr-[max(8px,env(safe-area-inset-right))]">
         {skip}
         {kontoAktiv && <KontoKnopf className="pointer-events-auto opacity-60 hover:opacity-100 focus-visible:opacity-100" />}
         <ThemeToggle className="pointer-events-auto opacity-60 hover:opacity-100 focus-visible:opacity-100" />

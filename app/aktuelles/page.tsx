@@ -6,6 +6,7 @@ import { Page } from "@/components/ui/Page";
 import { aktiv } from "@/lib/funktionen";
 import { aktuellesKonto } from "@/lib/konto/service";
 import { aktuelleMeldungen } from "@/lib/meldungen/service";
+import { aktiveWarnungen } from "@/lib/warnungen/service";
 import { getLang, getTenant } from "@/lib/tenant";
 import { deutsch } from "@/lib/i18n";
 
@@ -20,6 +21,7 @@ export default async function AktuellesSeite({ searchParams }: { searchParams: P
   const wunsch = (await searchParams).ortsteil;
   const ortsteil = tenant.ortsteile?.includes(wunsch ?? "") ? wunsch : wunsch === "alle" ? undefined : k?.einstellungen.ortsteil;
   const liste = await aktuelleMeldungen(tenant, ortsteil);
+  const amtlich = (await aktiveWarnungen(tenant, ortsteil)).filter((w) => w.quelle === "nina");
   const fmt = new Intl.DateTimeFormat(de ? "de-DE" : "en-GB", { day: "numeric", month: "long", timeZone: "Europe/Berlin" });
   return (
     <Page titel={de ? "Aktuelles" : "News"} intro={de ? "Sperrungen, Störungen und Hinweise Ihrer Verwaltung." : "Closures, disruptions and notices from your administration."}>
@@ -40,6 +42,21 @@ export default async function AktuellesSeite({ searchParams }: { searchParams: P
           })}
         </nav>
       )}
+      {amtlich.length > 0 && (
+        <ul className="mb-6 space-y-3" aria-label={de ? "Amtliche Warnungen" : "Official warnings"}>
+          {amtlich.map((w) => (
+            <li key={w.id}>
+              <Glass className={`rounded-[24px] border-2 p-6 ${w.stufe === "gefahr" ? "border-[#b42318]" : "border-[#dc9a00]"}`}>
+                <p className="text-[13px] font-medium text-subtle">{de ? "Amtliche Warnung (NINA)" : "Official warning (NINA)"}</p>
+                <h2 className="mt-1 text-[17px] font-semibold">{w.titel}</h2>
+                <a href="https://warnung.bund.de" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[14px] text-accent underline underline-offset-4">
+                  {de ? "Einzelheiten auf warnung.bund.de" : "Details at warnung.bund.de"}
+                </a>
+              </Glass>
+            </li>
+          ))}
+        </ul>
+      )}
       {liste.length === 0 ? (
         <p className="text-[15px] text-muted">{de ? "Zurzeit gibt es keine Meldungen." : "There are no notices at the moment."}</p>
       ) : (
@@ -48,7 +65,7 @@ export default async function AktuellesSeite({ searchParams }: { searchParams: P
             <li key={m.id}>
               <Glass className="rounded-[24px] p-6">
                 <h2 className="text-[17px] font-semibold">
-                  {m.wichtig && <span className="mr-2 text-danger">{de ? "Wichtig:" : "Important:"}</span>}
+                  {m.stufe === "gefahr" ? <span className="mr-2 text-danger">{de ? "Gefahr:" : "Danger:"}</span> : m.stufe === "warnung" ? <span className="mr-2 text-danger">{de ? "Warnung:" : "Warning:"}</span> : m.wichtig && <span className="mr-2 text-danger">{de ? "Wichtig:" : "Important:"}</span>}
                   {m.titel}
                 </h2>
                 <p className="mt-2 whitespace-pre-wrap text-[15px] leading-relaxed">{m.text}</p>

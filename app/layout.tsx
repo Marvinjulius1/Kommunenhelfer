@@ -12,6 +12,8 @@ import { HTML_LANG, rtl, untertitel } from "@/lib/i18n";
 import { getLang, getNonce, getTenant } from "@/lib/tenant";
 import { aktiv } from "@/lib/funktionen";
 import { aktuellesKonto, sicht } from "@/lib/konto/service";
+import { Warnbanner } from "@/components/Warnbanner";
+import { aktiveWarnungen } from "@/lib/warnungen/service";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenant();
@@ -47,6 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const kontoRecord = aktiv(tenant, "konto") ? await aktuellesKonto(tenant) : undefined;
   const konto = kontoRecord ? sicht(kontoRecord) : null;
   const dunkel = tenant.akzentfarbeDunkel ?? tenant.akzentfarbe;
+  const warnungen = (await aktiveWarnungen(tenant, kontoRecord?.einstellungen.ortsteil).catch(() => [])).map(({ id, stufe, titel, quelle }) => ({ id, stufe, titel, quelle }));
 
   // Akzentfarbe der Gemeinde als CSS-Variablen
   const vars = {
@@ -64,6 +67,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex min-h-dvh flex-col">
         <TenantProvider tenant={fuerBrowser(tenant, lang)} lang={lang} konto={konto}>
           <Providers>
+            <Warnbanner warnungen={warnungen} />
             <Header />
             <main id="inhalt" tabIndex={-1} className="flex flex-1 flex-col outline-none">
               {children}

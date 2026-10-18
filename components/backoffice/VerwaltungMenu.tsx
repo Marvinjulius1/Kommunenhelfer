@@ -30,7 +30,7 @@ export function VerwaltungMenu({ eintraege }: { eintraege: [string, string][] })
         <Icon name="chevronDown" className={`size-3.5 transition-transform ${offen ? "rotate-180" : ""}`} />
       </button>
       {offen && (
-        <ul id="bo-verwaltung" className="glass absolute right-0 top-full z-30 mt-2 w-52 rounded-[18px] p-2 text-[14px]">
+        <ul id="bo-verwaltung" className="glass absolute right-0 top-full z-30 mt-2 w-64 rounded-[18px] p-2 text-[14px]">
           {eintraege.map(([href, label]) => (
             <li key={href}>
               <Link href={href} aria-current={pfad.startsWith(href) ? "page" : undefined} className="block rounded-[12px] px-3 py-2 hover:bg-[var(--line)] aria-[current=page]:font-medium">

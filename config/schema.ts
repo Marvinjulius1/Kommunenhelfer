@@ -150,6 +150,74 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
     standardAmtId: z.string(),
   }),
   dokumentarten: z.array(z.object({ id, label: ltext, stichworte: z.array(z.string()) })).optional(),
+  kitas: z
+    .array(
+      z.object({
+        id,
+        name: z.string().min(1),
+        traeger: z.string(),
+        adresse: z.string(),
+        ortsteil: z.string().optional(),
+        lat: z.number().min(-90).max(90).optional(),
+        lng: z.number().min(-180).max(180).optional(),
+        altersgruppen: z.array(z.enum(["u3", "ue3", "hort"])).min(1),
+        plaetze: z.number().int().min(0),
+        oeffnungszeiten: z.string().optional(),
+        profil: z.string().optional(),
+      }),
+    )
+    .optional(),
+  vereine: z.array(z.object({ id, name: z.string().min(1), kategorie: z.string(), kurz: z.string(), web: z.string().url().optional(), kontaktEmail: z.string().email().optional() })).optional(),
+  veranstaltungen: z
+    .array(
+      z.object({
+        id,
+        titel: z.string().min(1),
+        text: z.string(),
+        beginn: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Beginn als JJJJ-MM-TTTHH:MM"),
+        ende: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/).optional(),
+        ort: z.string(),
+        kategorie: z.string(),
+        vereinId: z.string().optional(),
+        ferienprogramm: z.boolean().optional(),
+        anmeldung: z.boolean().optional(),
+        plaetze: z.number().int().min(1).optional(),
+        kosten: z.string().optional(),
+        alter: z.string().optional(),
+      }),
+    )
+    .optional(),
+  ehrenamt: z
+    .array(z.object({ id, titel: z.string().min(1), organisation: z.string(), text: z.string(), ort: z.string(), zeit: z.string(), kategorie: z.string(), kontaktEmail: z.string().email().optional(), bis: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }))
+    .optional(),
+  friedhoefe: z
+    .array(
+      z.object({
+        id,
+        name: z.string().min(1),
+        adresse: z.string(),
+        lat: z.number().optional(),
+        lng: z.number().optional(),
+        oeffnungszeiten: z.string().optional(),
+        grabarten: z.array(z.object({ name: z.string(), ruhezeitJahre: z.number().int().min(1), gebuehrEuro: z.number().min(0).optional(), hinweis: z.string().optional() })).min(1),
+      }),
+    )
+    .optional(),
+  orte: z
+    .array(
+      z.object({
+        id,
+        name: z.string().min(1),
+        kategorie: z.enum(["wertstoffhof", "defibrillator", "toilette", "spielplatz", "parken", "ladesaeule", "rathaus", "bad", "bibliothek", "sonstiges"]),
+        lat: z.number().min(-90).max(90),
+        lng: z.number().min(-180).max(180),
+        adresse: z.string().optional(),
+        hinweis: z.string().optional(),
+      }),
+    )
+    .optional(),
+  karte: z.object({ mitte: z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]), zoom: z.number().int().min(10).max(18) }).optional(),
+  ars: z.string().regex(/^\d{12}$/, "Regionalschlüssel mit 12 Ziffern").optional(),
   stichtage: z
     .array(
       z.object({
@@ -216,6 +284,8 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
             datum: z.string(),
             ort: z.string(),
             tagesordnung: z.array(z.object({ titel: z.string(), kurz: z.string().optional(), beschluss: z.string().optional() })),
+            livestream: z.string().url().optional(),
+            aufzeichnung: z.string().url().optional(),
           }),
         )
         .optional(),
@@ -290,6 +360,7 @@ export function pruefeGemeinde(roh: unknown): string[] {
       for (const f of felder) if (f.nurWenn && !fids.has(f.nurWenn.feld)) fehler.push(`${pfad}.${f.id}.nurWenn: unbekanntes Feld "${f.nurWenn.feld}"`);
     }
   }
+  for (const v of t.veranstaltungen ?? []) if (v.vereinId && !(t.vereine ?? []).some((x) => x.id === v.vereinId)) fehler.push(`veranstaltungen[${v.id}].vereinId: unbekannter Verein "${v.vereinId}"`);
   for (const ll of t.lebenslagen ?? []) for (const sc of ll.schritte) if (sc.leistungId && !ids.has(sc.leistungId)) fehler.push(`lebenslagen[${ll.id}].${sc.id}: unbekannte Leistung "${sc.leistungId}"`);
   for (const r of t.rueckfragen) for (const o of r.optionen) if (!ids.has(o.leistungId)) fehler.push(`rueckfragen[${r.id}]: unbekannte Leistung "${o.leistungId}"`);
   return fehler;

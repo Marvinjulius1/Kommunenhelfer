@@ -24,11 +24,11 @@ export const IDEE_STATUS: Record<IdeeRecord["status"], string> = {
   umgesetzt: "Umgesetzt",
 };
 
-const marke = (zweck: string, kontoId: string) => createHmac("sha256", zweckSchluessel("beteiligung")).update(`${zweck}:${kontoId}`).digest("hex");
+export const marke = (zweck: string, kontoId: string) => createHmac("sha256", zweckSchluessel("beteiligung")).update(`${zweck}:${kontoId}`).digest("hex");
 
 // Abstimmungen nacheinander, damit keine Stimme verloren geht
 const g = globalThis as { __beteiligungKette?: Promise<unknown> };
-function nacheinander<T>(fn: () => Promise<T>): Promise<T> {
+export function nacheinander<T>(fn: () => Promise<T>): Promise<T> {
   const p = (g.__beteiligungKette ?? Promise.resolve()).then(fn, fn);
   g.__beteiligungKette = p.catch(() => undefined);
   return p;

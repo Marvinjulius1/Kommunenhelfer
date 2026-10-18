@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
-import { IdeeModeration, UmfrageBeenden, UmfrageFormular } from "@/components/backoffice/Beteiligung";
+import { HaushaltBeenden, HaushaltFormular, IdeeModeration, UmfrageBeenden, UmfrageFormular } from "@/components/backoffice/Beteiligung";
+import { ergebnis, haushalte, haushaltOffen } from "@/lib/beteiligung/haushalt";
+import { aktiv } from "@/lib/funktionen";
 import { Glass } from "@/components/ui/Glass";
 import { aktuellerBenutzer, hatRolle } from "@/lib/backoffice/auth";
 import { alleIdeen, IDEE_STATUS, umfrageOffen, umfragen } from "@/lib/beteiligung/service";
@@ -15,6 +17,8 @@ export default async function BeteiligungBackoffice() {
   const u = await umfragen(tenant, true);
   const i = await alleIdeen(tenant);
   const offen = i.filter((x) => x.status === "eingereicht");
+  const hh = aktiv(tenant, "buergerhaushalt") ? await haushalte(tenant) : [];
+  const euro = (n: number) => new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
   const fmt = (iso: string) => new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeZone: "Europe/Berlin" }).format(new Date(iso));
   return (
     <div className="grid gap-8 lg:grid-cols-2">
@@ -72,6 +76,42 @@ export default async function BeteiligungBackoffice() {
           ))}
         </ul>
       </section>
+      {aktiv(tenant, "buergerhaushalt") && (
+        <section className="lg:col-span-2">
+          <h2 className="text-[28px] font-semibold tracking-[-0.02em]">Bürgerhaushalt</h2>
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <Glass className="rounded-[24px] p-6">
+              <HaushaltFormular ortsteile={tenant.ortsteile ?? []} />
+            </Glass>
+            <ul className="space-y-3">
+              {hh.length === 0 && <li className="text-[14px] text-muted">Noch kein Bürgerhaushalt.</li>}
+              {hh.map((h) => (
+                <li key={h.id}>
+                  <Glass className="rounded-[20px] p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[15px] font-semibold">{h.titel}</p>
+                      {haushaltOffen(h) ? <HaushaltBeenden id={h.id} /> : <span className="text-[13px] text-subtle">beendet</span>}
+                    </div>
+                    <p className="mt-1 text-[13px] text-subtle">
+                      Budget {euro(h.budgetEuro)} · bis {fmt(h.bis)} · {h.teilnahmen.length} Teilnahmen
+                    </p>
+                    <ol className="mt-3 space-y-1 text-[14px]">
+                      {ergebnis(h).map((p) => (
+                        <li key={p.id} className="flex justify-between gap-3">
+                          <span>
+                            {p.titel} <span className="text-subtle">({euro(p.kostenEuro)})</span>
+                          </span>
+                          <span className={`shrink-0 tabular-nums ${p.finanziert ? "font-medium text-success" : "text-muted"}`}>{p.stimmen}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </Glass>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

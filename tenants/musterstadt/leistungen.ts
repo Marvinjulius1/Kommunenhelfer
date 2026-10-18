@@ -781,4 +781,38 @@ export const weitereLeistungen: Leistung[] = [
     termin: true,
     externerLink: { label: { de: "Antrag im Bundesportal", en: "Federal portal" }, url: BUNDESPORTAL },
   },
+  // ---------------------------------------------------------------- Friedhof
+  {
+    id: "grabnutzung-verlaengern",
+    aktiv: true,
+    titel: { de: "Grabnutzungsrecht verlängern", en: "Extend grave usage rights" },
+    kurz: "Läuft das Nutzungsrecht an einer Grabstelle aus, können Sie es online um ein oder mehrere Jahre verlängern.",
+    stichworte: ["grab verlängern", "grabstelle verlängern", "nutzungsrecht", "nutzungsrecht verlängern", "grabnutzung", "wahlgrab verlängern", "grabbrief"],
+    unterlagen: ["Grabnummer (steht auf dem Grabbrief)", "Name der verstorbenen Person"],
+    gebuehren: [{ bezeichnung: "Nutzungsrecht je Jahr", betrag: 45, hinweis: "Wahlgrab, je Grabstelle" }],
+    bezahlung: { betrag: 45, mengeFeld: "jahre" },
+    ablauf: ["Sie geben die Grabstelle und die Jahre an.", "Sie bezahlen direkt online.", "Die Friedhofsverwaltung prüft und schickt Ihnen den neuen Grabbrief."],
+    fristen: ["Bitte vor Ablauf des Nutzungsrechts verlängern – sonst kann die Grabstelle neu vergeben werden."],
+    amtId: "bauhof",
+    online: true,
+    termin: false,
+    dauer: "ca. 3 Minuten",
+    formular: {
+      aufbewahrungTage: 365,
+      schritte: [
+        kontaktSchritt,
+        {
+          id: "grab",
+          titel: "Grabstelle",
+          beschreibung: "Die Angaben finden Sie auf Ihrem Grabbrief.",
+          felder: [
+            { id: "friedhof", typ: "select", label: "Friedhof", pflicht: true, optionen: [{ wert: "hauptfriedhof", label: "Hauptfriedhof" }, { wert: "oberdorf", label: "Friedhof Oberdorf" }] },
+            { id: "grabnummer", typ: "text", label: "Grabnummer", hinweis: "z. B. B-12-04", pflicht: true, maxLaenge: 20, halb: true },
+            { id: "verstorben", typ: "text", label: "Name der verstorbenen Person", pflicht: true, maxLaenge: 120, halb: true },
+            { id: "jahre", typ: "number", label: "Um wie viele Jahre verlängern?", pflicht: true, min: 1, max: 30, standard: "5", hinweis: "45 € je Jahr" },
+          ],
+        },
+      ],
+    },
+  },
 ];

@@ -13,6 +13,9 @@ export function MeldungFormular({ ortsteile, pushAktiv }: { ortsteile: string[];
   const [ortsteil, setOrtsteil] = useState("");
   const [bis, setBis] = useState(morgen);
   const [wichtig, setWichtig] = useState(false);
+  const [stufe, setStufe] = useState<"info" | "warnung" | "gefahr">("info");
+  const [kategorie, setKategorie] = useState("");
+  const [ort, setOrt] = useState("");
   const [push, setPush] = useState(pushAktiv);
   const [meldung, setMeldung] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
@@ -24,13 +27,14 @@ export function MeldungFormular({ ortsteile, pushAktiv }: { ortsteile: string[];
     const r = await fetch("/api/backoffice/meldungen", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ titel, text, ortsteil: ortsteil || undefined, gueltigBis: bis, wichtig, push }),
+      body: JSON.stringify({ titel, text, ortsteil: ortsteil || undefined, gueltigBis: bis, wichtig: wichtig || stufe !== "info", push, stufe, kategorie: kategorie || undefined, ort: ort || undefined }),
     });
     setLaedt(false);
     const d = await r.json().catch(() => ({}));
     if (!r.ok) return setMeldung(r.status === 403 ? "Dafür fehlt Ihnen die Berechtigung (Rolle „redaktion“)." : "Bitte Eingaben prüfen.");
     setTitel("");
     setText("");
+    setOrt("");
     setMeldung(`Veröffentlicht.${push ? ` Push an ${d.gesendet} Gerät${d.gesendet === 1 ? "" : "e"} gesendet.` : ""}`);
     router.refresh();
   };
@@ -54,6 +58,33 @@ export function MeldungFormular({ ortsteile, pushAktiv }: { ortsteile: string[];
           <input type="date" className="field-input" value={bis} onChange={(e) => setBis(e.target.value)} required />
         </label>
       </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1 text-[13px] text-subtle">
+          Warnstufe
+          <select className="field-input" value={stufe} onChange={(e) => setStufe(e.target.value as typeof stufe)}>
+            <option value="info">Hinweis</option>
+            <option value="warnung">Warnung – Banner auf allen Seiten</option>
+            <option value="gefahr">Gefahr – Banner und Push an alle</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-[13px] text-subtle">
+          Art
+          <select className="field-input" value={kategorie} onChange={(e) => setKategorie(e.target.value)}>
+            <option value="">–</option>
+            <option value="verkehr">Verkehr / Sperrung</option>
+            <option value="baustelle">Baustelle</option>
+            <option value="wasser">Wasser</option>
+            <option value="strom">Strom</option>
+            <option value="unwetter">Unwetter</option>
+            <option value="hochwasser">Hochwasser</option>
+            <option value="sonstiges">Sonstiges</option>
+          </select>
+        </label>
+      </div>
+      <label className="flex flex-col gap-1 text-[13px] text-subtle">
+        Ort auf der Karte (freiwillig, „Breite, Länge“ – z. B. aus OpenStreetMap kopiert)
+        <input className="field-input" value={ort} onChange={(e) => setOrt(e.target.value)} placeholder="50.6512, 9.7458" inputMode="decimal" />
+      </label>
       <label className="flex items-center gap-2 text-[14px]">
         <input type="checkbox" className="checkbox" checked={wichtig} onChange={(e) => setWichtig(e.target.checked)} /> Wichtig (oben anzeigen)
       </label>

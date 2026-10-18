@@ -21,6 +21,14 @@ export const STANDARD_FUNKTIONEN: Funktionen = {
   sms: true,
   whatsapp: false,
   feedback: true,
+  kita: true,
+  veranstaltungen: true,
+  ehrenamt: true,
+  buergerhaushalt: true,
+  parken: true,
+  friedhof: true,
+  karte: true,
+  warnungen: true,
 };
 
 export function aktiv(tenant: Pick<GemeindeConfig, "funktionen">, f: keyof Funktionen): boolean {

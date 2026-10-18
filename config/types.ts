@@ -272,6 +272,99 @@ export interface Funktionen {
   whatsapp: boolean;
   /** Zufriedenheit nach Antrag und Bearbeitung abfragen (1 Klick) */
   feedback: boolean;
+  /** Kita-Platz-Börse (braucht `kitas`) */
+  kita: boolean;
+  /** Veranstaltungen mit Anmeldung, Ferienprogramm, Vereinsverzeichnis */
+  veranstaltungen: boolean;
+  ehrenamt: boolean;
+  buergerhaushalt: boolean;
+  /** Verwarnungsgeld bezahlen oder Stellung nehmen */
+  parken: boolean;
+  /** Friedhöfe, Grabarten, Nutzungsrecht verlängern (braucht `friedhoefe`) */
+  friedhof: boolean;
+  /** Stadtkarte mit Orten, Baustellen und Mängeln */
+  karte: boolean;
+  /** Warnbanner und amtliche Warnungen (NINA, braucht `ars`) */
+  warnungen: boolean;
+}
+
+export interface Kita {
+  id: string;
+  name: string;
+  traeger: string;
+  adresse: string;
+  ortsteil?: string;
+  lat?: number;
+  lng?: number;
+  /** u3 = unter 3 Jahren (Krippe), ue3 = ab 3 (Kindergarten), hort = Schulkinder */
+  altersgruppen: ("u3" | "ue3" | "hort")[];
+  plaetze: number;
+  oeffnungszeiten?: string;
+  profil?: string;
+}
+
+export interface Verein {
+  id: string;
+  name: string;
+  kategorie: string;
+  kurz: string;
+  web?: string;
+  /** Kontakt für Anfragen über das Portal – wird nie öffentlich angezeigt */
+  kontaktEmail?: string;
+}
+
+/** Feste Termine aus der Config (weitere legt die Redaktion im Backoffice an). */
+export interface VeranstaltungConfig {
+  id: string;
+  titel: string;
+  text: string;
+  /** "JJJJ-MM-TTTHH:MM" Ortszeit */
+  beginn: string;
+  ende?: string;
+  ort: string;
+  kategorie: string;
+  vereinId?: string;
+  ferienprogramm?: boolean;
+  /** Mit Anmeldung über das Portal; ohne Angabe von Plätzen unbegrenzt */
+  anmeldung?: boolean;
+  plaetze?: number;
+  kosten?: string;
+  alter?: string;
+}
+
+export interface EhrenamtConfig {
+  id: string;
+  titel: string;
+  organisation: string;
+  text: string;
+  ort: string;
+  zeit: string;
+  kategorie: string;
+  kontaktEmail?: string;
+  /** Gesuch endet (ISO-Datum) */
+  bis?: string;
+}
+
+export interface Friedhof {
+  id: string;
+  name: string;
+  adresse: string;
+  lat?: number;
+  lng?: number;
+  oeffnungszeiten?: string;
+  grabarten: { name: string; ruhezeitJahre: number; gebuehrEuro?: number; hinweis?: string }[];
+}
+
+export type OrtKategorie = "wertstoffhof" | "defibrillator" | "toilette" | "spielplatz" | "parken" | "ladesaeule" | "rathaus" | "bad" | "bibliothek" | "sonstiges";
+
+export interface Ort {
+  id: string;
+  name: string;
+  kategorie: OrtKategorie;
+  lat: number;
+  lng: number;
+  adresse?: string;
+  hinweis?: string;
 }
 
 /**
@@ -361,6 +454,9 @@ export interface RatsinfoConfig {
     datum: string;
     ort: string;
     tagesordnung: { titel: string; kurz?: string; beschluss?: string }[];
+    /** Livestream der Sitzung (öffnet in neuem Fenster – keine eingebetteten Fremdinhalte) */
+    livestream?: string;
+    aufzeichnung?: string;
   }[];
 }
 
@@ -451,6 +547,17 @@ export interface GemeindeConfig {
   fundsachen?: Fundsache[];
   /** Video-Beratung: Basis-URL eines Jitsi-Servers in der EU, z. B. https://meet.example.de */
   videoBeratung?: { url: string; aemter: string[] };
+  kitas?: Kita[];
+  vereine?: Verein[];
+  veranstaltungen?: VeranstaltungConfig[];
+  ehrenamt?: EhrenamtConfig[];
+  friedhoefe?: Friedhof[];
+  /** Orte für die Stadtkarte (Wertstoffhof, Defibrillatoren, Toiletten …) */
+  orte?: Ort[];
+  /** Kartenmitte und Zoomstufe der Stadtkarte */
+  karte?: { mitte: [lat: number, lng: number]; zoom: number };
+  /** Amtlicher Regionalschlüssel (12 Stellen) – für amtliche Warnungen über NINA */
+  ars?: string;
   /** Stichtage für persönliche Hinweise im Bürgerkonto */
   stichtage?: Stichtag[];
   /** Annahmen für den Wirkungsbericht (Standard siehe lib/wirkung.ts) */

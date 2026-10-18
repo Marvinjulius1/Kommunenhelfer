@@ -1,4 +1,4 @@
-/** POST { titel, text, ortsteil?, gueltigBis, wichtig, push } – Meldung veröffentlichen · DELETE { id } */
+/** POST { titel, text, ortsteil?, gueltigBis, wichtig, push, stufe?, kategorie?, ort? } – Meldung veröffentlichen · DELETE { id } */
 import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { protokolliere } from "@/lib/backoffice/audit";
@@ -27,6 +27,12 @@ export async function POST(req: Request) {
       gueltigBis: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       wichtig: z.boolean().default(false),
       push: z.boolean().default(false),
+      stufe: z.enum(["info", "warnung", "gefahr"]).default("info"),
+      kategorie: z.enum(["verkehr", "baustelle", "wasser", "strom", "unwetter", "hochwasser", "sonstiges"]).optional(),
+      ort: z
+        .string()
+        .regex(/^\s*-?\d{1,2}(\.\d+)?\s*,\s*-?\d{1,3}(\.\d+)?\s*$/)
+        .optional(),
     })
     .safeParse(await leseJson(req).catch(() => null));
   if (!d.success) return fehler("ungueltige_anfrage");
@@ -34,7 +40,10 @@ export async function POST(req: Request) {
   // Ende des Tages in Deutschland – 21:59 UTC ist im Sommer 23:59, im Winter 22:59 Ortszeit
   const bis = new Date(d.data.gueltigBis + "T21:59:59Z");
   if (Number.isNaN(bis.getTime()) || bis < new Date()) return fehler("ungueltige_anfrage");
-  const r = await veroeffentliche(c.tenant, { ...d.data, ortsteil: d.data.ortsteil || undefined, gueltigBis: bis.toISOString(), autor: c.b.name });
+  const [lat, lng] = d.data.ort ? d.data.ort.split(",").map((x) => Math.round(Number(x) * 1e5) / 1e5) : [];
+  const { ort: _, ...rest } = d.data;
+  // Gefahr: immer als Push an alle, die Meldungen abonniert haben
+  const r = await veroeffentliche(c.tenant, { ...rest, push: rest.push || rest.stufe === "gefahr", lat, lng, ortsteil: d.data.ortsteil || undefined, gueltigBis: bis.toISOString(), autor: c.b.name });
   await protokolliere({ tenant: c.tenant.slug, benutzer: c.b.name, aktion: "meldung_veroeffentlicht", details: `${r.meldung.titel}${r.gesendet ? ` · Push an ${r.gesendet}` : ""}` });
   return Response.json({ id: r.meldung.id, gesendet: r.gesendet }, { status: 201 });
 }

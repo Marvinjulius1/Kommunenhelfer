@@ -5,7 +5,7 @@ import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Page } from "@/components/ui/Page";
 import { aktiv } from "@/lib/funktionen";
-import { sitzung } from "@/lib/ratsinfo/service";
+import { istLive, sitzung } from "@/lib/ratsinfo/service";
 import { getLang, getTenant } from "@/lib/tenant";
 
 export const revalidate = 600;
@@ -29,6 +29,20 @@ export default async function SitzungSeite({ params }: { params: Promise<{ id: s
         <Icon name="chevronLeft" className="size-4" />
         {de ? "Alle Sitzungen" : "All meetings"}
       </Link>
+      {(s.livestream || s.aufzeichnung) && (
+        <Glass className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[24px] p-5">
+          <p className="flex items-center gap-2 text-[15px]">
+            <Icon name="video" className="size-5" />
+            {istLive(s) ? (de ? "Die Sitzung läuft gerade – live zuschauen." : "The meeting is live now.") : s.aufzeichnung && vorbei ? (de ? "Die Aufzeichnung ist verfügbar." : "The recording is available.") : de ? "Diese Sitzung wird live übertragen." : "This meeting will be streamed live."}
+          </p>
+          {(istLive(s) || (!vorbei && s.livestream) || (vorbei && s.aufzeichnung)) && (
+            <a href={istLive(s) || !vorbei ? s.livestream : s.aufzeichnung} target="_blank" rel="noopener noreferrer" className="pressable inline-flex min-h-10 items-center gap-2 rounded-full bg-accent px-4 text-[14px] font-medium text-on-accent">
+              {istLive(s) ? (de ? "Live ansehen" : "Watch live") : vorbei ? (de ? "Aufzeichnung ansehen" : "Watch recording") : de ? "Zum Livestream" : "Livestream"}
+              <Icon name="external" className="size-4" />
+            </a>
+          )}
+        </Glass>
+      )}
       <h2 className="text-[20px] font-semibold">{de ? "Tagesordnung" : "Agenda"}</h2>
       <ol className="mt-4 space-y-3">
         {s.tagesordnung

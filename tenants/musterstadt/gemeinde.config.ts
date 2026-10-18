@@ -161,7 +161,7 @@ export default defineGemeinde({
       id: "bauhof",
       name: "Bauhof",
       ort: "Industriestraße 4",
-      zustaendigkeiten: ["bauhof", "straße", "schlagloch", "straßenbeleuchtung", "laterne", "spielplatz", "grünanlage", "winterdienst", "müll"],
+      zustaendigkeiten: ["bauhof", "friedhof", "grab", "straße", "schlagloch", "straßenbeleuchtung", "laterne", "spielplatz", "grünanlage", "winterdienst", "müll"],
       bearbeitungshinweis: "Wir prüfen Ihre Meldung und beheben den Mangel so schnell wie möglich.",
       weiterleitung: { typ: "backoffice" },
     },
@@ -732,6 +732,7 @@ export default defineGemeinde({
           { titel: "Neubau Kita Nordviertel", kurz: "Bau einer Kita mit 75 Plätzen an der Lindenallee." },
           { titel: "Fragestunde für Einwohnerinnen und Einwohner", kurz: "Sie können Fragen an den Rat stellen." },
         ],
+        livestream: "https://www.musterstadt.example/live",
       },
       {
         id: "bau-2026-11",
@@ -841,6 +842,73 @@ export default defineGemeinde({
   // (Beispieldaten – Bezirke und Termine sind frei erfunden)
   // -------------------------------------------------------------------------
   ortsteile: ["Altstadt", "Nordviertel", "Südfeld", "Oberdorf"],
+
+  // ---------------------------------------------------------------- Etappe 9: Bürgerdienste (Beispieldaten)
+  karte: { mitte: [50.6512, 9.7458], zoom: 15 },
+  // ars: "000000000000", // Amtlicher Regionalschlüssel für Warnungen aus NINA – für die Musterstadt (fiktiv) nicht gesetzt
+
+  kitas: [
+    { id: "sonnenschein", name: "Kita Sonnenschein", traeger: "Stadt Musterstadt", adresse: "Lindenallee 12", ortsteil: "Nordviertel", lat: 50.6551, lng: 9.7431, altersgruppen: ["u3", "ue3"], plaetze: 75, oeffnungszeiten: "Mo–Fr 7–17 Uhr", profil: "Naturnah, mit großem Garten" },
+    { id: "regenbogen", name: "Ev. Kita Regenbogen", traeger: "Ev. Kirchengemeinde", adresse: "Kirchplatz 2", ortsteil: "Altstadt", lat: 50.6509, lng: 9.7462, altersgruppen: ["ue3"], plaetze: 50, oeffnungszeiten: "Mo–Fr 7:30–16:30 Uhr", profil: "Religionspädagogisch, Sprachförderung" },
+    { id: "krabbelstube", name: "Krabbelstube Zwergenland", traeger: "Elternverein Zwergenland e. V.", adresse: "Südring 8", ortsteil: "Südfeld", lat: 50.6468, lng: 9.7489, altersgruppen: ["u3"], plaetze: 24, oeffnungszeiten: "Mo–Fr 7–15 Uhr" },
+    { id: "schulhort", name: "Hort an der Grundschule", traeger: "Stadt Musterstadt", adresse: "Schulweg 1", ortsteil: "Oberdorf", lat: 50.6533, lng: 9.7392, altersgruppen: ["hort"], plaetze: 40, oeffnungszeiten: "Mo–Fr 11:30–17 Uhr" },
+  ],
+
+  vereine: [
+    { id: "tsv", name: "TSV Musterstadt 1898 e. V.", kategorie: "Sport", kurz: "Fußball, Turnen, Leichtathletik und Kinderturnen", web: "https://www.musterstadt.example/tsv", kontaktEmail: "info@tsv-musterstadt.example" },
+    { id: "feuerwehr", name: "Freiwillige Feuerwehr Musterstadt", kategorie: "Ehrenamt", kurz: "Brandschutz, Hilfe in Notlagen und Jugendfeuerwehr ab 10 Jahren", kontaktEmail: "jugend@feuerwehr-musterstadt.example" },
+    { id: "heimatverein", name: "Heimat- und Geschichtsverein", kategorie: "Kultur", kurz: "Stadtführungen, Heimatmuseum und Erzählcafé" },
+    { id: "musikschule", name: "Musikschule Musterstadt e. V.", kategorie: "Musik", kurz: "Unterricht für Kinder und Erwachsene, Bläserklasse, Chor", kontaktEmail: "kontakt@musikschule-musterstadt.example" },
+    { id: "tafel", name: "Musterstädter Tafel", kategorie: "Soziales", kurz: "Lebensmittel für Menschen mit wenig Geld – getragen von Freiwilligen", kontaktEmail: "tafel@musterstadt.example" },
+  ],
+
+  veranstaltungen: [
+    { id: "martinsumzug-2026", titel: "Martinsumzug", text: "Laternenumzug vom Kirchplatz zum Marktplatz mit Martinsfeuer und Weckmännern.", beginn: "2026-11-11T17:30", ort: "Kirchplatz", kategorie: "Fest" },
+    { id: "weihnachtsmarkt-2026", titel: "Weihnachtsmarkt", text: "Drei Tage Weihnachtsmarkt rund ums Rathaus mit Kinderprogramm und Musik der Musikschule.", beginn: "2026-12-04T15:00", ende: "2026-12-06T20:00", ort: "Marktplatz", kategorie: "Fest", vereinId: "musikschule" },
+    { id: "stadtfuehrung-2026-11", titel: "Stadtführung: Musterstadt im Mittelalter", text: "Rundgang durch die Altstadt mit dem Heimatverein. Dauer etwa 90 Minuten.", beginn: "2026-11-21T14:00", ort: "Treffpunkt Rathaus", kategorie: "Kultur", vereinId: "heimatverein", anmeldung: true, plaetze: 25, kosten: "5 €, Kinder frei" },
+    { id: "erste-hilfe-2026", titel: "Erste-Hilfe-Kurs für Eltern", text: "Notfälle bei Kindern erkennen und richtig handeln. Mit praktischen Übungen.", beginn: "2026-11-28T09:00", ende: "2026-11-28T15:00", ort: "Bürgerhaus, Saal 2", kategorie: "Kurs", anmeldung: true, plaetze: 16, kosten: "kostenfrei" },
+    { id: "ferien-feuerwehr-2027", titel: "Ferienprogramm: Ein Tag bei der Feuerwehr", text: "Löschübung, Fahrzeuge erkunden und Mittagessen im Gerätehaus.", beginn: "2027-07-14T09:00", ende: "2027-07-14T14:00", ort: "Feuerwehrhaus", kategorie: "Ferienprogramm", vereinId: "feuerwehr", ferienprogramm: true, anmeldung: true, plaetze: 20, kosten: "3 €", alter: "8–12 Jahre" },
+    { id: "ferien-wald-2027", titel: "Ferienprogramm: Waldtag mit dem Förster", text: "Tierspuren lesen, Waldsofa bauen, Stockbrot am Feuer.", beginn: "2027-07-21T10:00", ende: "2027-07-21T15:00", ort: "Parkplatz am Stadtwald", kategorie: "Ferienprogramm", ferienprogramm: true, anmeldung: true, plaetze: 15, kosten: "kostenfrei", alter: "6–10 Jahre" },
+  ],
+
+  ehrenamt: [
+    { id: "stadtfest-helfer", titel: "Helfer/innen für das Stadtfest", organisation: "Stadt Musterstadt", text: "Für den Auf- und Abbau, die Getränkeausgabe und den Kinderbereich suchen wir Unterstützung – schon zwei Stunden helfen.", ort: "Marktplatz", zeit: "Juni 2027, einzelne Schichten", kategorie: "Veranstaltung" },
+    { id: "lesepaten", titel: "Lesepatinnen und Lesepaten", organisation: "Grundschule Musterstadt", text: "Einmal pro Woche mit Kindern lesen und ihnen beim Lesenlernen helfen.", ort: "Grundschule", zeit: "1 Stunde pro Woche", kategorie: "Bildung", kontaktEmail: "schule@musterstadt.example" },
+    { id: "tafel-fahrer", titel: "Fahrerinnen und Fahrer für die Tafel", organisation: "Musterstädter Tafel", text: "Lebensmittel bei Supermärkten abholen. Führerschein Klasse B genügt.", ort: "Musterstadt", zeit: "vormittags, nach Absprache", kategorie: "Soziales", kontaktEmail: "tafel@musterstadt.example" },
+  ],
+
+  friedhoefe: [
+    {
+      id: "hauptfriedhof",
+      name: "Hauptfriedhof",
+      adresse: "Friedhofsweg 1",
+      lat: 50.6489,
+      lng: 9.7401,
+      oeffnungszeiten: "April–September 7–20 Uhr, Oktober–März 8–17 Uhr",
+      grabarten: [
+        { name: "Wahlgrab (Sarg)", ruhezeitJahre: 25, gebuehrEuro: 1125, hinweis: "verlängerbar, 45 € je Jahr" },
+        { name: "Reihengrab (Sarg)", ruhezeitJahre: 20, gebuehrEuro: 780 },
+        { name: "Urnenwahlgrab", ruhezeitJahre: 20, gebuehrEuro: 720 },
+        { name: "Urnengemeinschaftsgrab mit Namensplatte", ruhezeitJahre: 20, gebuehrEuro: 950, hinweis: "Pflege durch die Stadt" },
+        { name: "Baumbestattung", ruhezeitJahre: 20, gebuehrEuro: 1200 },
+      ],
+    },
+    { id: "oberdorf", name: "Friedhof Oberdorf", adresse: "Am Kirchberg", lat: 50.6545, lng: 9.7368, oeffnungszeiten: "ganzjährig geöffnet", grabarten: [{ name: "Urnenwahlgrab", ruhezeitJahre: 20, gebuehrEuro: 690 }, { name: "Wahlgrab (Sarg)", ruhezeitJahre: 25, gebuehrEuro: 1050 }] },
+  ],
+
+  orte: [
+    { id: "rathaus", name: "Rathaus", kategorie: "rathaus", lat: 50.6512, lng: 9.7458, adresse: "Marktplatz 1" },
+    { id: "wertstoffhof", name: "Wertstoffhof", kategorie: "wertstoffhof", lat: 50.6452, lng: 9.7531, adresse: "Industriestraße 4", hinweis: "Di und Do 14–18 Uhr, Sa 9–13 Uhr" },
+    { id: "aed-rathaus", name: "Defibrillator Rathaus", kategorie: "defibrillator", lat: 50.6513, lng: 9.7455, hinweis: "Im Eingangsbereich, rund um die Uhr zugänglich" },
+    { id: "aed-sporthalle", name: "Defibrillator Sporthalle", kategorie: "defibrillator", lat: 50.6537, lng: 9.7415, hinweis: "Außenwand neben dem Haupteingang" },
+    { id: "wc-markt", name: "Öffentliche Toilette Marktplatz", kategorie: "toilette", lat: 50.6508, lng: 9.7466, hinweis: "barrierefrei, Euroschlüssel" },
+    { id: "spielplatz-park", name: "Spielplatz Stadtpark", kategorie: "spielplatz", lat: 50.6527, lng: 9.7486 },
+    { id: "spielplatz-sued", name: "Spielplatz Südfeld", kategorie: "spielplatz", lat: 50.6474, lng: 9.7472 },
+    { id: "parkhaus", name: "Parkhaus Altstadt", kategorie: "parken", lat: 50.6501, lng: 9.7441, hinweis: "erste Stunde kostenfrei" },
+    { id: "laden-markt", name: "Ladesäule Marktplatz", kategorie: "ladesaeule", lat: 50.6505, lng: 9.7452, hinweis: "2 × 22 kW" },
+    { id: "freibad", name: "Freibad", kategorie: "bad", lat: 50.6559, lng: 9.7497, hinweis: "Mai bis September" },
+    { id: "buecherei", name: "Stadtbücherei", kategorie: "bibliothek", lat: 50.6515, lng: 9.7471, adresse: "Marktplatz 3" },
+  ],
 
   abfall: {
     arten: [

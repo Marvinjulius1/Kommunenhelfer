@@ -9,6 +9,7 @@
 import type { GemeindeConfig } from "@/config/types";
 import { abfuhren } from "@/lib/abfall/kalender";
 import { plusTage } from "@/lib/feiertage";
+import { aktiv } from "@/lib/funktionen";
 import { tx } from "@/lib/i18n";
 import type { Profil } from "./types";
 
@@ -125,6 +126,8 @@ export function berechneHinweise(tenant: GemeindeConfig, d: HinweisDaten, heute:
 
   // --- Kinder ------------------------------------------------------------
   const kitaLeistung = leistung("kita-anmeldung");
+  // Mit Kita-Börse dorthin, sonst zum Online-Antrag
+  const kitaHref = tenant.kitas?.length && aktiv(tenant, "kita") ? "/kita" : "/antrag/kita-anmeldung";
   const kitaBeantragt = d.vorgaenge.some((v) => v.leistungId === "kita-anmeldung" && tageZwischen(v.erstelltAm.slice(0, 10), heute) < 365);
   for (const k of p.kinder ?? []) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(k.geburtsdatum)) continue;
@@ -135,9 +138,9 @@ export function berechneHinweise(tenant: GemeindeConfig, d: HinweisDaten, heute:
     if (kitaLeistung && !kitaBeantragt) {
       // Rechtsanspruch auf Betreuung ab dem 1. Geburtstag (§ 24 SGB VIII) – Anmeldung idealerweise 6–9 Monate vorher
       if (bis(1) >= 0 && bis(1) <= 270)
-        h.push({ id: `kita1:${k.vorname}:${geb(1)}`, art: "info", titel: `${name} wird am ${fmtDatum(geb(1))} ein Jahr alt`, text: "Ab dem 1. Geburtstag besteht ein Anspruch auf einen Betreuungsplatz. Viele Kitas vergeben Plätze Monate im Voraus – ist der Platz schon angemeldet?", datum: geb(1), href: "/antrag/kita-anmeldung", link: "Kita-Platz anmelden", ausblendbar: true, erinnern: true });
+        h.push({ id: `kita1:${k.vorname}:${geb(1)}`, art: "info", titel: `${name} wird am ${fmtDatum(geb(1))} ein Jahr alt`, text: "Ab dem 1. Geburtstag besteht ein Anspruch auf einen Betreuungsplatz. Viele Kitas vergeben Plätze Monate im Voraus – ist der Platz schon angemeldet?", datum: geb(1), href: kitaHref, link: "Kita-Platz anmelden", ausblendbar: true, erinnern: true });
       if (bis(3) >= 0 && bis(3) <= 180)
-        h.push({ id: `kita3:${k.vorname}:${geb(3)}`, art: "info", titel: `${name} wird am ${fmtDatum(geb(3))} drei Jahre alt`, text: "Steht der Wechsel in den Kindergarten an? Ist der Kita-Platz schon angemeldet?", datum: geb(3), href: "/antrag/kita-anmeldung", link: "Kita-Platz anmelden", ausblendbar: true, erinnern: true });
+        h.push({ id: `kita3:${k.vorname}:${geb(3)}`, art: "info", titel: `${name} wird am ${fmtDatum(geb(3))} drei Jahre alt`, text: "Steht der Wechsel in den Kindergarten an? Ist der Kita-Platz schon angemeldet?", datum: geb(3), href: kitaHref, link: "Kita-Platz anmelden", ausblendbar: true, erinnern: true });
     }
     // Einschulung: Anmeldung meist im Jahr vor der Einschulung bei der Grundschule
     if (bis(6) >= 0 && bis(6) <= 365)

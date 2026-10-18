@@ -23,6 +23,14 @@ export interface Sitzung {
   tagesordnung: Tagesordnungspunkt[];
   quelle: "oparl" | "config";
   link?: string;
+  livestream?: string;
+  aufzeichnung?: string;
+}
+
+/** Läuft die Sitzung gerade (Beginn bis 5 Stunden danach)? */
+export function istLive(s: Pick<Sitzung, "datum" | "livestream">, jetzt = Date.now()) {
+  const t = new Date(s.datum).getTime();
+  return !!s.livestream && jetzt >= t - 15 * 60_000 && jetzt <= t + 5 * 3600_000;
 }
 
 const CACHE_MS = 10 * 60_000;
@@ -96,6 +104,8 @@ function ausConfig(tenant: GemeindeConfig): Sitzung[] {
     ort: s.ort,
     tagesordnung: s.tagesordnung.map((t, i) => ({ nummer: String(i + 1), titel: t.titel, kurz: t.kurz, beschluss: t.beschluss, oeffentlich: true })),
     quelle: "config",
+    livestream: erlaubt(s.livestream) ? s.livestream : undefined,
+    aufzeichnung: erlaubt(s.aufzeichnung) ? s.aufzeichnung : undefined,
   }));
 }
 

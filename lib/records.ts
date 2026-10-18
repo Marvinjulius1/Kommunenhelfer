@@ -126,7 +126,12 @@ export interface AuditRecord extends StoredRecord {
     | "vertretung"
     | "wiedervorlage"
     | "entwurf_erstellt"
-    | "formular_geaendert";
+    | "formular_geaendert"
+    | "kita"
+    | "veranstaltung"
+    | "ehrenamt"
+    | "buergerhaushalt"
+    | "verwarnung";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
@@ -188,6 +193,8 @@ export interface ZahlungRecord extends StoredRecord {
   methode?: string;
   referenz?: string;
   bezahltAm?: string;
+  /** Wofür gezahlt wird, wenn es kein Vorgang ist (z. B. Verwarnungsgeld) */
+  bezug?: { art: "verwarnung"; id: string };
 }
 
 export interface SafeRecord extends StoredRecord {
@@ -239,6 +246,12 @@ export interface MeldungRecord extends StoredRecord {
   gueltigBis: string;
   autor: string;
   wichtig: boolean;
+  /** Warnstufe: gefahr/warnung erscheinen als Banner auf allen Seiten */
+  stufe?: "info" | "warnung" | "gefahr";
+  kategorie?: "verkehr" | "baustelle" | "wasser" | "strom" | "unwetter" | "hochwasser" | "sonstiges";
+  /** Ort für die Stadtkarte (z. B. Baustelle, Sperrung) */
+  lat?: number;
+  lng?: number;
 }
 
 /** Merker, dass eine geplante Aufgabe (z. B. Abfall-Erinnerung für einen Tag) erledigt ist. */
@@ -344,4 +357,97 @@ export interface VertretungRecord extends StoredRecord {
   vertreter: string;
   von: string;
   bis: string;
+}
+
+// ---------------------------------------------------------------------------
+// Kita-Börse, Veranstaltungen, Ehrenamt, Bürgerhaushalt, Verwarnungen
+// ---------------------------------------------------------------------------
+
+export type KitaStatus = "wartend" | "angebot" | "zugesagt" | "abgesagt" | "zurueckgezogen";
+
+/** Betreuungswunsch eines Kontos für ein Kind. Personendaten des Kindes verschlüsselt. */
+export interface KitaWunschRecord extends StoredRecord {
+  kontoId: string;
+  altersgruppe: "u3" | "ue3" | "hort";
+  /** Gewünschter Beginn (JJJJ-MM) */
+  beginn: string;
+  /** Wunsch-Kitas in Reihenfolge der Priorität */
+  kitas: string[];
+  status: Record<string, KitaStatus>;
+  angebot?: { kitaId: string; bis: string };
+  /** Verschlüsselt: { vorname, geburtsdatum, stunden, hinweis } */
+  inhalt: Verschluesselt;
+}
+
+export interface VeranstaltungRecord extends StoredRecord {
+  titel: string;
+  text: string;
+  beginn: string;
+  ende?: string;
+  ort: string;
+  kategorie: string;
+  vereinId?: string;
+  ferienprogramm?: boolean;
+  anmeldung?: boolean;
+  plaetze?: number;
+  kosten?: string;
+  alter?: string;
+  autor: string;
+}
+
+export interface AnmeldungRecord extends StoredRecord {
+  veranstaltungId: string;
+  anzahl: number;
+  status: "angemeldet" | "warteliste" | "storniert";
+  tokenHash: string;
+  kontoId?: string;
+  /** Verschlüsselt: { name, email, telefon?, hinweis? } */
+  daten: Verschluesselt;
+}
+
+export interface EhrenamtRecord extends StoredRecord {
+  titel: string;
+  organisation: string;
+  text: string;
+  ort: string;
+  zeit: string;
+  kategorie: string;
+  kontaktEmail?: string;
+  bis?: string;
+  autor: string;
+}
+
+/** „Ich helfe mit“ – an die Organisation weitergeleitet, nach 90 Tagen gelöscht. */
+export interface InteresseRecord extends StoredRecord {
+  ehrenamtId: string;
+  /** Verschlüsselt: { name, email, telefon?, text } */
+  daten: Verschluesselt;
+}
+
+/** Bürgerhaushalt: Budget auf Projekte verteilen. Stimmen nur als Summen, Teilnahme als HMAC. */
+export interface BuergerhaushaltRecord extends StoredRecord {
+  titel: string;
+  text: string;
+  budgetEuro: number;
+  bis: string;
+  projekte: { id: string; titel: string; text: string; kostenEuro: number; ortsteil?: string }[];
+  stimmen: Record<string, number>;
+  teilnahmen: string[];
+  nurOnlineAusweis: boolean;
+  autor: string;
+  beendet?: boolean;
+}
+
+/** Verwarnungsgeld (ruhender Verkehr). Das Kennzeichen liegt nur als HMAC vor. */
+export interface VerwarnungRecord extends StoredRecord {
+  aktenzeichen: string;
+  kennzeichenIndex: string;
+  betragCent: number;
+  tatbestand: string;
+  tatzeit: string;
+  tatort: string;
+  status: "offen" | "bezahlt" | "stellungnahme";
+  zahlungId?: string;
+  vorgangId?: string;
+  erfasstVon: string;
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { istLive } from "@/lib/ratsinfo/service";
 import { notFound } from "next/navigation";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
@@ -24,7 +25,16 @@ function Liste({ titel, liste, de }: { titel: string; liste: Sitzung[]; de: bool
             <Link href={`/ratsinfo/${encodeURIComponent(s.id)}`} className="block rounded-[24px]">
               <Glass className="pressable flex items-center justify-between gap-4 rounded-[24px] p-6">
                 <span>
-                  <span className="block text-[17px] font-medium">{s.gremium}</span>
+                  <span className="flex items-center gap-2 text-[17px] font-medium">
+                    {s.gremium}
+                    {istLive(s) && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#b42318] px-2.5 py-0.5 text-[12px] font-semibold text-white">
+                        <span className="size-1.5 animate-pulse rounded-full bg-white motion-reduce:animate-none" aria-hidden="true" />
+                        Live
+                      </span>
+                    )}
+                    {!istLive(s) && s.aufzeichnung && <span className="rounded-full bg-[var(--line)] px-2.5 py-0.5 text-[12px] font-normal">Aufzeichnung</span>}
+                  </span>
                   <span className="mt-1 block text-[14px] text-muted">{fmt(s.datum, de)}</span>
                   <span className="mt-1 block text-[13px] text-subtle">
                     {s.tagesordnung.length} {de ? "Tagesordnungspunkte" : "agenda items"}
