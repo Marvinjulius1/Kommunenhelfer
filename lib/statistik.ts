@@ -26,7 +26,8 @@ export type Zaehler =
   | "frist_eingehalten"
   | "bewertungen"
   | "bewertung_summe"
-  | "kurznachrichten";
+  | "kurznachrichten"
+  | "entwuerfe";
 
 export interface StatistikTag extends StoredRecord {
   datum: string;

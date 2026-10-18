@@ -99,6 +99,7 @@ export function VorgangAktionen({
   zugewiesen,
   textbausteine,
   zahlungMoeglich,
+  hatAntwort = false,
 }: {
   id: string;
   status: string;
@@ -107,12 +108,17 @@ export function VorgangAktionen({
   zugewiesen?: string;
   textbausteine: { titel: string; text: string }[];
   zahlungMoeglich: boolean;
+  /** Letzte Nachricht stammt vom Bürger → Entwurf als Antwort */
+  hatAntwort?: boolean;
 }) {
   const router = useRouter();
   const [neu, setNeu] = useState(status);
   const [text, setText] = useState("");
   const [meldung, setMeldung] = useState<string | null>(null);
   const [laedt, setLaedt] = useState(false);
+  const [bescheidText, setBescheidText] = useState("");
+  const [entwurfInfo, setEntwurfInfo] = useState<{ ziel: "rueckfrage" | "bescheid"; quelle: string; hinweise: string[] } | null>(null);
+  const [entwirft, setEntwirft] = useState<string | null>(null);
   const [betrag, setBetrag] = useState("");
   const [zweck, setZweck] = useState("");
   const pfad = `/api/backoffice/vorgang/${encodeURIComponent(id)}`;
@@ -132,6 +138,31 @@ export function VorgangAktionen({
   };
 
   const auswahl = "field-input !min-h-10 w-full !py-2 text-[14px] text-fg";
+
+  /** Entwurf holen – ersetzt nur das Textfeld, gesendet wird erst mit dem eigenen Klick. */
+  const entwerfen = async (art: "rueckfrage" | "antwort" | "bescheid") => {
+    setEntwirft(art);
+    setMeldung(null);
+    const r = await fetch(`${pfad}/entwurf`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ art }) });
+    setEntwirft(null);
+    if (!r.ok) return setMeldung("Kein Entwurf möglich. Bitte selbst formulieren.");
+    const d: { text: string; quelle: "vorlage" | "ki"; hinweise: string[] } = await r.json();
+    if (art === "bescheid") setBescheidText(d.text);
+    else setText(d.text);
+    setEntwurfInfo({ ziel: art === "bescheid" ? "bescheid" : "rueckfrage", quelle: d.quelle === "ki" ? "Entwurf mit KI" : "Entwurf aus Vorlage", hinweise: d.hinweise });
+  };
+
+  const EntwurfHinweis = ({ ziel }: { ziel: "rueckfrage" | "bescheid" }) =>
+    entwurfInfo?.ziel === ziel ? (
+      <div className="rounded-[14px] bg-[var(--line)] px-4 py-3 text-[13px]" role="status">
+        <p className="font-medium">{entwurfInfo.quelle} – bitte prüfen und anpassen. Gesendet wird erst mit Ihrem Klick.</p>
+        {entwurfInfo.hinweise.map((h) => (
+          <p key={h} className={`mt-1 ${h.startsWith("Achtung") ? "font-medium text-danger" : "text-muted"}`}>
+            {h}
+          </p>
+        ))}
+      </div>
+    ) : null;
 
   return (
     <div className="space-y-8">
@@ -171,10 +202,15 @@ export function VorgangAktionen({
         }}
         className="space-y-2"
       >
-        <div className="flex items-end justify-between gap-2">
+        <div className="flex flex-wrap items-end justify-between gap-2">
           <label htmlFor="rueckfrage" className="text-[14px] font-medium">
             Rückfrage an den Bürger
           </label>
+          <span className="flex gap-1">
+            <button type="button" disabled={!!entwirft} onClick={() => entwerfen(status === "rueckfrage" || hatAntwort ? "antwort" : "rueckfrage")} className="pressable rounded-full bg-[var(--line)] px-3 py-1 text-[13px] font-medium">
+              {entwirft === "rueckfrage" || entwirft === "antwort" ? "Entwurf wird erstellt …" : "Entwurf vorschlagen"}
+            </button>
+          </span>
           {textbausteine.length > 0 && (
             <select aria-label="Textbaustein einfügen" className="field-input !min-h-9 w-48 !py-1 text-[13px]" value="" onChange={(e) => setText((t) => (t ? t + "\n\n" : "") + e.target.value)}>
               <option value="">Textbaustein …</option>
@@ -186,7 +222,8 @@ export function VorgangAktionen({
             </select>
           )}
         </div>
-        <textarea id="rueckfrage" rows={3} className="field-input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
+        <EntwurfHinweis ziel="rueckfrage" />
+        <textarea id="rueckfrage" rows={text.length > 200 ? 9 : 3} className="field-input" value={text} onChange={(e) => setText(e.target.value)} maxLength={2000} />
         <Button type="submit" variant="glass" className="!min-h-10 px-4 text-[14px]" disabled={laedt || text.trim().length < 3}>
           Rückfrage senden
         </Button>
@@ -196,13 +233,23 @@ export function VorgangAktionen({
         onSubmit={async (e) => {
           e.preventDefault();
           const f = e.currentTarget;
-          if (await anfrage(`${pfad}/bescheid`, "POST", new FormData(f), "Bescheid digital zugestellt.")) f.reset();
+          if (await anfrage(`${pfad}/bescheid`, "POST", new FormData(f), "Bescheid digital zugestellt.")) {
+            f.reset();
+            setBescheidText("");
+            setEntwurfInfo(null);
+          }
         }}
         className="space-y-2"
       >
-        <p className="text-[14px] font-medium">Bescheid digital zustellen</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[14px] font-medium">Bescheid digital zustellen</p>
+          <button type="button" disabled={!!entwirft} onClick={() => entwerfen("bescheid")} className="pressable rounded-full bg-[var(--line)] px-3 py-1 text-[13px] font-medium">
+            {entwirft === "bescheid" ? "Entwurf wird erstellt …" : "Begleittext vorschlagen"}
+          </button>
+        </div>
         <input name="titel" required minLength={3} maxLength={140} placeholder="Titel, z. B. Hundesteuerbescheid 2026" className="field-input" />
-        <textarea name="text" rows={2} maxLength={5000} placeholder="Begleittext (optional)" className="field-input" />
+        <EntwurfHinweis ziel="bescheid" />
+        <textarea name="text" aria-label="Begleittext" rows={bescheidText.length > 200 ? 9 : 2} maxLength={5000} placeholder="Begleittext (optional)" className="field-input" value={bescheidText} onChange={(e) => setBescheidText(e.target.value)} />
         <input name="datei" type="file" accept="application/pdf" className="block text-[13px] text-muted file:mr-4 file:rounded-full file:border-0 file:bg-[var(--line)] file:px-4 file:py-2 file:text-[13px] file:text-fg" />
         <label className="flex items-center gap-2 text-[13px] text-muted">
           <input type="checkbox" name="erledigt" value="1" className="checkbox" /> Vorgang danach als erledigt markieren

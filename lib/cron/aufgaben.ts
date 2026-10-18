@@ -23,6 +23,7 @@ import { benutzerListe, darfAmt } from "@/lib/backoffice/auth";
 import { zustaendigFuer } from "@/lib/backoffice/vertretung";
 import { hinweiseFuer } from "@/lib/konto/uebersicht";
 import { fristlage } from "@/lib/vorgaenge/fristen";
+import { sichereAuslastung } from "@/lib/auslastung/service";
 import { inTagen, store } from "@/lib/storage/store";
 import type { Profil } from "@/lib/konto/types";
 import { loescheAbgelaufene } from "@/lib/vorgaenge/service";
@@ -234,6 +235,7 @@ export async function taeglich(alle: GemeindeConfig[], jetzt = new Date()) {
       termine: await terminErinnerung(t, jetzt),
       hinweise: await hinweisErinnerung(t, jetzt),
       wiedervorlage: await wiedervorlageUebersicht(t, jetzt),
+      auslastung: await sichereAuslastung(t, jetzt),
     };
   }
   ergebnis.loeschung = { entfernt: await loescheAbgelaufene() };

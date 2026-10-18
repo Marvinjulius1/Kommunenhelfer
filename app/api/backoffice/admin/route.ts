@@ -5,7 +5,7 @@
  */
 import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
-import { anwenden, speichereAnpassungen, type AnpassungRecord } from "@/lib/admin/anpassungen";
+import { anwenden, ladeAnpassungen, speichereAnpassungen, type AnpassungRecord } from "@/lib/admin/anpassungen";
 import { protokolliere } from "@/lib/backoffice/audit";
 import { hatRolle } from "@/lib/backoffice/auth";
 import { boZugang } from "@/lib/backoffice/zugang";
@@ -63,6 +63,8 @@ export async function PUT(req: Request) {
     tenant: basis.slug,
     leistungen,
     texte: d.data.texte,
+    // Formulare aus dem Baukasten bleiben unberührt
+    eigeneLeistungen: (await ladeAnpassungen(basis.slug))?.eigeneLeistungen,
     geaendertVon: c.b.name,
     erstelltAm: new Date().toISOString(),
     loeschenAm: "9999-12-31T00:00:00.000Z",

@@ -15,7 +15,7 @@ Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfig
 | **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil |
 | **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · Rat und Ausschüsse (OParl) |
 | **Für alle** | 7 Sprachen inkl. Arabisch (von rechts nach links) und **Leichter Sprache** · Vorlesen · optional Spracheingabe · WCAG 2.1 AA |
-| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
+| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · **Formular-Baukasten** · **Entwürfe für Rückfragen und Bescheide** · **Auslastungsprognose** · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
 
 ```
 Startseite → „Ich möchte meinen Hund anmelden“ → Unterlagen, Gebühren, Ablauf → Online-Antrag → Bestätigung → Meine Anliegen
@@ -434,6 +434,14 @@ Jede Aufgabe läuft pro Tag höchstens einmal.
 | **Fristen und Wiedervorlage** | `/backoffice` (Filter „Frist“), Vorgang | Bearbeitungsfrist in Werktagen ohne Feiertage und Schließtage (`bearbeitungTage` je Leistung oder Amt, Standard 10). Überschrittene Fristen und fällige Wiedervorlagen stehen oben. |
 | **Wirkungsbericht** | `/backoffice/bericht` (Rolle `admin`) | Online-Anteil, eingesparte Arbeitszeit und Gegenwert, Bearbeitungsdauer, Fristquote, Zufriedenheit, häufigste Anliegen, Vergleich zum Vorzeitraum. „Als PDF speichern“ über den Druckdialog. Annahmen offen ausgewiesen und per `wirkung` anpassbar. |
 
+### Werkzeuge für die Sachbearbeitung
+
+| Funktion | Wo | Hinweise |
+|---|---|---|
+| **Entwürfe** für Rückfrage, Antwort und Bescheid-Begleittext | Vorgang → „Entwurf vorschlagen“ | Immer nur ein Vorschlag im Textfeld – gesendet wird erst mit dem eigenen Klick. Ohne Sprachmodell aus Vorlagen und Konfiguration (z. B. fehlende Pflichtunterlagen). Mit `ASSISTANT_PROVIDER` formuliert ein Modell; Namen, Kontakt- und Bankdaten werden vorher entfernt und erst danach wieder eingesetzt, Antragsinhalte gelten als Daten, nie als Anweisungen. Beträge, die nicht in der Gebührenordnung stehen, werden rot markiert. `ENTWURF_KI=aus` schaltet das Modell nur hierfür ab. Jeder Entwurf steht im Audit-Log. |
+| **Formular-Baukasten** | Verwaltung → Formulare (Rolle `admin`) | Eigene Online-Anträge ohne Programmierung: Grunddaten, Schritte, Felder (Text, Datum, Auswahl, IBAN …), Gebühr mit Online-Bezahlung, Live-Vorschau mit den echten Formularfeldern, Vorlage aus einer bestehenden Leistung. Kontaktschritt, Eingangsbestätigung, „Meine Anliegen“, Backoffice und Assistent sind automatisch dabei. Gespeichert wird geprüft wie die Konfigurationsdatei; Leistungen der Datei werden nie überschrieben. |
+| **Auslastungsprognose** | Auslastung | 14 Tage je Amt: gebuchte Termine, erwartete Kontakte (gewichteter Verlauf der letzten 8 gleichen Wochentage inkl. Wartenummern), Auslastung und fehlendes Personal. Grundlage sind anonyme Tageszähler je Amt (Cron), keine Personendaten. |
+
 ### FIT-Connect
 
 Ein Amt kann Vorgänge per FIT-Connect an sein Fachverfahren übermitteln:
@@ -592,7 +600,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Tests und Qualität
 
-- `npm test` – 87 Tests (Vitest): persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
+- `npm test` – 96 Tests (Vitest): Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
 - `npm run assistent:check` – 29 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
 - `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
 - Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100
@@ -603,7 +611,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 - **Für den Echtbetrieb anbinden:** BundID (SAML) statt Test-Identität, ePayBL-Zugangsdaten des Landes, FIT-Connect gegen die Testumgebung prüfen, ClamAV, SMTP
 - Datenbank-Adapter (PostgreSQL), S3-Objektspeicher in der EU und Redis-Rate-Limit für mehrere Instanzen
-- Backoffice: Termine verwalten, Wissensbasis pflegen
+- Backoffice: Termine verwalten, Wissensbasis pflegen, bedingte Felder im Formular-Baukasten
 - Übersetzungen der Seitentexte und Leistungsinhalte in alle Sprachen; Gebärdensprach-Videos
 - Daten aus dem Gespräch in Formulare übernehmen (z. B. Hundename)
 - Texterkennung (OCR) für fotografierte Dokumente auf eigenem Server, um die Erkennung der Dokumentart zu verbessern

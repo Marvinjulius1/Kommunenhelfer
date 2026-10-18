@@ -15,6 +15,8 @@ export interface AnpassungRecord extends StoredRecord {
   leistungen: Record<string, LeistungAnpassung>;
   /** Zusätzliche Texte unter dem Wappen etc. */
   texte?: Partial<GemeindeConfig["texte"]>;
+  /** Mit dem Formular-Baukasten erstellte Online-Anträge */
+  eigeneLeistungen?: Leistung[];
   geaendertVon?: string;
 }
 
@@ -41,7 +43,11 @@ export function anwenden(basis: GemeindeConfig, a: AnpassungRecord | undefined):
         return [k, typeof v === "string" && alt && typeof alt === "object" ? { ...alt, de: v } : v];
       }),
     ) as GemeindeConfig["texte"],
-    leistungen: basis.leistungen.map((l) => (a.leistungen[l.id] ? { ...l, ...a.leistungen[l.id] } : l)),
+    leistungen: [
+      ...basis.leistungen.map((l) => (a.leistungen[l.id] ? { ...l, ...a.leistungen[l.id] } : l)),
+      // Eigene Formulare dürfen keine Leistung der Konfigurationsdatei überschreiben
+      ...(a.eigeneLeistungen ?? []).filter((e) => !basis.leistungen.some((l) => l.id === e.id)),
+    ],
   };
 }
 

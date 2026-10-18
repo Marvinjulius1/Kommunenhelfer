@@ -34,6 +34,7 @@ const AKTION: Record<string, string> = {
   zahlung_angefordert: "Zahlung angefordert",
   zugewiesen: "Zugewiesen",
   wiedervorlage: "Wiedervorlage",
+  entwurf_erstellt: "Entwurf vorgeschlagen",
 };
 
 function Block({ titel, children }: { titel: string; children: React.ReactNode }) {
@@ -194,6 +195,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
               zugewiesen={v.zugewiesen}
               textbausteine={tenant.textbausteine ?? []}
               zahlungMoeglich={aktiv(tenant, "zahlung")}
+              hatAntwort={nachrichten(v).at(-1)?.von === "buerger"}
             />
           </Block>
           {v.status !== "erledigt" && (

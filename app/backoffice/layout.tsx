@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AbmeldenButton } from "@/components/backoffice/Aktionen";
+import { VerwaltungMenu } from "@/components/backoffice/VerwaltungMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { aktuellerBenutzer } from "@/lib/backoffice/auth";
 import { getTenant } from "@/lib/tenant";
+
+const VERWALTUNG: [string, string][] = [
+  ["/backoffice/bericht", "Wirkungsbericht"],
+  ["/backoffice/statistik", "Statistik"],
+  ["/backoffice/formulare", "Formulare"],
+  ["/backoffice/admin", "Portal anpassen"],
+  ["/backoffice/vertretung", "Vertretung"],
+];
 
 export const metadata: Metadata = { title: "Backoffice", robots: { index: false, follow: false } };
 
@@ -25,20 +34,28 @@ export default async function BackofficeLayout({ children }: { children: React.R
               {[
                 ["/backoffice", "Vorgänge"],
                 ["/backoffice/wartezeit", "Wartezeit"],
+                ["/backoffice/auslastung", "Auslastung"],
                 ["/backoffice/ausweise", "Ausweise"],
                 ["/backoffice/fundbuero", "Fundbüro"],
                 ["/backoffice/meldungen", "Meldungen"],
                 ["/backoffice/beteiligung", "Beteiligung"],
-                ["/backoffice/statistik", "Statistik"],
-                ["/backoffice/bericht", "Bericht"],
-                ["/backoffice/vertretung", "Vertretung"],
-                ["/backoffice/admin", "Anpassen"],
               ].map(([href, label]) => (
                 <Link key={href} href={href} className="shrink-0 rounded-full px-3 py-1 hover:text-fg">
                   {label}
                 </Link>
               ))}
+              {/* Auf kleinen Bildschirmen stehen die Verwaltungspunkte direkt in der wischbaren Leiste */}
+              {VERWALTUNG.map(([href, label]) => (
+                <Link key={href} href={href} className="shrink-0 rounded-full px-3 py-1 hover:text-fg lg:hidden">
+                  {label}
+                </Link>
+              ))}
             </nav>
+          )}
+          {b && (
+            <div className="hidden lg:block">
+              <VerwaltungMenu eintraege={VERWALTUNG} />
+            </div>
           )}
           <div className="flex shrink-0 items-center gap-2 text-[14px] text-muted">
             {b && <span className="hidden 2xl:inline">{b.name}</span>}

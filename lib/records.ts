@@ -124,7 +124,9 @@ export interface AuditRecord extends StoredRecord {
     | "beteiligung"
     | "anpassung"
     | "vertretung"
-    | "wiedervorlage";
+    | "wiedervorlage"
+    | "entwurf_erstellt"
+    | "formular_geaendert";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
