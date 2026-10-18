@@ -240,3 +240,75 @@ export function VorgangAktionen({
     </div>
   );
 }
+
+/** Wiedervorlage: Datum + kurze Notiz. Fällige Vorgänge erscheinen oben in der Liste. */
+export function Wiedervorlage({ id, am, notiz, frist }: { id: string; am?: string; notiz?: string; frist?: { datum: string; text: string; ueberfaellig: boolean } }) {
+  const router = useRouter();
+  const [datum, setDatum] = useState(am ?? "");
+  const [text, setText] = useState(notiz ?? "");
+  const [meldung, setMeldung] = useState<string | null>(null);
+  const pfad = `/api/backoffice/vorgang/${encodeURIComponent(id)}`;
+  const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+  const schnell = [
+    ["Morgen", 1],
+    ["In 3 Tagen", 3],
+    ["In 1 Woche", 7],
+  ] as const;
+
+  const speichern = async (wv: { am: string; notiz?: string } | null) => {
+    const r = await fetch(pfad, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ wiedervorlage: wv }) });
+    setMeldung(r.ok ? (wv ? "Wiedervorlage gespeichert." : "Wiedervorlage entfernt.") : "Das hat nicht geklappt.");
+    if (r.ok) router.refresh();
+  };
+
+  return (
+    <div className="space-y-4">
+      {frist && (
+        <p className={`text-[14px] ${frist.ueberfaellig ? "font-medium text-danger" : "text-muted"}`}>
+          Bearbeitungsfrist: {new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(frist.datum + "T12:00:00Z"))} · {frist.text}
+        </p>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (datum) void speichern({ am: datum, notiz: text || undefined });
+        }}
+        className="space-y-2"
+      >
+        <label htmlFor="wv-datum" className="text-[14px] font-medium">
+          Wiedervorlage am
+        </label>
+        <input id="wv-datum" type="date" min={heute} className="field-input !min-h-10 !py-2 text-[14px]" value={datum} onChange={(e) => setDatum(e.target.value)} />
+        <div className="flex flex-wrap gap-1">
+          {schnell.map(([l, t]) => (
+            <button
+              key={l}
+              type="button"
+              onClick={() => setDatum(new Date(Date.now() + t * 86400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }))}
+              className="pressable rounded-full bg-[var(--line)] px-3 py-1 text-[13px]"
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+        <label htmlFor="wv-notiz" className="block pt-2 text-[14px] font-medium">
+          Notiz (intern)
+        </label>
+        <input id="wv-notiz" className="field-input !min-h-10 !py-2 text-[14px]" maxLength={500} value={text} onChange={(e) => setText(e.target.value)} placeholder="z. B. Rückruf Bauamt abwarten" />
+        <div className="flex gap-2">
+          <Button type="submit" variant="glass" className="!min-h-10 px-4 text-[14px]" disabled={!datum}>
+            Speichern
+          </Button>
+          {am && (
+            <Button type="button" variant="quiet" className="!min-h-10 px-4 text-[14px]" onClick={() => speichern(null)}>
+              Entfernen
+            </Button>
+          )}
+        </div>
+      </form>
+      <p role="status" className="text-[13px] text-muted">
+        {meldung}
+      </p>
+    </div>
+  );
+}

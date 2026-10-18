@@ -20,7 +20,13 @@ export type Zaehler =
   | "maengel"
   | "konten_neu"
   | "push_gesendet"
-  | "wartemarken";
+  | "wartemarken"
+  | "erledigt"
+  | "erledigt_stunden"
+  | "frist_eingehalten"
+  | "bewertungen"
+  | "bewertung_summe"
+  | "kurznachrichten";
 
 export interface StatistikTag extends StoredRecord {
   datum: string;
@@ -49,4 +55,9 @@ export function zaehle(tenant: string, z: Zaehler, n = 1, leistungId?: string): 
 export async function statistik(tenant: string, tage: number): Promise<StatistikTag[]> {
   const ab = new Date(Date.now() - tage * 86400_000).toISOString().slice(0, 10);
   return (await store().list<StatistikTag>("statistik", (s) => s.tenant === tenant && s.datum >= ab)).sort((a, b) => a.datum.localeCompare(b.datum));
+}
+
+/** Tageszähler im Zeitraum [von, bis] (ISO-Datum, inklusive). */
+export async function statistikZeitraum(tenant: string, von: string, bis: string): Promise<StatistikTag[]> {
+  return (await store().list<StatistikTag>("statistik", (s) => s.tenant === tenant && s.datum >= von && s.datum <= bis)).sort((a, b) => a.datum.localeCompare(b.datum));
 }

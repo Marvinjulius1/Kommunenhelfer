@@ -7,9 +7,11 @@
 import "server-only";
 import { createHmac, randomBytes } from "node:crypto";
 import type { GemeindeConfig } from "@/config/types";
-import { zweckSchluessel } from "@/lib/crypto";
+import { decryptJson, encryptJson, zweckSchluessel } from "@/lib/crypto";
+import { sendeKurznachricht } from "@/lib/kurznachricht";
+import { sendMail } from "@/lib/mail";
 import { stelleZu } from "@/lib/postfach/service";
-import type { AusweisRecord } from "@/lib/records";
+import type { AusweisRecord, Kanal } from "@/lib/records";
 import { inTagen, store } from "@/lib/storage/store";
 
 export const STATUS_TEXT: Record<AusweisRecord["status"], string> = {
@@ -39,10 +41,8 @@ async function speichern(r: AusweisRecord) {
   await store().put("ausweise", { ...r, loeschenAm: inTagen(r.status === "abgeholt" ? 30 : 183) });
 }
 
-/** Bürger: Benachrichtigung abonnieren (legt einen Platzhalter an, falls die Nummer noch unbekannt ist). */
-export async function merkeVor(tenant: GemeindeConfig, nummer: string, kontoId: string) {
-  const vorhanden = await findeAusweis(tenant, nummer);
-  const r: AusweisRecord = vorhanden ?? {
+function platzhalter(tenant: GemeindeConfig, nummer: string): AusweisRecord {
+  return {
     id: randomBytes(9).toString("base64url"),
     tenant: tenant.slug,
     nummerIndex: nummerIndex(tenant.slug, nummer),
@@ -51,8 +51,21 @@ export async function merkeVor(tenant: GemeindeConfig, nummer: string, kontoId: 
     erstelltAm: new Date().toISOString(),
     loeschenAm: inTagen(183),
   };
+}
+
+/** Bürger: Benachrichtigung abonnieren (legt einen Platzhalter an, falls die Nummer noch unbekannt ist). */
+export async function merkeVor(tenant: GemeindeConfig, nummer: string, kontoId: string) {
+  const r = (await findeAusweis(tenant, nummer)) ?? platzhalter(tenant, nummer);
   if (!r.kontoIds.includes(kontoId)) r.kontoIds = [...r.kontoIds, kontoId].slice(-5);
   await speichern(r);
+  return r;
+}
+
+/** Ohne Konto: per SMS/WhatsApp/E-Mail benachrichtigen. Der Kontakt wird nach der Nachricht gelöscht. */
+export async function merkeKontakt(tenant: GemeindeConfig, nummer: string, k: Kanal) {
+  const r = (await findeAusweis(tenant, nummer)) ?? platzhalter(tenant, nummer);
+  const liste = [...(r.kontakte ? decryptJson<Kanal[]>(r.kontakte) : []).filter((x) => x.ziel !== k.ziel), k].slice(-3);
+  await speichern({ ...r, kontakte: encryptJson(liste) });
   return r;
 }
 
@@ -81,6 +94,15 @@ export async function setzeAusweisStatus(tenant: GemeindeConfig, nummer: string,
       });
       benachrichtigt++;
     }
+    const kontakte = r.kontakte ? decryptJson<Kanal[]>(r.kontakte) : [];
+    const text = `${tenant.art} ${tenant.name}: Ihr Ausweisdokument liegt zur Abholung bereit. Bitte bringen Sie das alte Dokument mit.`;
+    for (const k of kontakte) {
+      if (k.kanal === "email") await sendMail(tenant, { to: k.ziel, subject: "Ihr Ausweis ist abholbereit", text: `Guten Tag,\n\n${text}\n\nFreundliche Grüße\n${tenant.email.absenderName}` }).catch(() => undefined);
+      else await sendeKurznachricht(tenant, k.kanal, k.ziel, text);
+      benachrichtigt++;
+    }
+    // Datensparsamkeit: Kontaktdaten werden nach der Nachricht nicht mehr gebraucht
+    if (kontakte.length) await speichern({ ...r, kontakte: undefined });
   }
   return { record: r, benachrichtigt };
 }

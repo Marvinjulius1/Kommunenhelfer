@@ -3,6 +3,8 @@
  *  - Erinnerung am Vorabend der Müllabfuhr (Push nach Bezirk)
  *  - Fristen in Lebenslagen-Checklisten (Push + E-Mail ohne Inhalt)
  *  - Ablaufender Personalausweis (E-Mail, 90 und 30 Tage vorher)
+ *  - „Was steht bei mir an?“: neue Hinweise (Stichtage, Kinder, Reisepass) per Push/E-Mail
+ *  - Wiedervorlagen und Fristen: Übersicht an Sachbearbeiter/innen (ohne Personendaten)
  *  - Löschfristen
  * Jede Aufgabe läuft pro Tag höchstens einmal (Merker in "cronlaeufe").
  */
@@ -16,7 +18,11 @@ import { tx } from "@/lib/i18n";
 import { checklisteSicht, inhalt, speichereCheckliste } from "@/lib/lebenslagen/service";
 import { sendMail } from "@/lib/mail";
 import { benachrichtige } from "@/lib/push/service";
-import type { ChecklisteRecord, CronLaufRecord, KontoRecord, TerminRecord } from "@/lib/records";
+import type { ChecklisteRecord, CronLaufRecord, KontoRecord, TerminRecord, VorgangRecord } from "@/lib/records";
+import { benutzerListe, darfAmt } from "@/lib/backoffice/auth";
+import { zustaendigFuer } from "@/lib/backoffice/vertretung";
+import { hinweiseFuer } from "@/lib/konto/uebersicht";
+import { fristlage } from "@/lib/vorgaenge/fristen";
 import { inTagen, store } from "@/lib/storage/store";
 import type { Profil } from "@/lib/konto/types";
 import { loescheAbgelaufene } from "@/lib/vorgaenge/service";
@@ -158,6 +164,65 @@ export async function terminErinnerung(tenant: GemeindeConfig, jetzt = new Date(
   });
 }
 
+/**
+ * Neue persönliche Hinweise (nur Quellen ohne eigene Erinnerung: Stichtage, Kinder, Reisepass).
+ * E-Mail bewusst ohne Inhalt – Kinder oder Grundbesitz gehören nicht in eine E-Mail.
+ */
+export async function hinweisErinnerung(tenant: GemeindeConfig, jetzt = new Date()) {
+  if (!aktiv(tenant, "konto") || !aktiv(tenant, "hinweise")) return 0;
+  const heute = heuteBerlin(jetzt);
+  return einmal(tenant.slug, `hinweise:${heute}`, async () => {
+    let n = 0;
+    for (const k of await store().list<KontoRecord>("konten", (x) => x.tenant === tenant.slug)) {
+      const neu = (await hinweiseFuer(tenant, k, heute)).filter((h) => h.erinnern && !k.erinnerungen?.includes(`h:${h.id}`));
+      if (!neu.length) continue;
+      await benachrichtige(tenant, { kontoIds: [k.id], titel: neu.length === 1 ? neu[0].titel : `${neu.length} neue Hinweise`, text: "Was steht bei mir an? – jetzt im Bürgerkonto ansehen.", url: "/konto" });
+      if (k.einstellungen.emailBenachrichtigung) {
+        const email = decryptJson<Profil>(k.profil).email;
+        if (email)
+          await sendMail(tenant, {
+            to: email,
+            subject: neu.length === 1 ? "Ein neuer Hinweis in Ihrem Bürgerkonto" : `${neu.length} neue Hinweise in Ihrem Bürgerkonto`,
+            text: `Guten Tag,\n\nin Ihrem Bürgerkonto gibt es ${neu.length === 1 ? "einen neuen Hinweis" : `${neu.length} neue Hinweise`} unter „Was steht bei mir an?“ – zum Beispiel eine Frist, die bald endet.\n\nBitte melden Sie sich im Portal an, um die Einzelheiten zu sehen.\n\nFreundliche Grüße\n${tenant.email.absenderName}`,
+          }).catch(() => undefined);
+      }
+      await store().put("konten", { ...k, erinnerungen: [...(k.erinnerungen ?? []), ...neu.map((h) => `h:${h.id}`)].slice(-60) });
+      n++;
+    }
+    return n;
+  });
+}
+
+/** Morgens: je Sachbearbeiter/in eine Übersicht fälliger Wiedervorlagen und Fristen – nur Zahlen und Vorgangsnummern. */
+export async function wiedervorlageUebersicht(tenant: GemeindeConfig, jetzt = new Date()) {
+  if (stundeBerlin(jetzt) < 6) return 0;
+  const heute = heuteBerlin(jetzt);
+  const wt = new Date(heute + "T12:00:00Z").getUTCDay();
+  if (wt === 0 || wt === 6) return 0;
+  return einmal(tenant.slug, `wiedervorlage:${heute}`, async () => {
+    const offen = (await store().list<VorgangRecord>("vorgaenge", (v) => v.tenant === tenant.slug && v.status !== "erledigt")).map((v) => ({ v, fl: fristlage(tenant, v, heute)! }));
+    let n = 0;
+    for (const b of benutzerListe().filter((x) => x.email && (x.gemeinde === "*" || x.gemeinde === tenant.slug))) {
+      const fuer = await zustaendigFuer(tenant, b.name);
+      const meine = offen.filter(({ v }) => darfAmt(b, v.amtId) && !!v.zugewiesen && fuer.includes(v.zugewiesen));
+      const wv = meine.filter(({ fl }) => fl.wiedervorlageFaellig);
+      const ueber = meine.filter(({ fl }) => fl.ueberfaellig);
+      const bald = meine.filter(({ fl }) => fl.bald);
+      if (!wv.length && !ueber.length && !bald.length) continue;
+      const zeile = (titel: string, l: typeof meine) => (l.length ? `${titel} (${l.length}): ${l.map(({ v }) => v.id).join(", ")}` : "");
+      await sendMail(tenant, {
+        to: b.email!,
+        subject: `Heute: ${wv.length} Wiedervorlage${wv.length === 1 ? "" : "n"}, ${ueber.length} über der Frist`,
+        text: [`Guten Morgen ${b.name},`, "", zeile("Wiedervorlage heute", wv), zeile("Frist überschritten", ueber), zeile("Frist endet in 0–2 Werktagen", bald), "", "Einzelheiten im Backoffice unter „Vorgänge“ → Filter „Frist“."]
+          .filter((x, i, a) => x !== "" || a[i - 1] !== "")
+          .join("\n"),
+      }).catch(() => undefined);
+      n++;
+    }
+    return n;
+  });
+}
+
 /** Alle Aufgaben für alle Gemeinden. */
 export async function taeglich(alle: GemeindeConfig[], jetzt = new Date()) {
   const ergebnis: Record<string, Record<string, number | string>> = {};
@@ -167,6 +232,8 @@ export async function taeglich(alle: GemeindeConfig[], jetzt = new Date()) {
       checklisten: await checklistenErinnerung(t, jetzt),
       ausweis: await ausweisErinnerung(t, jetzt),
       termine: await terminErinnerung(t, jetzt),
+      hinweise: await hinweisErinnerung(t, jetzt),
+      wiedervorlage: await wiedervorlageUebersicht(t, jetzt),
     };
   }
   ergebnis.loeschung = { entfernt: await loescheAbgelaufene() };

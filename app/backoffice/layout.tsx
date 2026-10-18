@@ -12,7 +12,7 @@ export default async function BackofficeLayout({ children }: { children: React.R
   const b = await aktuellerBenutzer(tenant);
   return (
     <div className="flex flex-1 flex-col">
-      <header className="border-b border-[var(--line)]">
+      <header className="border-b border-[var(--line)] print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-2 px-4 sm:px-6 lg:h-16 lg:flex-nowrap">
           <Link href="/backoffice" className="flex h-14 shrink-0 items-center gap-2 lg:h-auto">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -30,6 +30,7 @@ export default async function BackofficeLayout({ children }: { children: React.R
                 ["/backoffice/meldungen", "Meldungen"],
                 ["/backoffice/beteiligung", "Beteiligung"],
                 ["/backoffice/statistik", "Statistik"],
+                ["/backoffice/bericht", "Bericht"],
                 ["/backoffice/vertretung", "Vertretung"],
                 ["/backoffice/admin", "Anpassen"],
               ].map(([href, label]) => (
@@ -47,7 +48,7 @@ export default async function BackofficeLayout({ children }: { children: React.R
         </div>
       </header>
       {b?.demo && (
-        <p className="bg-[var(--line)] px-4 py-2 text-center text-[13px] text-muted">
+        <p className="bg-[var(--line)] px-4 py-2 text-center text-[13px] text-muted print:hidden">
           Demo-Zugang aktiv. Nur für Vorführungen mit Testdaten – in Produktion BACKOFFICE_DEMO entfernen.
         </p>
       )}

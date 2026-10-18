@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { VorgangAktionen } from "@/components/backoffice/Aktionen";
+import { VorgangAktionen, Wiedervorlage } from "@/components/backoffice/Aktionen";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { auditFuerVorgang, protokolliere } from "@/lib/backoffice/audit";
@@ -18,6 +18,7 @@ import { artLabel } from "@/lib/uploads/pruefung";
 import { formatGroesse } from "@/lib/uploads/formate";
 import { ladeVorgang, nachrichten, STATUS_LABEL } from "@/lib/vorgaenge/service";
 import { dokumentLink } from "@/lib/vorgaenge/weiterleitung";
+import { fristlage } from "@/lib/vorgaenge/fristen";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,7 @@ const AKTION: Record<string, string> = {
   bescheid_zugestellt: "Bescheid zugestellt",
   zahlung_angefordert: "Zahlung angefordert",
   zugewiesen: "Zugewiesen",
+  wiedervorlage: "Wiedervorlage",
 };
 
 function Block({ titel, children }: { titel: string; children: React.ReactNode }) {
@@ -62,6 +64,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
   const mangelKat = v.mangel ? tenant.maengel?.kategorien.find((k) => k.id === v.mangel!.kategorie) : undefined;
   const zahlungen = await zahlungenVon((z) => z.tenant === tenant.slug && z.vorgangId === v.id);
   // Relative Links: gültig 5 Minuten, nur mit dieser Sitzung
+  const fl = fristlage(tenant, v, new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" }));
   const links = Object.fromEntries(v.dokumente.map((dok) => [dok.id, dokumentLink("", v, dok.id, b.name, 5 * 60)]));
 
   return (
@@ -193,6 +196,16 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
               zahlungMoeglich={aktiv(tenant, "zahlung")}
             />
           </Block>
+          {v.status !== "erledigt" && (
+            <Block titel="Frist & Wiedervorlage">
+              <Wiedervorlage
+                id={v.id}
+                am={v.wiedervorlage?.am}
+                notiz={v.wiedervorlage?.notiz ? decryptJson<string>(v.wiedervorlage.notiz) : undefined}
+                frist={fl ? { datum: fl.frist, ueberfaellig: fl.ueberfaellig, text: fl.ueberfaellig ? `seit ${-fl.rest} Werktag${fl.rest === -1 ? "" : "en"} überschritten` : fl.rest === 0 ? "endet heute" : `noch ${fl.rest} Werktag${fl.rest === 1 ? "" : "e"}` } : undefined}
+              />
+            </Block>
+          )}
           {(post.length > 0 || zahlungen.length > 0) && (
             <Block titel="Zustellungen & Zahlungen">
               <ul className="space-y-2 text-[14px]">

@@ -6,6 +6,7 @@ import type { TerminRecord, VorgangRecord } from "@/lib/records";
 import { nachrichten } from "./service";
 import { postFuerVorgang, postSicht } from "@/lib/postfach/service";
 import { zahlungenVon, zahlungZugang } from "@/lib/zahlung/service";
+import { kanaeleVon, kanalSicht } from "./benachrichtigung";
 
 /** Bescheide und Zahlungen zu einem Vorgang – für "Meine Anliegen". */
 export async function vorgangExtras(tenant: GemeindeConfig, v: VorgangRecord, zugang?: { code: string }) {
@@ -21,7 +22,7 @@ export async function vorgangExtras(tenant: GemeindeConfig, v: VorgangRecord, zu
     status: z.status,
     url: `/bezahlen/${z.id}?t=${encodeURIComponent(zahlungZugang(z))}`,
   }));
-  return { post, zahlungen };
+  return { post, zahlungen, kanaele: kanaeleVon(v).map(kanalSicht), bewertet: !!v.bewertet };
 }
 
 function mangelLabel(tenant: GemeindeConfig, id?: string) {

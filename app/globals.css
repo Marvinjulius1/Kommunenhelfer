@@ -432,3 +432,29 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     unicode-bidi: plaintext;
   }
 }
+
+/* Druck (z. B. Wirkungsbericht als PDF): hell, ohne Glaseffekte, ohne Bedienelemente */
+@media print {
+  :root {
+    color-scheme: light;
+  }
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .glass {
+    background: #fff !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+    border: 1px solid #d9dde2 !important;
+  }
+  .glass,
+  li,
+  tr {
+    break-inside: avoid;
+  }
+  @page {
+    margin: 16mm 14mm;
+  }
+}

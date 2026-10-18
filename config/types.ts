@@ -77,6 +77,8 @@ export interface Amt {
   bearbeitungshinweis?: LText;
   /** Terminbuchung. Fehlt der Eintrag, ist das Amt nicht online buchbar. */
   termine?: Terminangebot;
+  /** Bearbeitungsfrist in Werktagen (Fristüberwachung im Backoffice). Standard: 10. */
+  bearbeitungTage?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,6 +212,8 @@ export interface Leistung {
   dokumente?: DokumentAnforderung[];
   /** Löschfrist für Vorgänge dieser Leistung (Uploads) in Tagen. Standard: uploads.aufbewahrungTage. */
   aufbewahrungTage?: number;
+  /** Bearbeitungsfrist in Werktagen – überschreibt die Frist des Amts. */
+  bearbeitungTage?: number;
   /** Leistungsschlüssel aus dem LeiKa/FIM-Katalog – für spätere OZG-/XÖV-Anbindung. */
   leistungsschluessel?: string;
   /** Rechtsgrundlage (Anzeige als Quelle). */
@@ -260,6 +264,49 @@ export interface Funktionen {
    * Servern des Browser-Herstellers – vorher datenschutzrechtlich prüfen.
    */
   spracheingabe: boolean;
+  /** „Was steht bei mir an?“ – persönliche Hinweise im Konto */
+  hinweise: boolean;
+  /** Status-Nachrichten per SMS (auch ohne Konto) */
+  sms: boolean;
+  /** Status-Nachrichten per WhatsApp (nur mit WhatsApp-Business-Gateway in der EU) */
+  whatsapp: boolean;
+  /** Zufriedenheit nach Antrag und Bearbeitung abfragen (1 Klick) */
+  feedback: boolean;
+}
+
+/**
+ * Wiederkehrende oder einmalige Stichtage für persönliche Hinweise,
+ * z. B. „Hundesteuer fällig am 15.02.“ oder „Bundestagswahl – Briefwahl beantragen“.
+ */
+export interface Stichtag {
+  id: string;
+  titel: LText;
+  text?: LText;
+  /** Jährlich ("MM-TT") oder einmalig ("JJJJ-MM-TT") */
+  daten: string[];
+  /** Wen betrifft es? Haushaltsangaben macht der Bürger freiwillig im Konto. */
+  fuer: "alle" | "hund" | "grundbesitz" | "kinder";
+  /** Ab wie vielen Tagen vorher der Hinweis erscheint */
+  vorlaufTage: number;
+  href?: string;
+  link?: LText;
+}
+
+/**
+ * Annahmen für den Wirkungsbericht. Bewusst konservativ und für die Gemeinde
+ * sichtbar – der Bericht nennt sie immer mit.
+ */
+export interface Wirkungsannahmen {
+  /** Eingesparte Arbeitszeit je Online-Antrag gegenüber Papier/Schalter (Minuten) */
+  minutenProAntrag: number;
+  /** Eingesparte Zeit je online gebuchtem Termin (Telefonat entfällt) */
+  minutenProTermin: number;
+  /** Eingesparte Zeit je sicher beantworteter Frage an den Assistenten (Anruf entfällt) */
+  minutenProAuskunft: number;
+  /** Porto + Druck je digital zugestelltem Bescheid (Cent) */
+  portoCent: number;
+  /** Kosten einer Arbeitsstunde (Euro, z. B. nach KGSt-Bericht) */
+  stundensatzEuro: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -404,6 +451,10 @@ export interface GemeindeConfig {
   fundsachen?: Fundsache[];
   /** Video-Beratung: Basis-URL eines Jitsi-Servers in der EU, z. B. https://meet.example.de */
   videoBeratung?: { url: string; aemter: string[] };
+  /** Stichtage für persönliche Hinweise im Bürgerkonto */
+  stichtage?: Stichtag[];
+  /** Annahmen für den Wirkungsbericht (Standard siehe lib/wirkung.ts) */
+  wirkung?: Partial<Wirkungsannahmen>;
   /** Textbausteine für Rückfragen im Backoffice. */
   textbausteine?: { titel: string; text: string }[];
   /** Ergänzt die Standard-Dokumentarten. */

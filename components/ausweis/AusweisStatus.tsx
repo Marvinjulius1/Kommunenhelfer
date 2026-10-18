@@ -7,6 +7,7 @@ import { useTenant } from "@/components/TenantProvider";
 import { Button } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
+import { aktiv } from "@/lib/funktionen";
 import { deutsch } from "@/lib/i18n";
 
 type Ergebnis = { status: "unbekannt" | "in_produktion" | "abholbereit" | "abgeholt"; text: string };
@@ -95,16 +96,71 @@ export function AusweisStatus() {
                   {vorgemerkt ? (de ? "Wir benachrichtigen Sie" : "We will notify you") : de ? "Benachrichtigen, sobald er da ist" : "Notify me when ready"}
                 </Button>
               ) : (
-                <p className="mt-5 text-[14px] text-muted">
-                  {de ? "Mit einem Bürgerkonto benachrichtigen wir Sie, sobald er da ist. " : "With an account we notify you when it is ready. "}
-                  <Link href="/konto/anmelden?weiter=/ausweis-status" className="font-medium text-accent underline underline-offset-4">
-                    {de ? "Anmelden" : "Sign in"}
-                  </Link>
-                </p>
+                <OhneKonto nummer={nummer} />
               ))}
           </Glass>
         )}
       </div>
     </div>
+  );
+}
+
+/** Ohne Konto: per SMS oder E-Mail benachrichtigen lassen */
+function OhneKonto({ nummer }: { nummer: string }) {
+  const { tenant, lang } = useTenant();
+  const de = deutsch(lang);
+  const sms = aktiv(tenant, "sms");
+  const [kanal, setKanal] = useState<"sms" | "email">(sms ? "sms" : "email");
+  const [ziel, setZiel] = useState("");
+  const [status, setStatus] = useState<"offen" | "ok" | "fehler">("offen");
+
+  const senden = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const r = await fetch("/api/ausweis-status", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ nummer, kanal, ziel }) });
+    setStatus(r.ok ? "ok" : "fehler");
+  };
+
+  if (status === "ok")
+    return (
+      <p role="status" className="mt-5 flex items-center gap-2 text-[15px]">
+        <Icon name="check" className="size-4" />
+        {de ? "Wir benachrichtigen Sie, sobald er da ist. Danach löschen wir Ihren Kontakt." : "We will notify you when it is ready and then delete your contact."}
+      </p>
+    );
+  return (
+    <form onSubmit={senden} className="mt-5 space-y-3 border-t border-[var(--line)] pt-5">
+      <p className="text-[15px] font-medium">{de ? "Benachrichtigen, sobald er da ist" : "Notify me when it is ready"}</p>
+      {sms && (
+        <div className="flex gap-2" role="radiogroup" aria-label={de ? "Kanal" : "Channel"}>
+          {(["sms", "email"] as const).map((k) => (
+            <label key={k} className={`pressable cursor-pointer rounded-full border px-4 py-2 text-[14px] ${kanal === k ? "border-fg font-medium" : "border-[var(--line)] text-muted"}`}>
+              <input type="radio" name="ausweis-kanal" className="sr-only" checked={kanal === k} onChange={() => setKanal(k)} />
+              {k === "sms" ? "SMS" : de ? "E-Mail" : "Email"}
+            </label>
+          ))}
+        </div>
+      )}
+      <label htmlFor="ausweis-ziel" className="block text-[14px] font-medium">
+        {kanal === "sms" ? (de ? "Mobilnummer" : "Mobile number") : de ? "E-Mail-Adresse" : "Email address"}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        <input id="ausweis-ziel" className="field-input min-w-0 flex-1" type={kanal === "sms" ? "tel" : "email"} autoComplete={kanal === "sms" ? "tel" : "email"} value={ziel} onChange={(e) => setZiel(e.target.value)} required />
+        <Button type="submit" variant="glass">
+          <Icon name="bell" className="size-4" />
+          {de ? "Benachrichtigen" : "Notify me"}
+        </Button>
+      </div>
+      {status === "fehler" && (
+        <p role="alert" className="text-[14px] text-danger">
+          {de ? "Bitte prüfen Sie Ihre Eingabe." : "Please check your entry."}
+        </p>
+      )}
+      <p className="text-[13px] text-subtle">
+        {de ? "Oder mit Bürgerkonto: " : "Or with an account: "}
+        <Link href="/konto/anmelden?weiter=/ausweis-status" className="font-medium text-accent underline underline-offset-4">
+          {de ? "Anmelden" : "Sign in"}
+        </Link>
+      </p>
+    </form>
   );
 }

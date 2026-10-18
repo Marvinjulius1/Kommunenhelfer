@@ -61,6 +61,12 @@ export interface VorgangRecord extends StoredRecord {
   /** Verschlüsselt: Nachricht[] (Rückfragen und Antworten) */
   nachrichten: Verschluesselt;
   einwilligungAm: string;
+  /** Wiedervorlage im Backoffice (Notiz verschlüsselt) */
+  wiedervorlage?: { am: string; notiz?: Verschluesselt; benutzer: string };
+  /** Verschlüsselt: Kanaele[] – Status-Nachrichten per SMS/WhatsApp/E-Mail, auch ohne Konto */
+  benachrichtigung?: Verschluesselt;
+  /** Zufriedenheit wurde schon abgefragt/abgegeben */
+  bewertet?: boolean;
   /** Ergebnis der Weiterleitung an das Amt */
   weiterleitung?: { typ: string; ok: boolean; am: string; /** z. B. Submission-ID bei FIT-Connect */ referenz?: string };
 }
@@ -117,7 +123,8 @@ export interface AuditRecord extends StoredRecord {
     | "wartenummer_aufgerufen"
     | "beteiligung"
     | "anpassung"
-    | "vertretung";
+    | "vertretung"
+    | "wiedervorlage";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;
@@ -141,6 +148,8 @@ export interface KontoRecord extends StoredRecord {
   letzteAnmeldung: string;
   /** Bereits versandte Erinnerungen (z. B. "ausweis-90:2027-03-01"), damit nichts doppelt kommt */
   erinnerungen?: string[];
+  /** Ausgeblendete Hinweise („Was steht bei mir an?“) – IDs enthalten das Datum, Wiederkehrendes erscheint im nächsten Jahr neu */
+  ausgeblendet?: string[];
 }
 
 export interface SitzungRecord extends StoredRecord {
@@ -260,6 +269,24 @@ export interface AusweisRecord extends StoredRecord {
   status: "unbekannt" | "in_produktion" | "abholbereit" | "abgeholt";
   kontoIds: string[];
   abholbereitAm?: string;
+  /** Verschlüsselt: Kanaele[] – Benachrichtigung ohne Konto (SMS/E-Mail) */
+  kontakte?: Verschluesselt;
+}
+
+/** Kanal für Status-Nachrichten. Ziel = Telefonnummer (E.164) oder E-Mail-Adresse. */
+export interface Kanal {
+  kanal: "sms" | "whatsapp" | "email";
+  ziel: string;
+}
+
+/** Zufriedenheit (1–5). Ohne Personenbezug; Freitext verschlüsselt, Löschung nach 1 Jahr. */
+export interface FeedbackRecord extends StoredRecord {
+  note: 1 | 2 | 3 | 4 | 5;
+  anlass: "antrag" | "erledigt" | "termin" | "allgemein";
+  leistungId?: string;
+  amtId?: string;
+  /** Verschlüsselt: Freitext */
+  text?: Verschluesselt;
 }
 
 export interface WarteRecord extends StoredRecord {

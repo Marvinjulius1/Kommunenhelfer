@@ -21,9 +21,11 @@ import { artLabel } from "@/lib/uploads/pruefung";
 import { einblenden, feder, gestaffelt, schrittwechsel, uebergang } from "@/lib/motion";
 import { deutsch, tx } from "@/lib/i18n";
 import { Field } from "./Field";
+import { StatusAbo } from "@/components/anliegen/StatusAbo";
+import { Zufriedenheit } from "@/components/feedback/Zufriedenheit";
 import { abgedeckt, Unterlagen, zuordnung } from "./Unterlagen";
 
-type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "unterlagen" } | { typ: "pruefen" } | { typ: "fertig"; nummer: string; zahlung?: { betragCent: number; url: string } };
+type Phase = { typ: "start" } | { typ: "schritt"; index: number; zurUebersicht?: boolean } | { typ: "unterlagen" } | { typ: "pruefen" } | { typ: "fertig"; nummer: string; code?: string; zahlung?: { betragCent: number; url: string } };
 
 export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbelegung?: Record<string, string> }) {
   const { tenant, lang, t, konto } = useTenant();
@@ -168,7 +170,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
       try {
         sessionStorage.removeItem(entwurfKey);
       } catch {}
-      gehe({ typ: "fertig", nummer: data.vorgangsnummer, zahlung: data.zahlung }, 1);
+      gehe({ typ: "fertig", nummer: data.vorgangsnummer, code: konto ? undefined : data.zugangscode, zahlung: data.zahlung }, 1);
     } catch (e) {
       setServerFehler((e as Error).message);
     } finally {
@@ -508,7 +510,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
           )}
 
           {/* ---------- Bestätigung ---------- */}
-          {phase.typ === "fertig" && <Bestaetigung leistung={leistung} nummer={phase.nummer} headingRef={headingRef} email={werte.email} zahlung={phase.zahlung} />}
+          {phase.typ === "fertig" && <Bestaetigung leistung={leistung} nummer={phase.nummer} code={phase.code} headingRef={headingRef} email={werte.email} zahlung={phase.zahlung} />}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -518,12 +520,14 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
 function Bestaetigung({
   leistung,
   nummer,
+  code,
   headingRef,
   email,
   zahlung,
 }: {
   leistung: Leistung;
   nummer: string;
+  code?: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   email?: string;
   zahlung?: { betragCent: number; url: string };
@@ -579,6 +583,10 @@ function Bestaetigung({
         </motion.div>
       )}
 
+      <motion.div variants={einblenden} className="mx-auto mt-8 max-w-md">
+        <StatusAbo vorgangId={nummer} code={code} />
+      </motion.div>
+
       <motion.div variants={einblenden} className="mx-auto mt-10 max-w-md text-left">
         <h2 className="mb-3 text-[13px] font-semibold uppercase tracking-[0.06em] text-subtle">{de ? "So geht es weiter" : "What happens next"}</h2>
         <ol className="prose-calm text-[15px] leading-relaxed">
@@ -586,6 +594,10 @@ function Bestaetigung({
             <li key={i}>{tx(s, lang)}</li>
           ))}
         </ol>
+      </motion.div>
+
+      <motion.div variants={einblenden} className="mx-auto mt-10 max-w-md">
+        <Zufriedenheit anlass="antrag" leistungId={leistung.id} />
       </motion.div>
 
       <motion.div variants={einblenden} className="mt-10 flex flex-wrap justify-center gap-3">

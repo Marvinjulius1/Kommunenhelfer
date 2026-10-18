@@ -11,6 +11,8 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { UnterlagenCheck } from "./UnterlagenCheck";
+import { StatusAbo } from "./StatusAbo";
+import { Zufriedenheit } from "@/components/feedback/Zufriedenheit";
 import { entferneAnliegen, ladeAnliegen, type LokalesAnliegen } from "@/lib/client/anliegen";
 import { einblenden, gestaffelt } from "@/lib/motion";
 import { deutsch } from "@/lib/i18n";
@@ -27,6 +29,8 @@ interface Status {
   zahlungen?: { id: string; betragCent: number; zweck: string; status: string; url: string }[];
   videoLink?: string;
   leistungId?: string;
+  kanaele?: { kanal: "sms" | "whatsapp" | "email"; ziel: string }[];
+  bewertet?: boolean;
 }
 
 const STUFEN = ["eingegangen", "in_bearbeitung", "erledigt"] as const;
@@ -207,6 +211,14 @@ export function MeineAnliegen() {
               )}
 
               {s?.typ === "vorgang" && !!s.nachrichten?.length && <Nachrichten eintrag={a} nachrichten={s.nachrichten} offen={st === "rueckfrage"} onGesendet={() => laden()} />}
+
+              {s?.typ === "vorgang" && st !== "erledigt" && <StatusAbo kompakt vorgangId={a.id} code={a.code || undefined} start={s.kanaele} />}
+
+              {s?.typ === "vorgang" && st === "erledigt" && !s.bewertet && (
+                <div className="mt-6 border-t border-[var(--line)] pt-6">
+                  <Zufriedenheit kompakt anlass="erledigt" vorgang={{ id: a.id, code: a.code || undefined }} frage={de ? "Wie zufrieden sind Sie mit der Bearbeitung?" : "How satisfied are you with how your request was handled?"} />
+                </div>
+              )}
 
               {s?.typ === "termin" && s.slot && <p className="mt-4 text-[15px]">{fmtSlot(s.slot)}</p>}
 

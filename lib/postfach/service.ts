@@ -12,6 +12,7 @@ import type { KontoRecord, PostfachRecord, VorgangDaten, VorgangRecord } from "@
 import { blobs } from "@/lib/storage/blobs";
 import { inTagen, store } from "@/lib/storage/store";
 import { benachrichtige } from "@/lib/push/service";
+import { meldeStand } from "@/lib/vorgaenge/benachrichtigung";
 
 export interface NeuePost {
   tenant: GemeindeConfig;
@@ -61,6 +62,8 @@ export async function stelleZu(p: NeuePost): Promise<PostfachRecord> {
       text: `Guten Tag,\n\nin Ihrem Bürgerservice-Postfach liegt ${p.art === "bescheid" ? "ein neuer Bescheid" : "eine neue Nachricht"} für Sie bereit${p.vorgang ? ` (Vorgang ${p.vorgang.id})` : ""}.\n\nAus Datenschutzgründen senden wir den Inhalt nicht per E-Mail. Bitte melden Sie sich im Portal an${kontoId ? "" : " oder öffnen Sie „Meine Anliegen“ auf dem Gerät, mit dem Sie das Anliegen gestellt haben"}.\n\nFreundliche Grüße\n${p.tenant.email.absenderName}`,
     }).catch(() => undefined);
   }
+  // SMS/WhatsApp an Kanäle, die der Bürger zu diesem Vorgang bestellt hat
+  if (p.vorgang && (p.art === "bescheid" || p.art === "nachricht" || p.art === "zahlung")) await meldeStand(p.tenant, p.vorgang, p.art).catch(() => 0);
   if (kontoId) await benachrichtige(p.tenant, { kontoIds: [kontoId], titel: p.art === "bescheid" ? "Neuer Bescheid" : "Neue Nachricht", text: "In Ihrem Postfach liegt etwas Neues.", url: "/konto/postfach" });
   return r;
 }

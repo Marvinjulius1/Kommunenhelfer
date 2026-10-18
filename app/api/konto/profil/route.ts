@@ -28,6 +28,10 @@ const Schema = z.object({
   iban: opt(42),
   ausweisGueltigBis: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).optional(),
   ausweisAntragsnummer: opt(40),
+  reisepassGueltigBis: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).or(z.literal("")).optional(),
+  kinder: z.array(z.object({ vorname: z.string().trim().max(40), geburtsdatum: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) })).max(12).optional(),
+  hund: z.boolean().optional(),
+  grundbesitz: z.boolean().optional(),
 });
 
 export async function PUT(req: Request) {

@@ -11,7 +11,8 @@ import { checklistenVon, checklisteSicht } from "@/lib/lebenslagen/service";
 import { aktuelleMeldungen } from "@/lib/meldungen/service";
 import { postFuerKonto } from "@/lib/postfach/service";
 import { safeVon } from "@/lib/safe/service";
-import { euro, zahlungenVon } from "@/lib/zahlung/service";
+import { euro, zahlungZugang, zahlungenVon } from "@/lib/zahlung/service";
+import { berechneHinweise, type Hinweis } from "./hinweise";
 import { anliegenVon, profilVon } from "./service";
 
 export interface KachelDaten {
@@ -24,7 +25,6 @@ export interface KachelDaten {
 
 export async function kontoUebersicht(tenant: GemeindeConfig, k: KontoRecord) {
   const { vorgaenge, termine } = await anliegenVon(k);
-  const p = profilVon(k);
   const offen = vorgaenge.filter((v) => v.status !== "erledigt");
   const rueckfragen = vorgaenge.filter((v) => v.status === "rueckfrage").length;
   const heute = new Date().toISOString().slice(0, 16);
@@ -43,17 +43,6 @@ export async function kontoUebersicht(tenant: GemeindeConfig, k: KontoRecord) {
     { href: "/termine", icon: "calendar", titel: "Termine", text: naechster ? `Nächster Termin: ${fmtSlot(naechster.slot)}` : "Termin im Rathaus buchen" },
   ];
 
-  const hinweise: { text: string; href: string; link: string }[] = [];
-  if (p.ausweisGueltigBis) {
-    const tage = Math.round((new Date(p.ausweisGueltigBis).getTime() - Date.now()) / 86400_000);
-    if (tage <= 90)
-      hinweise.push({
-        text: tage < 0 ? "Ihr Personalausweis ist abgelaufen." : `Ihr Personalausweis läuft in ${tage} Tagen ab. Planen Sie etwa 4 Wochen für den neuen Ausweis ein.`,
-        href: "/termine?leistung=personalausweis",
-        link: "Termin buchen",
-      });
-  }
-
   const post = await postFuerKonto(k);
   const ungelesen = post.filter((p) => !p.gelesenAm).length;
   kacheln.push({ href: "/konto/postfach", icon: "inbox", titel: "Postfach", text: ungelesen ? `${ungelesen} ungelesen` : post.length ? "Bescheide und Nachrichten" : "Bescheide kommen digital hierher", zahl: ungelesen });
@@ -68,20 +57,9 @@ export async function kontoUebersicht(tenant: GemeindeConfig, k: KontoRecord) {
 
   if (aktiv(tenant, "lebenslagen") && tenant.lebenslagen?.length) {
     const listen = (await checklistenVon(k)).map((c) => checklisteSicht(tenant, c)).filter((c) => !!c);
-    const heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
     const bald = new Date(Date.now() + 7 * 86400_000).toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
     let faellig = 0;
-    for (const c of listen)
-      for (const sc of c.schritte)
-        if (!sc.erledigt && sc.frist && sc.frist <= bald) {
-          faellig++;
-          if (faellig <= 3)
-            hinweise.push({
-              text: `${c.titel}: „${sc.titel}“ ${sc.frist < heute ? "ist überfällig" : `bis ${new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", timeZone: "UTC" }).format(new Date(sc.frist + "T12:00:00Z"))}`}.`,
-              href: `/lebenslagen/${c.lebenslageId}`,
-              link: "Zur Checkliste",
-            });
-        }
+    for (const c of listen) for (const sc of c.schritte) if (!sc.erledigt && sc.frist && sc.frist <= bald) faellig++;
     const offen = listen.reduce((s, c) => s + c.offen, 0);
     kacheln.push({
       href: listen.length === 1 ? `/lebenslagen/${listen[0].lebenslageId}` : "/lebenslagen",
@@ -102,9 +80,30 @@ export async function kontoUebersicht(tenant: GemeindeConfig, k: KontoRecord) {
   });
 
   kacheln.push(
+    ...(aktiv(tenant, "hinweise") ? [{ href: "/konto/haushalt", icon: "home" as const, titel: "Mein Haushalt", text: "Kinder, Hund, Reisepass – für Hinweise, die zu Ihnen passen" }] : []),
     { href: "/konto/einstellungen", icon: "bell", titel: "Benachrichtigungen", text: k.einstellungen.pushBenachrichtigung ? "Push und E-Mail aktiv" : "E-Mail, Push, Wohnort" },
     { href: "/konto/profil", icon: "user", titel: "Persönliche Daten", text: "Füllen Formulare automatisch aus" },
     { href: "/konto/sicherheit", icon: "lock", titel: "Sicherheit & Datenschutz", text: "Geräte, Passwort, Datenexport, Konto löschen" },
   );
-  return { kacheln, hinweise };
+  return { kacheln, hinweise: aktiv(tenant, "hinweise") ? await hinweiseFuer(tenant, k) : [] };
+}
+
+/** „Was steht bei mir an?“ für ein Konto (Dashboard und tägliche Erinnerung). */
+export async function hinweiseFuer(tenant: GemeindeConfig, k: KontoRecord, heute = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" })): Promise<Hinweis[]> {
+  const { vorgaenge, termine } = await anliegenVon(k);
+  const zahlungen = aktiv(tenant, "zahlung") ? await zahlungenVon((z) => z.kontoId === k.id && z.status === "offen") : [];
+  const checklisten = aktiv(tenant, "lebenslagen") ? (await checklistenVon(k)).map((c) => checklisteSicht(tenant, c)).filter((c) => !!c) : [];
+  return berechneHinweise(
+    tenant,
+    {
+      profil: profilVon(k),
+      vorgaenge,
+      termine,
+      zahlungen: zahlungen.map((z) => ({ id: z.id, betragCent: z.betragCent, zweck: z.zweck, url: `/bezahlen/${z.id}?t=${encodeURIComponent(zahlungZugang(z))}` })),
+      checklisten,
+      abfallBezirk: aktiv(tenant, "abfall") ? k.einstellungen.abfallBezirk : undefined,
+      ausgeblendet: k.ausgeblendet,
+    },
+    heute,
+  );
 }

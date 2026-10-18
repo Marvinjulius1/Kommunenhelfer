@@ -10,12 +10,12 @@ Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfig
 
 | Bereich | Funktionen |
 |---|---|
-| **Erledigen** | Assistent mit einem Eingabefeld · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
-| **Bürgerkonto** | Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
+| **Erledigen** | Assistent mit einem Eingabefeld · Status per SMS/E-Mail auch ohne Konto · Zufriedenheit mit einem Klick · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
+| **Bürgerkonto** | **„Was steht bei mir an?“** (Ausweis läuft ab, Hundesteuer fällig, Kind wird 3 …) · Mein Haushalt · Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
 | **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil |
 | **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · Rat und Ausschüsse (OParl) |
 | **Für alle** | 7 Sprachen inkl. Arabisch (von rechts nach links) und **Leichter Sprache** · Vorlesen · optional Spracheingabe · WCAG 2.1 AA |
-| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · Statistik · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
+| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
 
 ```
 Startseite → „Ich möchte meinen Hund anmelden“ → Unterlagen, Gebühren, Ablauf → Online-Antrag → Bestätigung → Meine Anliegen
@@ -399,12 +399,14 @@ Der Assistent verweist auf diese Dienste deterministisch (z. B. „Schlagloch“
 
 ### Tägliche Aufgaben (Cron)
 
-`GET /api/cron` mit `Authorization: Bearer $CRON_SECRET` – auf Vercel per `vercel.json` täglich um 16 Uhr UTC (Vercel sendet den Header automatisch, wenn `CRON_SECRET` gesetzt ist). Ohne `CRON_SECRET` nur im Demo-/Entwicklungsmodus aufrufbar.
+`GET /api/cron` mit `Authorization: Bearer $CRON_SECRET` – auf Vercel per `vercel.json` täglich um 5 und 16 Uhr UTC (Vercel sendet den Header automatisch, wenn `CRON_SECRET` gesetzt ist). Ohne `CRON_SECRET` nur im Demo-/Entwicklungsmodus aufrufbar.
 
 - Abfall-Erinnerung für morgen (Push je Bezirk, nur nachmittags)
 - Fristen aus Checklisten (Push und E-Mail **ohne** Inhalt – Lebenslagen wie eine Geburt gehören nicht in eine Mail)
 - Personalausweis läuft in 90 bzw. 30 Tagen ab
 - Erinnerung am Vortag eines Termins (mit Unterlagen-Liste bzw. Video-Link)
+- Neue persönliche Hinweise („Was steht bei mir an?“) per Push und E-Mail – ohne Inhalt
+- Werktags morgens: Übersicht „Wiedervorlagen und Fristen“ an Sachbearbeiter/innen mit `email` in `BACKOFFICE_USERS` (nur Vorgangsnummern)
 - Löschfristen: Vorgänge, Postfach, Safe, Zahlungen, Push-Abos, Sitzungen, Checklisten, Meldungen, inaktive Konten (3 Jahre) mit allen Dateien
 
 Jede Aufgabe läuft pro Tag höchstens einmal.
@@ -421,6 +423,16 @@ Jede Aufgabe läuft pro Tag höchstens einmal.
 | **Portal anpassen** – Leistungen ein/aus, Kurztexte, Gebühren, Texte der Startseite; gespeichert wird nur die Abweichung, geprüft wie die Config | – | `/backoffice/admin` (Rolle `admin`) |
 | **Statistik** – nur Tageszähler, keine Personendaten | – | `/backoffice/statistik` (Rolle `admin`) |
 | **Abwesenheit und Vertretung** – die Vertretung sieht die Vorgänge unter „Mir zugewiesen“ | – | `/backoffice/vertretung` |
+
+### Wirkung zeigen und Fristen halten
+
+| Funktion | Wo | Hinweise |
+|---|---|---|
+| **„Was steht bei mir an?“** | `/konto`, `/konto/haushalt` | Hinweise aus Profil, freiwilligen Haushaltsangaben (Kinder, Hund, Grundbesitz, Reisepass), Anliegen und den `stichtage` der Gemeinde (z. B. `{ id: "hundesteuer", daten: ["07-01"], fuer: "hund", vorlaufTage: 14 }`). Ausblendbar, als Kalenderdatei abonnierbar. Kinder: Kita ab 1 und 3, Einschulung, Ausweispflicht ab 16. |
+| **Status per SMS/WhatsApp/E-Mail** | Bestätigung, „Meine Anliegen“, Ausweis-Status | Auch ohne Konto. Nachrichten enthalten nur Vorgangsnummer und neuen Stand. `SMS_TRANSPORT=http` + `SMS_API_URL`/`SMS_API_KEY` (EU-Gateway); WhatsApp (`funktionen.whatsapp`) über `WHATSAPP_API_URL`/`WHATSAPP_API_KEY`. Ohne Gateway: nur Log. |
+| **Zufriedenheit** | nach dem Antrag, nach der Erledigung | 1–5 mit einem Klick, optional ein Satz. Ohne Personenbezug, Freitext verschlüsselt, Löschung nach einem Jahr. |
+| **Fristen und Wiedervorlage** | `/backoffice` (Filter „Frist“), Vorgang | Bearbeitungsfrist in Werktagen ohne Feiertage und Schließtage (`bearbeitungTage` je Leistung oder Amt, Standard 10). Überschrittene Fristen und fällige Wiedervorlagen stehen oben. |
+| **Wirkungsbericht** | `/backoffice/bericht` (Rolle `admin`) | Online-Anteil, eingesparte Arbeitszeit und Gegenwert, Bearbeitungsdauer, Fristquote, Zufriedenheit, häufigste Anliegen, Vergleich zum Vorzeitraum. „Als PDF speichern“ über den Druckdialog. Annahmen offen ausgewiesen und per `wirkung` anpassbar. |
 
 ### FIT-Connect
 
@@ -580,7 +592,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Tests und Qualität
 
-- `npm test` – 74 Tests (Vitest): Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
+- `npm test` – 87 Tests (Vitest): persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
 - `npm run assistent:check` – 29 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
 - `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
 - Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100

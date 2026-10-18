@@ -21,12 +21,15 @@ import { dokumentarten } from "@/lib/uploads/dokumentarten";
 import { formatGroesse } from "@/lib/uploads/formate";
 import { artLabel, einreichbareLeistungen, fehlendeUnterlagen, zustaendigesAmt } from "@/lib/uploads/pruefung";
 import { Vorschau } from "./AttachmentTray";
+import { StatusAbo } from "@/components/anliegen/StatusAbo";
 
 export interface EinreichungErgebnis {
   vorgangsnummer: string;
   amt: string;
   bearbeitungshinweis?: string;
   email: string;
+  /** Zugangscode (nur ohne Konto) – für Benachrichtigungen */
+  code?: string;
 }
 
 interface Props {
@@ -90,7 +93,7 @@ export function Einreichung({ daten, vorschauen, nachricht: start, aktiv, ergebn
       const l = tenant.leistungen.find((x) => x.id === leistungId);
       if (!konto) speichereAnliegen({ id: d.vorgangsnummer, code: d.zugangscode, typ: "antrag", titel: l ? tx(l.titel, lang) : de ? "Eingereichte Unterlagen" : "Submitted documents", erstelltAm: new Date().toISOString() });
       entwurfId(true); // neuer Entwurf für das nächste Anliegen
-      onAbgesendet({ vorgangsnummer: d.vorgangsnummer, amt: d.amt, bearbeitungshinweis: d.bearbeitungshinweis, email: email.trim() });
+      onAbgesendet({ vorgangsnummer: d.vorgangsnummer, amt: d.amt, bearbeitungshinweis: d.bearbeitungshinweis, email: email.trim(), code: konto ? undefined : d.zugangscode });
     } catch (err) {
       setFehler((err as Error).message);
     } finally {
@@ -122,6 +125,9 @@ export function Einreichung({ daten, vorschauen, nachricht: start, aktiv, ergebn
             {ergebnis.bearbeitungshinweis ? `${ergebnis.bearbeitungshinweis} ` : ""}
             {de ? `Eine Bestätigung haben wir an ${ergebnis.email} gesendet.` : `We have sent a confirmation to ${ergebnis.email}.`}
           </motion.p>
+          <motion.div variants={einblenden} className="mt-6">
+            <StatusAbo vorgangId={ergebnis.vorgangsnummer} code={ergebnis.code} />
+          </motion.div>
           <motion.div variants={einblenden} className="mt-6">
             <Link href="/meine-anliegen" className="text-[15px] font-medium text-accent underline-offset-4 hover:underline">
               {t.menuAnliegen}

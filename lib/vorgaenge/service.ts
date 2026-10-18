@@ -13,6 +13,8 @@ import { blobs } from "@/lib/storage/blobs";
 import { inTagen, store } from "@/lib/storage/store";
 import { zaehle } from "@/lib/statistik";
 import { leiteWeiter } from "./weiterleitung";
+import { meldeStand } from "./benachrichtigung";
+import { werktageBis } from "./fristen";
 
 export const STATUS_LABEL: Record<VorgangStatus, string> = {
   eingegangen: "Eingegangen",
@@ -123,9 +125,21 @@ export function nachrichten(v: VorgangRecord): Nachricht[] {
   return decryptJson<Nachricht[]>(v.nachrichten);
 }
 
-export async function setzeStatus(v: VorgangRecord, status: VorgangStatus, benutzer?: string) {
-  const neu: VorgangRecord = { ...v, status, verlauf: [...v.verlauf, { status, am: new Date().toISOString(), benutzer }] };
+/**
+ * Setzt den Status. Ändert das Amt den Status (benutzer gesetzt), erhält der Bürger
+ * eine Status-Nachricht über die gewählten Kanäle; beim Abschluss werden Dauer und
+ * Fristeinhaltung für den Wirkungsbericht gezählt (nur Summen).
+ */
+export async function setzeStatus(v: VorgangRecord, status: VorgangStatus, benutzer?: string, tenant?: GemeindeConfig, opt: { melden?: boolean } = {}) {
+  const jetzt = new Date();
+  const neu: VorgangRecord = { ...v, status, verlauf: [...v.verlauf, { status, am: jetzt.toISOString(), benutzer }], ...(status === "erledigt" ? { wiedervorlage: undefined } : {}) };
   await store().put("vorgaenge", neu);
+  if (status === "erledigt" && v.status !== "erledigt") {
+    await zaehle(v.tenant, "erledigt", 1);
+    await zaehle(v.tenant, "erledigt_stunden", Math.max(0, Math.round((jetzt.getTime() - Date.parse(v.erstelltAm)) / 3_600_000)));
+    if (tenant && jetzt.toISOString().slice(0, 10) <= werktageBis(tenant, v)) await zaehle(v.tenant, "frist_eingehalten", 1);
+  }
+  if (tenant && benutzer && opt.melden !== false && status !== v.status && (status === "in_bearbeitung" || status === "erledigt")) await meldeStand(tenant, neu, status).catch(() => 0);
   return neu;
 }
 
@@ -140,6 +154,7 @@ export async function fuegeNachrichtHinzu(tenant: GemeindeConfig, v: VorgangReco
       subject: `Rückfrage zu Ihrem Anliegen ${v.id}`,
       text: `Guten Tag ${d.kontakt.name},\n\nzu Ihrem Anliegen ${v.id} haben wir eine Rückfrage:\n\n${n.text}\n\nBitte antworten Sie unter „Meine Anliegen“ im Bürgerservice-Portal.\n\nFreundliche Grüße\n${tenant.email.absenderName}`,
     }).catch((e) => console.error("[mail] Versand fehlgeschlagen:", (e as Error).message));
+    await meldeStand(tenant, v, "rueckfrage").catch(() => 0);
   }
   await store().put("vorgaenge", neu);
   return neu;
@@ -161,7 +176,7 @@ export async function loescheAbgelaufene(): Promise<number> {
   const safe = await s.purgeExpired<SafeRecord>("safe");
   await Promise.all([...post.flatMap((p) => (p.dokument ? [p.dokument.id] : [])), ...safe.map((x) => x.id)].map((id) => blobs.delete(id)));
   let weitere = 0;
-  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen"]) weitere += (await s.purgeExpired(c)).length;
+  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen", "feedback"]) weitere += (await s.purgeExpired(c)).length;
   // Konten nach Inaktivität: mit allen zugehörigen Daten entfernen
   const konten = await s.purgeExpired<KontoRecord>("konten");
   for (const k of konten) await entferneKontoDaten(k);

@@ -24,6 +24,8 @@ export interface BoBenutzer {
   demo?: boolean;
   /** Zusätzliche Rechte: "redaktion" (Meldungen), "admin" (Portal-Einstellungen, Statistik) */
   rollen?: ("redaktion" | "admin")[];
+  /** Für die tägliche Übersicht „Wiedervorlagen und Fristen“ (ohne Personendaten) */
+  email?: string;
 }
 
 export const SESSION_COOKIE = "bo_sitzung";

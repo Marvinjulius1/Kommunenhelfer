@@ -945,6 +945,46 @@ export default defineGemeinde({
     },
   ],
 
+  // Persönliche Hinweise im Bürgerkonto („Was steht bei mir an?“) – Beispieltermine
+  stichtage: [
+    {
+      id: "hundesteuer",
+      titel: "Hundesteuer fällig",
+      text: "Die Jahressteuer für Ihren Hund wird am 1. Juli fällig. Mit einem Lastschriftmandat geschieht das automatisch.",
+      daten: ["07-01"],
+      fuer: "hund",
+      vorlaufTage: 14,
+      href: "/antrag/lastschrift",
+      link: "Lastschrift einrichten",
+    },
+    {
+      id: "grundsteuer",
+      titel: "Grundsteuer fällig",
+      text: "Die Grundsteuer wird vierteljährlich fällig. Den Betrag finden Sie in Ihrem Grundsteuerbescheid.",
+      daten: ["02-15", "05-15", "08-15", "11-15"],
+      fuer: "grundbesitz",
+      vorlaufTage: 10,
+      href: "/antrag/lastschrift",
+      link: "Lastschrift einrichten",
+    },
+    {
+      id: "ferienprogramm",
+      titel: "Anmeldung Ferienprogramm",
+      text: "Die Anmeldung für das Sommer-Ferienprogramm der Stadtjugendpflege beginnt. Plätze sind begrenzt.",
+      daten: ["05-02"],
+      fuer: "kinder",
+      vorlaufTage: 10,
+    },
+    {
+      id: "buergermeisterwahl-2027",
+      titel: "Bürgermeisterwahl",
+      text: "Sie können bequem per Briefwahl wählen. Die Unterlagen kommen per Post.",
+      daten: ["2027-03-14"],
+      fuer: "alle",
+      vorlaufTage: 45,
+    },
+  ],
+
   textbausteine: [
     {
       titel: "Unterlage fehlt",

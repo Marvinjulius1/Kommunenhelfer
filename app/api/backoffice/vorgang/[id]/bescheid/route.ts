@@ -36,6 +36,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   await stelleZu({ tenant: ctx.tenant, art: "bescheid", titel, text: text || "Ihr Bescheid liegt als Dokument bei.", vorgang: ctx.v, datei, absender: amt ? tx(amt.name, "de") : ctx.tenant.name, tage: 365 * 3 });
   await zaehle(ctx.tenant.slug, "bescheide_digital");
   await protokolliere({ tenant: ctx.tenant.slug, benutzer: ctx.b.name, aktion: "bescheid_zugestellt", vorgangId: ctx.v.id, details: titel });
-  if (form.get("erledigt") === "1") await setzeStatus(ctx.v, "erledigt", ctx.b.name);
+  if (form.get("erledigt") === "1") await setzeStatus(ctx.v, "erledigt", ctx.b.name, ctx.tenant, { melden: false }); // der Bescheid wurde bereits gemeldet
   return Response.json({ ok: true });
 }

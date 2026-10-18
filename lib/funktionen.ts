@@ -17,6 +17,10 @@ export const STANDARD_FUNKTIONEN: Funktionen = {
   push: true,
   vorlesen: true,
   spracheingabe: false,
+  hinweise: true,
+  sms: true,
+  whatsapp: false,
+  feedback: true,
 };
 
 export function aktiv(tenant: Pick<GemeindeConfig, "funktionen">, f: keyof Funktionen): boolean {

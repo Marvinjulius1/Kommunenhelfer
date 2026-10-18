@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { GemeindeConfig } from "./types";
 import { contrast } from "@/lib/color";
 import { STANDARD_DOKUMENTARTEN } from "@/lib/uploads/dokumentarten";
+import { STANDARD_FUNKTIONEN } from "@/lib/funktionen";
 
 const sprache = z.enum(["de", "en", "tr", "uk", "ar", "ru", "ls"]);
 const ltext = z.union([
@@ -70,6 +71,7 @@ const leistung = z.object({
   erfordertOnlineAusweis: z.boolean().optional(),
   dokumente: z.array(z.object({ art: z.string(), pflicht: z.boolean(), hinweis: ltext.optional() })).optional(),
   aufbewahrungTage: z.number().int().positive().optional(),
+  bearbeitungTage: z.number().int().min(1).max(365).optional(),
   leistungsschluessel: z.string().optional(),
   rechtsgrundlage: ltext.optional(),
   externerLink: z.object({ label: ltext, url: z.string().url() }).optional(),
@@ -89,6 +91,7 @@ const amt = z.object({
     ])
     .optional(),
   bearbeitungshinweis: ltext.optional(),
+  bearbeitungTage: z.number().int().min(1).max(365).optional(),
   termine: z
     .object({
       zeiten: wochenplan,
@@ -111,7 +114,7 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
   funktionen: z
     .object(
       Object.fromEntries(
-        ["konto", "onlineAusweis", "zahlung", "maengelmelder", "abfall", "lebenslagen", "beteiligung", "ratsinfo", "warteschlange", "videoBeratung", "fundbuero", "ausweisStatus", "push", "vorlesen", "spracheingabe"].map((k) => [k, z.boolean().optional()]),
+        Object.keys(STANDARD_FUNKTIONEN).map((k) => [k, z.boolean().optional()]),
       ) as Record<keyof NonNullable<GemeindeConfig["funktionen"]>, z.ZodOptional<z.ZodBoolean>>,
     )
     .optional(),
@@ -147,6 +150,30 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
     standardAmtId: z.string(),
   }),
   dokumentarten: z.array(z.object({ id, label: ltext, stichworte: z.array(z.string()) })).optional(),
+  stichtage: z
+    .array(
+      z.object({
+        id,
+        titel: ltext,
+        text: ltext.optional(),
+        daten: z.array(z.string().regex(/^(\d{4}-)?\d{2}-\d{2}$/, "Datum als MM-TT oder JJJJ-MM-TT")).min(1),
+        fuer: z.enum(["alle", "hund", "grundbesitz", "kinder"]),
+        vorlaufTage: z.number().int().min(0).max(365),
+        href: z.string().startsWith("/").optional(),
+        link: ltext.optional(),
+      }),
+    )
+    .optional(),
+  wirkung: z
+    .object({
+      minutenProAntrag: z.number().min(0).max(240),
+      minutenProTermin: z.number().min(0).max(120),
+      minutenProAuskunft: z.number().min(0).max(60),
+      portoCent: z.number().int().min(0).max(1000),
+      stundensatzEuro: z.number().min(0).max(500),
+    })
+    .partial()
+    .optional(),
   textbausteine: z.array(z.object({ titel: z.string().min(1), text: z.string().min(1) })).optional(),
   ortsteile: z.array(z.string()).optional(),
   abfall: z

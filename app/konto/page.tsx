@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Anstehend } from "@/components/konto/Anstehend";
 import { Kachel } from "@/components/konto/Kachel";
 import { AbmeldenKnopf, AnliegenUebernehmen } from "@/components/konto/KontoAktionen";
 import { Glass } from "@/components/ui/Glass";
@@ -27,7 +28,6 @@ export default async function KontoSeite({ searchParams }: { searchParams: Promi
   const hinweise: { text: string; href: string; link: string }[] = [];
   if (!p.email) hinweise.push({ text: "Bitte hinterlegen Sie Ihre E-Mail-Adresse, damit wir Sie über Ihre Anliegen informieren können.", href: "/konto/profil", link: "E-Mail hinterlegen" });
   else if (!k.emailBestaetigt) hinweise.push({ text: "Bitte bestätigen Sie Ihre E-Mail-Adresse über den Link, den wir Ihnen geschickt haben.", href: "/konto/profil", link: "Adresse prüfen" });
-  for (const h of u.hinweise) hinweise.push(h);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 sm:px-6">
@@ -76,6 +76,8 @@ export default async function KontoSeite({ searchParams }: { searchParams: Promi
           ))}
         </ul>
       )}
+
+      {aktiv(tenant, "hinweise") && <Anstehend start={u.hinweise} haushaltLeer={!p.kinder?.length && p.hund === undefined && p.grundbesitz === undefined && !p.reisepassGueltigBis} />}
 
       <div className="mt-8">
         <AnliegenUebernehmen />

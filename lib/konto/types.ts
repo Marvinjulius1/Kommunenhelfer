@@ -23,6 +23,14 @@ export interface Profil {
   ausweisGueltigBis?: string;
   /** Antragsnummer eines beantragten Ausweises – Benachrichtigung, wenn abholbereit */
   ausweisAntragsnummer?: string;
+  reisepassGueltigBis?: string;
+  /**
+   * Mein Haushalt – freiwillig, nur für persönliche Hinweise
+   * („Ihr Kind wird 3 – Kita-Platz schon angemeldet?“). Verschlüsselt wie das ganze Profil.
+   */
+  kinder?: { vorname: string; geburtsdatum: string }[];
+  hund?: boolean;
+  grundbesitz?: boolean;
 }
 
 export interface Einstellungen {
