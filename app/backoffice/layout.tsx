@@ -21,12 +21,15 @@ function navigation(tenant: GemeindeConfig, betreiber: boolean) {
     ["/backoffice/beteiligung", "Beteiligung", an("beteiligung") || an("buergerhaushalt")],
   ];
   const verwaltung: [string, string, boolean][] = [
+    ["/backoffice/krise", "Krisenmodus", an("krisenmodus")],
+    ["/backoffice/briefwahl", "Briefwahl", an("briefwahl")],
     ["/backoffice/kita", "Kita-Plätze", an("kita") && !!tenant.kitas?.length],
     ["/backoffice/veranstaltungen", "Veranstaltungen & Ehrenamt", an("veranstaltungen") || an("ehrenamt")],
     ["/backoffice/parken", "Verwarnungsgeld", an("parken")],
     ["/backoffice/bericht", "Wirkungsbericht", an("wirkungsbericht")],
     ["/backoffice/statistik", "Statistik", true],
     ["/backoffice/formulare", "Formulare", an("formularBaukasten")],
+    ["/backoffice/import", "Leistungen übernehmen", true],
     ["/backoffice/admin", "Portal anpassen", true],
     ["/backoffice/vertretung", "Vertretung", true],
     ["/backoffice/betreiber", "Betreiber: Gemeinden", betreiber],

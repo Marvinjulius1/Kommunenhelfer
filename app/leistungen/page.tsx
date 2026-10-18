@@ -19,7 +19,7 @@ export default async function LeistungenSeite() {
     <Page titel={t.alleLeistungen} intro={de ? "Was möchten Sie erledigen?" : "What would you like to do?"}>
       <ul className="space-y-3">
         {liste.map((l) => {
-          const href = l.online && l.formular ? `/antrag/${l.id}` : l.termin ? `/termine?leistung=${l.id}` : "/kontakt";
+          const href = l.online && l.formular ? `/antrag/${l.id}` : l.termin ? `/termine?leistung=${l.id}` : `/leistungen/${l.id}`;
           return (
             <li key={l.id}>
               <Link href={href} className="block rounded-[24px]">

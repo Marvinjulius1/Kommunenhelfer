@@ -222,6 +222,7 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
   karte: z.object({ mitte: z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]), zoom: z.number().int().min(10).max(18) }).optional(),
   landkreis: z.object({ slug: id, name: z.string().min(1), url: z.string().url().optional() }).optional(),
   gemeinden: z.array(z.object({ slug: id.optional(), name: z.string().min(1), plz: z.array(z.string().regex(/^\d{5}$/)), url: z.string().url().optional() })).optional(),
+  wahlen: z.array(z.object({ id, titel: z.string().min(3), datum: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), antragBis: z.string().datetime({ offset: true }).optional() })).optional(),
   ausschreibungen: z.array(z.object({ id, titel: z.string().min(1), kurz: z.string(), vergabeart: z.string(), frist: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), link: z.string().url() })).optional(),
   ars: z.string().regex(/^\d{12}$/, "Regionalschlüssel mit 12 Ziffern").optional(),
   stichtage: z

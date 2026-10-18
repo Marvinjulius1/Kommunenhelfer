@@ -33,9 +33,11 @@ export const STANDARD_FUNKTIONEN: Funktionen = {
   formularBaukasten: true,
   wirkungsbericht: true,
   auslastung: true,
+  briefwahl: true,
+  krisenmodus: true,
 };
 
-const BASIS: (keyof Funktionen)[] = ["konto", "onlineAusweis", "zahlung", "maengelmelder", "abfall", "push", "vorlesen", "spracheingabe", "hinweise", "feedback", "warnungen", "ausweisStatus"];
+const BASIS: (keyof Funktionen)[] = ["konto", "onlineAusweis", "zahlung", "maengelmelder", "abfall", "push", "vorlesen", "spracheingabe", "hinweise", "feedback", "warnungen", "ausweisStatus", "briefwahl", "krisenmodus"];
 const KOMFORT: (keyof Funktionen)[] = [...BASIS, "lebenslagen", "warteschlange", "fundbuero", "videoBeratung", "sms", "veranstaltungen", "karte", "parken", "friedhof", "wirkungsbericht", "auslastung"];
 const PREMIUM: (keyof Funktionen)[] = [...KOMFORT, "beteiligung", "buergerhaushalt", "ratsinfo", "kita", "ehrenamt", "whatsapp", "kiEntwurf", "formularBaukasten"];
 
@@ -44,7 +46,7 @@ const PREMIUM: (keyof Funktionen)[] = [...KOMFORT, "beteiligung", "buergerhausha
  * hier zentral anpassen. Eine Gemeinde ohne `paket` erhält alle Standardfunktionen.
  */
 export const PAKETE: Record<Paket, { name: string; beschreibung: string; grundpreisEuro: number; jeEinwohnerCent: number; funktionen: (keyof Funktionen)[] }> = {
-  basis: { name: "Basis", beschreibung: "Assistent, Online-Anträge, Bürgerkonto, Bezahlen, Abfall, Mängelmelder", grundpreisEuro: 2400, jeEinwohnerCent: 20, funktionen: BASIS },
+  basis: { name: "Basis", beschreibung: "Assistent, Online-Anträge, Bürgerkonto, Bezahlen, Abfall, Mängelmelder, Briefwahl, Krisenmodus", grundpreisEuro: 2400, jeEinwohnerCent: 20, funktionen: BASIS },
   komfort: { name: "Komfort", beschreibung: "Basis + Lebenslagen, Wartezeit, Fundbüro, Video-Beratung, SMS, Veranstaltungen, Karte, Parken, Friedhof, Wirkungsbericht, Auslastung", grundpreisEuro: 4800, jeEinwohnerCent: 35, funktionen: KOMFORT },
   premium: { name: "Premium", beschreibung: "Komfort + Beteiligung, Bürgerhaushalt, Ratsinfo, Kita-Börse, Ehrenamt, KI-Entwürfe, Formular-Baukasten", grundpreisEuro: 8400, jeEinwohnerCent: 50, funktionen: PREMIUM },
 };

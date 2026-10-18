@@ -36,7 +36,8 @@ export async function getTenant(): Promise<GemeindeConfig> {
  */
 export async function mitAnpassungen(basis: GemeindeConfig): Promise<GemeindeConfig> {
   const { wendeAnpassungenAn } = await import("@/lib/admin/anpassungen");
-  return wendeAnpassungenAn(basis);
+  const { mitBriefwahl } = await import("@/lib/briefwahl/service");
+  return mitBriefwahl(await wendeAnpassungenAn(basis));
 }
 
 export async function getLang(tenant: GemeindeConfig): Promise<Sprache> {

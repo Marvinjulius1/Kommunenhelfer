@@ -94,7 +94,7 @@ export function baueGemeinde(d: NeueGemeinde, slug: string): GemeindeConfig {
   const vorlage = JSON.parse(text) as GemeindeConfig;
   const ohneBeispiele: Partial<GemeindeConfig> = d.demo
     ? {}
-    : { abfall: undefined, kitas: undefined, vereine: undefined, veranstaltungen: undefined, ehrenamt: undefined, friedhoefe: undefined, orte: undefined, karte: undefined, ausschreibungen: undefined, fundsachen: undefined, stichtage: undefined, ratsinfo: { sitzungen: [] } };
+    : { abfall: undefined, kitas: undefined, vereine: undefined, veranstaltungen: undefined, ehrenamt: undefined, friedhoefe: undefined, orte: undefined, karte: undefined, ausschreibungen: undefined, wahlen: undefined, fundsachen: undefined, stichtage: undefined, ratsinfo: { sitzungen: [] } };
   return {
     ...vorlage,
     ...ohneBeispiele,

@@ -299,6 +299,20 @@ export interface Funktionen {
   wirkungsbericht: boolean;
   /** Backoffice: Auslastungsprognose */
   auslastung: boolean;
+  /** Briefwahl (Wahlschein) online beantragen – Wahlen im Backoffice anlegen */
+  briefwahl: boolean;
+  /** Krisenmodus: Startseite wird zur Lage-Seite (Hochwasser, Stromausfall …) */
+  krisenmodus: boolean;
+}
+
+/** Eine Wahl, für die Briefwahl online beantragt werden kann. */
+export interface Wahl {
+  id: string;
+  titel: string;
+  /** Wahltag (JJJJ-MM-TT) */
+  datum: string;
+  /** Antragsschluss (ISO-Zeitpunkt). Standard: zweiter Tag vor der Wahl, 18 Uhr (§ 27 Abs. 4 BWO). */
+  antragBis?: string;
 }
 
 /** Vertragspaket (siehe lib/funktionen.ts). Einzelne Funktionen lassen sich mit `funktionen` zusätzlich an- oder abschalten. */
@@ -583,6 +597,8 @@ export interface GemeindeConfig {
   landkreis?: { slug: string; name: string; url?: string };
   /** Nur für Landkreise: die kreisangehörigen Gemeinden (mit eigenem Portal oder Website) */
   gemeinden?: { slug?: string; name: string; plz: string[]; url?: string }[];
+  /** Wahlen mit Briefwahl-Antrag (weitere legt das Wahlamt im Backoffice an) */
+  wahlen?: Wahl[];
   /** Öffentliche Ausschreibungen (Bekanntmachungen; Angebote laufen über die Vergabeplattform) */
   ausschreibungen?: { id: string; titel: string; kurz: string; vergabeart: string; frist: string; link: string }[];
   /** Amtlicher Regionalschlüssel (12 Stellen) – für amtliche Warnungen über NINA */

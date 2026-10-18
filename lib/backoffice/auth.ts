@@ -15,6 +15,7 @@ import type { GemeindeConfig } from "@/config/types";
 import { demoModus } from "@/lib/demo";
 import { pruefePasswort as pruefeHash } from "@/lib/passwort";
 import { pruefeSignatur, signiere } from "@/lib/signatur";
+import type { SsoRechte } from "./sso";
 
 export interface BoBenutzer {
   name: string;
@@ -26,6 +27,8 @@ export interface BoBenutzer {
   rollen?: ("redaktion" | "admin")[];
   /** Für die tägliche Übersicht „Wiedervorlagen und Fristen“ (ohne Personendaten) */
   email?: string;
+  /** Angemeldet mit dem Rathaus-Konto (SSO) – Rechte stammen aus der Anmeldung */
+  sso?: boolean;
 }
 
 export const SESSION_COOKIE = "bo_sitzung";
@@ -55,8 +58,8 @@ export function findeBenutzer(tenant: GemeindeConfig, name: string): BoBenutzer 
   return benutzerListe().find((b) => b.name === name && (b.gemeinde === "*" || b.gemeinde === tenant.slug));
 }
 
-export function sitzungsToken(tenant: GemeindeConfig, b: BoBenutzer): string {
-  return signiere({ u: b.name, g: tenant.slug }, SESSION_STUNDEN * 3600, "backoffice-sitzung");
+export function sitzungsToken(tenant: GemeindeConfig, b: BoBenutzer, sso?: SsoRechte): string {
+  return signiere({ u: b.name, g: tenant.slug, ...(sso ? { r: sso } : {}) }, SESSION_STUNDEN * 3600, "backoffice-sitzung");
 }
 
 export const cookieOptionen = {
@@ -70,8 +73,10 @@ export const cookieOptionen = {
 /** Angemeldeter Benutzer für diese Gemeinde – oder null. */
 export async function aktuellerBenutzer(tenant: GemeindeConfig): Promise<BoBenutzer | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  const s = pruefeSignatur<{ u: string; g: string }>(token, "backoffice-sitzung");
+  const s = pruefeSignatur<{ u: string; g: string; r?: SsoRechte }>(token, "backoffice-sitzung");
   if (!s || s.g !== tenant.slug) return null;
+  // SSO: Rechte aus der Anmeldung (Gruppen) – gelten bis zum Ende der Sitzung
+  if (s.r) return { name: s.u, gemeinde: tenant.slug, aemter: s.r.aemter, rollen: s.r.rollen, hash: "sso", sso: true };
   return findeBenutzer(tenant, s.u) ?? null;
 }
 

@@ -13,6 +13,7 @@ import { getLang, getNonce, getTenant } from "@/lib/tenant";
 import { aktiv } from "@/lib/funktionen";
 import { aktuellesKonto, sicht } from "@/lib/konto/service";
 import { Warnbanner } from "@/components/Warnbanner";
+import { aktuelleLage } from "@/lib/krise/service";
 import { aktiveWarnungen } from "@/lib/warnungen/service";
 import { vertretungSicht } from "@/lib/konto/vertretung";
 import { Vertretungsleiste } from "@/components/konto/Vertretungsleiste";
@@ -52,7 +53,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const vertretung = kontoRecord ? await vertretungSicht(tenant) : undefined;
   const konto = kontoRecord ? { ...sicht(kontoRecord), handeltFuer: vertretung } : null;
   const dunkel = tenant.akzentfarbeDunkel ?? tenant.akzentfarbe;
-  const warnungen = (await aktiveWarnungen(tenant, kontoRecord?.einstellungen.ortsteil).catch(() => [])).map(({ id, stufe, titel, quelle }) => ({ id, stufe, titel, quelle }));
+  const lage = await aktuelleLage(tenant).catch(() => undefined);
+  const warnungen = [
+    // Krisenmodus steht immer vorn und führt zur Lage-Seite
+    ...(lage ? [{ id: "krise", stufe: lage.stufe, titel: lage.titel, quelle: "krise" }] : []),
+    ...(await aktiveWarnungen(tenant, kontoRecord?.einstellungen.ortsteil).catch(() => [])).map(({ id, stufe, titel, quelle }) => ({ id, stufe, titel, quelle })),
+  ];
 
   // Akzentfarbe der Gemeinde als CSS-Variablen
   const vars = {

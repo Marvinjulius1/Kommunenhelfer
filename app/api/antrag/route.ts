@@ -5,6 +5,8 @@
  */
 import { z } from "zod";
 import { basisUrl, fehler, langAus, leseJson, tenantAus } from "@/lib/api";
+import { offeneWahlen } from "@/lib/briefwahl/service";
+import { BRIEFWAHL_ID } from "@/lib/briefwahl/wahlen";
 import { validiereFormular } from "@/lib/flows/validate";
 import { gatewayFuer } from "@/lib/integrations";
 import { fuerText, handelndesKonto, protokolliereVertretung } from "@/lib/konto/vertretung";
@@ -61,6 +63,11 @@ export async function POST(req: Request) {
   const konto = h?.konto;
   // Rechtlich nur mit sicherer Identifizierung (z. B. elektronische Wohnsitzanmeldung) – und nur persönlich
   if (leistung.erfordertOnlineAusweis && (konto?.vertrauensniveau !== "hoch" || h?.vollmacht)) return fehler("online_ausweis_noetig", 403);
+  // Briefwahl: nur persönlich und nur bis zum Antragsschluss (§ 27 BWO)
+  if (leistung.id === BRIEFWAHL_ID) {
+    if (h?.vollmacht || body.fuerKind !== undefined) return fehler("persoenlich_noetig", 403);
+    if (!(await offeneWahlen(tenant)).some((w) => w.id === pruefung.werte.wahl)) return fehler("antragsfrist_abgelaufen", 410);
+  }
   let fuer = h ? fuerText(h) : undefined;
   if (body.fuerKind !== undefined && h) {
     const p = profilVon(h.selbst);

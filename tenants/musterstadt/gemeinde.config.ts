@@ -70,7 +70,7 @@ export default defineGemeinde({
       id: "buergerbuero",
       name: "Bürgerbüro",
       ort: "Rathaus, Erdgeschoss, Zimmer 0.12",
-      zustaendigkeiten: ["meldewesen", "anmeldung", "ummeldung", "abmeldung", "personalausweis", "reisepass", "meldebescheinigung", "führungszeugnis", "fundsache", "beglaubigung"],
+      zustaendigkeiten: ["meldewesen", "anmeldung", "ummeldung", "abmeldung", "personalausweis", "reisepass", "meldebescheinigung", "führungszeugnis", "fundsache", "beglaubigung", "wahlen"],
       bearbeitungshinweis: "In der Regel bearbeiten wir Ihr Anliegen innerhalb von 3 Werktagen.",
       weiterleitung: { typ: "email", adresse: "buergerbuero@musterstadt.example" },
       termine: {
@@ -842,6 +842,8 @@ export default defineGemeinde({
   // (Beispieldaten – Bezirke und Termine sind frei erfunden)
   // -------------------------------------------------------------------------
   ortsteile: ["Altstadt", "Nordviertel", "Südfeld", "Oberdorf"],
+  // Beispiel: Briefwahl-Antrag ist bis zum Freitag vor der Wahl, 18 Uhr, online
+  wahlen: [{ id: "bgm-2026", titel: "Bürgermeisterwahl", datum: "2026-11-22" }],
   landkreis: { slug: "musterkreis", name: "Landkreis Musterkreis" },
 
   // ---------------------------------------------------------------- Etappe 9: Bürgerdienste (Beispieldaten)

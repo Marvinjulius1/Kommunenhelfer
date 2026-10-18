@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Selbst erstelltes Beispiel im Aufbau eines XZuFi-Exports (keine amtlichen Texte) -->
+<xzufi:transfer.operation.CreateOrUpdate xmlns:xzufi="http://xoev.de/schemata/xzufi/2_2_0">
+  <xzufi:leistung>
+    <xzufi:id schemeAgencyID="L100001">B100019</xzufi:id>
+    <xzufi:referenzLeiKa listURI="urn:de:fim:leika:leistung">99108008000000</xzufi:referenzLeiKa>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul listURI="urn:de:fim:leika:textmodul"><code>01</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE">Hundesteuer Anmeldung</xzufi:inhalt>
+      <xzufi:inhalt languageCode="en-GB">Dog tax registration</xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>14</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE">&lt;p&gt;Wenn Sie einen Hund halten, müssen Sie ihn bei der Gemeinde anmelden. Danach erhalten Sie einen Bescheid.&lt;/p&gt;</xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>03</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE"><![CDATA[<p>Die Hundesteuer ist eine Gemeindesteuer.</p><script>alert(1)</script><p>Melden Sie Ihren Hund innerhalb von <b>zwei Wochen</b> an.</p>]]></xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>04</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE"><![CDATA[<ul><li>Personalausweis</li><li>Nachweis der Haftpflichtversicherung</li></ul>]]></xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>09</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE">Innerhalb von zwei Wochen nach Beginn der Haltung.</xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>12</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE">Hundesteuersatzung der Gemeinde</xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulKosten>
+      <xzufi:kosten>
+        <xzufi:betragFix>0</xzufi:betragFix>
+        <xzufi:beschreibung><xzufi:inhalt languageCode="de-DE">Anmeldung</xzufi:inhalt></xzufi:beschreibung>
+      </xzufi:kosten>
+    </xzufi:modulKosten>
+    <xzufi:begriffImKontext>Hund anmelden</xzufi:begriffImKontext>
+  </xzufi:leistung>
+  <xzufi:leistung>
+    <xzufi:id>B100020</xzufi:id>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>1</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE">Sondernutzungserlaubnis für Werbeaufsteller</xzufi:inhalt>
+    </xzufi:modulText>
+    <xzufi:modulText>
+      <xzufi:leikaTextmodul><code>06</code></xzufi:leikaTextmodul>
+      <xzufi:inhalt languageCode="de-DE">Nach Gebührensatzung, je Aufsteller und Monat.</xzufi:inhalt>
+    </xzufi:modulText>
+  </xzufi:leistung>
+</xzufi:transfer.operation.CreateOrUpdate>

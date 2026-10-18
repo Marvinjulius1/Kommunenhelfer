@@ -172,6 +172,8 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
         setPhase({ typ: "unterlagen" });
         return;
       }
+      if (data.fehler === "antragsfrist_abgelaufen") throw new Error(de ? "Die Antragsfrist für diese Wahl ist abgelaufen. Wahlscheine gibt es jetzt nur noch persönlich im Wahlamt (z. B. bei plötzlicher Erkrankung)." : "The application deadline has passed.");
+      if (data.fehler === "persoenlich_noetig") throw new Error(de ? "Briefwahl kann nur die wahlberechtigte Person selbst online beantragen. Für andere Personen ist eine schriftliche Vollmacht im Wahlamt nötig." : "Only the voter can apply online.");
       if (res.status === 403 && data.fehler === "online_ausweis_noetig") throw new Error(de ? "Für diesen Antrag ist eine Anmeldung mit dem Online-Ausweis nötig." : "This application requires the online ID.");
       if (!res.ok) throw new Error(res.status === 429 ? t.zuVieleAnfragen : t.fehlerAllgemein);
       if (hatDok) entwurfId(true);

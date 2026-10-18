@@ -61,7 +61,10 @@ export async function PUT(req: Request) {
   for (const s of p.data.schritte) for (const f of s.felder) if ((f.typ === "radio" || f.typ === "select") && !(f.optionen ?? []).filter(Boolean).length) return fehler("validierung", 422, { probleme: [`„${f.label}“: Auswahlfeld ohne Optionen`] });
 
   const belegt = new Set([...c.basis.leistungen.map((l) => l.id), ...eigene.map((l) => l.id)]);
-  const leistung = baueLeistung(p.data, belegt, c.basis.kontakt.ort);
+  // Was der Baukasten nicht bearbeitet (z. B. aus XZuFi übernommen), bleibt erhalten
+  const vorher = eigene.find((l) => l.id === p.data.id);
+  const erhalten = vorher ? Object.fromEntries((["beschreibung", "fristen", "rechtsgrundlage", "leistungsschluessel", "externerLink", "dauer"] as const).filter((k) => vorher[k] !== undefined).map((k) => [k, vorher[k]])) : {};
+  const leistung = { ...erhalten, ...baueLeistung(p.data, belegt, c.basis.kontakt.ort) };
   const record: AnpassungRecord = { ...c.record, eigeneLeistungen: [...eigene.filter((l) => l.id !== leistung.id), leistung], geaendertVon: c.b.name };
   const probleme = pruefeGemeinde(anwenden(c.basis, record));
   if (probleme.length) return fehler("validierung", 422, { probleme });

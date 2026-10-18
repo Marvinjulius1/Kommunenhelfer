@@ -137,7 +137,10 @@ export interface AuditRecord extends StoredRecord {
     | "buergerhaushalt"
     | "verwarnung"
     | "vorgang_exportiert"
-    | "kassen_export";
+    | "kassen_export"
+    | "krisenmodus"
+    | "briefwahl"
+    | "leistungen_importiert";
   vorgangId?: string;
   dokumentId?: string;
   details?: string;

@@ -10,13 +10,13 @@ Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfig
 
 | Bereich | Funktionen |
 |---|---|
-| **Erledigen** | Assistent mit einem Eingabefeld · Status per SMS/E-Mail auch ohne Konto · Zufriedenheit mit einem Klick · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
+| **Erledigen** | Assistent mit einem Eingabefeld · Status per SMS/E-Mail auch ohne Konto · Zufriedenheit mit einem Klick · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · **Briefwahl online beantragen** · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
 | **Bürgerkonto** | **Familie, Vollmacht, Unternehmenskonto** · **„Was steht bei mir an?“** (Ausweis läuft ab, Hundesteuer fällig, Kind wird 3 …) · Mein Haushalt · Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
-| **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil · **Warnungen** (Banner, NINA) · **Stadtkarte** · **Parken & Verwarnungsgeld** · **Friedhöfe** |
+| **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil · **Warnungen** (Banner, NINA) · **Krisenmodus** (Startseite wird zur Lage-Seite) · **Stadtkarte** · **Parken & Verwarnungsgeld** · **Friedhöfe** |
 | **Familie & Freizeit** | **Kita-Platz-Börse** mit Warteliste · **Veranstaltungen & Ferienprogramm** mit Anmeldung · **Vereinsverzeichnis** · **Ehrenamtsbörse** |
 | **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · **Bürgerhaushalt** · Rat und Ausschüsse (OParl) mit Livestream |
 | **Für alle** | 7 Sprachen inkl. Arabisch (von rechts nach links) und **Leichter Sprache** · Vorlesen · optional Spracheingabe · WCAG 2.1 AA |
-| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · **Formular-Baukasten** · **Entwürfe für Rückfragen und Bescheide** · **Auslastungsprognose** · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook, FIT-Connect oder **WebDAV/DMS** · **Antrag als PDF** · **Kassen-Export** |
+| **Verwaltung** | Backoffice mit Rollen, **Anmeldung mit dem Rathaus-Konto (Microsoft, ADFS, Keycloak)**, **Leistungsbeschreibungen aus FIM/XZuFi übernehmen**, **Wahlamt: Briefwahl-Anträge, Doppelanträge, Export**, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · **Formular-Baukasten** · **Entwürfe für Rückfragen und Bescheide** · **Auslastungsprognose** · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook, FIT-Connect oder **WebDAV/DMS** · **Antrag als PDF** · **Kassen-Export** |
 | **Für Fachverfahren** | **Schnittstelle zum Abholen von Vorgängen und Zurückmelden** (Status, Rückfrage, Bescheid, Gebühr) |
 | **Für den Betreiber** | **Betreiber-Cockpit** mit allen Gemeinden · **Demo-Gemeinde per Klick** · **Pakete Basis/Komfort/Premium** mit Preisrechner · **Landkreis-Portal** mit Gemeindesuche und Zuständigkeit im Assistenten |
 
@@ -45,9 +45,10 @@ Startseite → Büroklammer / Foto / Drag & Drop → Vorsortierung → Zusammenf
 14. [Barrierefreiheit](#barrierefreiheit-wcag-21-aa--bitv-20)
 15. [Datenschutz und Sicherheit](#datenschutz-und-sicherheit)
 16. [Schnittstellen: BundID, FIT-Connect, XÖV](#schnittstellen-bundid-fit-connect-xöv)
-17. [Betreiber: Gemeinden, Pakete, Landkreis](#betreiber-gemeinden-pakete-landkreis)
-18. [Tests und Qualität](#tests-und-qualität)
-19. [Roadmap](#roadmap)
+17. [Krisenmodus, Briefwahl, Leistungs-Import, Rathaus-Login](#krisenmodus-briefwahl-leistungs-import-rathaus-login)
+18. [Betreiber: Gemeinden, Pakete, Landkreis](#betreiber-gemeinden-pakete-landkreis)
+19. [Tests und Qualität](#tests-und-qualität)
+20. [Roadmap](#roadmap)
 
 ---
 
@@ -658,6 +659,57 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ---
 
+## Krisenmodus, Briefwahl, Leistungs-Import, Rathaus-Login
+
+### Krisenmodus (Backoffice → Verwaltung → Krisenmodus, Rolle `redaktion`)
+
+Ein Schalter, und die **Startseite wird zur Lage-Seite** – bei Hochwasser, Stromausfall, Unwetter, Abkochgebot oder Evakuierung. Vorlagen füllen Titel, Text und Verhaltenstipps vor; dazu Bürgertelefon, Notrufe (112, 110, 116 117), Anlaufstellen (Sandsack-Ausgabe, Wärmestube, Notunterkunft) und **laufende Lagemeldungen** mit Uhrzeit. Auf allen anderen Seiten erscheint ein Banner mit Link zu `/lage`; das Bürgerportal bleibt über „Weiter zum Bürgerportal“ erreichbar. Die Seite aktualisiert sich jede Minute von selbst, amtliche NINA-Warnungen stehen mit darauf, auf Wunsch geht eine Push-Nachricht an alle Abonnenten. Keine Personendaten, jede Änderung im Protokoll. Im Basis-Paket enthalten – Sicherheit ist kein Zusatzverkauf.
+
+> Die Verhaltenstipps der Vorlagen sind allgemein gehalten. Bitte vor dem Einsatz mit Feuerwehr, Gesundheitsamt und Katastrophenschutz abstimmen.
+
+### Briefwahl (Wahlamt: Backoffice → Verwaltung → Briefwahl)
+
+Das Wahlamt legt eine Wahl an (Titel, Wahltag) – sofort gibt es den Online-Antrag auf Wahlschein, auch im Assistenten („Ich bin am Wahltag im Urlaub“). **Antragsschluss** ist automatisch der zweite Tag vor der Wahl, 18 Uhr deutscher Zeit (§ 27 Abs. 4 BWO; über `antragBis` abweichend einstellbar). Danach ist der Antrag gesperrt.
+
+- Antrag mit Name, Geburtsdatum, Wohnanschrift, optional Wählerverzeichnis-Nummer; Versand an die Wohnanschrift, eine andere Anschrift oder Abholung.
+- **Nur persönlich:** Mit Vollmacht oder für ein Kind ist der Online-Antrag gesperrt (Hinweis auf die schriftliche Vollmacht im Wahlamt).
+- **Doppelanträge** (gleicher Name und Geburtstag, Schreibweise egal – „Müller“ = „MUELLER“) werden markiert, nicht abgelehnt, damit niemand erfährt, ob eine andere Person schon beantragt hat.
+- „Unterlagen versandt“ für viele Anträge auf einmal – die Antragsteller werden benachrichtigt.
+- **Export als CSV** für die Wahlsoftware. Anträge werden nach 120 Tagen gelöscht (an das Landesrecht anpassen).
+- Wahlen können auch in der Konfiguration stehen: `wahlen: [{ id, titel, datum }]`. Zuständig ist das Amt mit der Zuständigkeit `wahlen`.
+
+> Die Fristen entsprechen der Bundeswahlordnung; Kommunal- und Landtagswahlen folgen den Wahlordnungen der Länder – bitte prüfen. Eine direkte Schnittstelle zur Wahlsoftware (z. B. über deren Import) ist noch nicht gebaut; der CSV-Export ist der Zwischenschritt.
+
+### Leistungsbeschreibungen übernehmen (Backoffice → Verwaltung → Leistungen übernehmen, Rolle `admin`)
+
+Bund und Länder pflegen Leistungsbeschreibungen zentral (FIM/LeiKa). Aus dem Redaktionssystem des Landes bzw. dem Portalverbund lassen sie sich als **XZuFi-Datei** exportieren. Datei hochladen → Vorschau (Titel, Leistungsschlüssel, Unterlagen, Kosten; schon vorhandene Leistungen sind markiert) → auswählen → zuständiges Amt wählen → übernehmen. Die Leistungen erscheinen sofort im Portal (eigene Detailseite `/leistungen/<id>`) und im Assistenten; einen Online-Antrag ergänzt man im Formular-Baukasten.
+
+- Der XML-Leser ist bewusst minimal: **kein DOCTYPE, keine Entitäten** (Schutz vor XXE und „Billion Laughs“), Größen- und Tiefenbegrenzung.
+- Texte werden in reinen Text umgewandelt – kein HTML aus der Quelle wird je ausgegeben, Inhalte gelten als Daten, nie als Anweisungen.
+- Geprüft wird mit denselben Regeln wie die Konfigurationsdatei; Leistungen der Datei werden nie überschrieben.
+
+> **Status:** Die Zuordnung der LeiKa-Textmodule (01 Bezeichnung, 03 Volltext, 04 Unterlagen, 06 Kosten, 07 Ablauf, 09 Frist, 12 Rechtsgrundlage, 14 Kurztext …) steht in `lib/import/xzufi.ts` und ist mit einer selbst erstellten Beispieldatei getestet, **noch nicht mit einem echten Export eines Landesredaktionssystems**. Ein direkter Abruf aus dem PVOG ist noch nicht eingebaut (erfordert Zugang beim Land).
+
+### Anmeldung mit dem Rathaus-Konto (OpenID Connect)
+
+Mitarbeitende melden sich mit ihrem normalen Konto der Verwaltung an – Microsoft Entra ID, ADFS, Keycloak oder jeder andere OpenID-Connect-Dienst. Die **Rechte kommen aus Gruppen oder App-Rollen**: Wer keiner eingetragenen Gruppe angehört, kommt nicht hinein. Passwort-Anmeldung bleibt daneben möglich.
+
+```bash
+BACKOFFICE_SSO='[{"gemeinde":"musterstadt","name":"Microsoft",
+  "issuer":"https://login.microsoftonline.com/<Verzeichnis-ID>/v2.0",
+  "clientId":"<Anwendungs-ID>","clientSecretEnv":"SSO_SECRET_MUSTERSTADT",
+  "gruppen":{"<Gruppen-ID>":{"aemter":["steueramt"]},"<Gruppen-ID>":{"aemter":["*"],"rollen":["admin"]}}}]'
+SSO_SECRET_MUSTERSTADT=…
+```
+
+Weiterleitungs-URL in der App-Registrierung: `https://<portal>/api/backoffice/sso/rueckkehr`. In Entra ID den Gruppen-Claim (`groups`) oder App-Rollen (`roles`) aktivieren.
+
+Technik: Authorization Code mit PKCE, `state` und `nonce` in einem signierten, kurzlebigen Cookie; das ID-Token wird über die Schlüssel des Anbieters geprüft (RS256/PS256/ES256 – `none` und HMAC abgelehnt), dazu Aussteller, Empfänger, Ablauf und Nonce. Nur HTTPS-Anbieter (lokal `localhost` zum Testen). Die Rechte gelten für die Sitzung (8 Stunden); Änderungen an Gruppen wirken bei der nächsten Anmeldung.
+
+> **Status:** gegen einen lokalen Test-Anmeldedienst geprüft (komplette Anmeldung im Browser), **noch nicht gegen einen echten Microsoft-Entra- oder ADFS-Mandanten**. Abmelden beendet nur die Portal-Sitzung, nicht die Anmeldung bei Microsoft. Per SSO angemeldete Mitarbeitende erscheinen (noch) nicht in der Auswahl „Zuweisen an“.
+
+---
+
 ## Betreiber: Gemeinden, Pakete, Landkreis
 
 **Betreiber-Cockpit** (`/backoffice/betreiber`, Benutzer mit `"gemeinde": "*"` und Rolle `admin`): alle Gemeinden mit Paket, Einwohnern und Jahrespreis, Paket ändern, Vorschau öffnen.
@@ -668,7 +720,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 | Paket | Inhalt | Preis |
 |---|---|---|
-| Basis | Assistent, Online-Anträge, Bürgerkonto, Bezahlen, Abfall, Mängelmelder | 2.400 € + 0,20 € je Einwohner |
+| Basis | Assistent, Online-Anträge, Bürgerkonto, Bezahlen, Abfall, Mängelmelder, Briefwahl, Krisenmodus | 2.400 € + 0,20 € je Einwohner |
 | Komfort | + Lebenslagen, Wartezeit, Fundbüro, Video-Beratung, SMS, Veranstaltungen, Karte, Parken, Friedhof, Wirkungsbericht, Auslastung | 4.800 € + 0,35 € je Einwohner |
 | Premium | + Beteiligung, Bürgerhaushalt, Ratsinfo, Kita-Börse, Ehrenamt, KI-Entwürfe, Formular-Baukasten | 8.400 € + 0,50 € je Einwohner |
 
@@ -680,7 +732,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Tests und Qualität
 
-- `npm test` – 120 Tests (Vitest): Pakete und Preise, Demo-Gemeinde aus der Vorlage (gültige Konfiguration, ohne Beispieldaten im Echtbetrieb), Kontrast-Anpassung hell/dunkel, Wappen und SVG-Prüfung, Landkreis-Zuständigkeit und Gemeindesuche, PDF-Erzeugung (Umlaute, mehrere Seiten), Schnittstellen-Schlüssel (Hash, Gemeinde, Ämter), Vollmachten (Einladung, Umfang, Ablauf, Widerruf), Unternehmenskonten (Mitglieder, Löschung mit letztem Inhaber), Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
+- `npm test` – 131 Tests (Vitest): Briefwahl-Antragsschluss (Sommer-/Winterzeit), Doppelanträge, Krisenmodus (Aktivieren, Meldungen, Beenden), XML-Leser (DOCTYPE/XXE abgelehnt), XZuFi-Übernahme (ohne HTML/Skripte), OIDC-Token-Prüfung (Signatur, Aussteller, Empfänger, Ablauf, Nonce, `alg: none`) und Gruppen-Rechte, Pakete und Preise, Demo-Gemeinde aus der Vorlage (gültige Konfiguration, ohne Beispieldaten im Echtbetrieb), Kontrast-Anpassung hell/dunkel, Wappen und SVG-Prüfung, Landkreis-Zuständigkeit und Gemeindesuche, PDF-Erzeugung (Umlaute, mehrere Seiten), Schnittstellen-Schlüssel (Hash, Gemeinde, Ämter), Vollmachten (Einladung, Umfang, Ablauf, Widerruf), Unternehmenskonten (Mitglieder, Löschung mit letztem Inhaber), Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
 - `npm run assistent:check` – 34 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
 - `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
 - Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100
