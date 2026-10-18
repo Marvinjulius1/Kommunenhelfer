@@ -100,6 +100,7 @@ export function VorgangAktionen({
   textbausteine,
   zahlungMoeglich,
   hatAntwort = false,
+  entwurfMoeglich = true,
 }: {
   id: string;
   status: string;
@@ -110,6 +111,8 @@ export function VorgangAktionen({
   zahlungMoeglich: boolean;
   /** Letzte Nachricht stammt vom Bürger → Entwurf als Antwort */
   hatAntwort?: boolean;
+  /** Entwürfe sind Teil des Pakets */
+  entwurfMoeglich?: boolean;
 }) {
   const router = useRouter();
   const [neu, setNeu] = useState(status);
@@ -206,7 +209,7 @@ export function VorgangAktionen({
           <label htmlFor="rueckfrage" className="text-[14px] font-medium">
             Rückfrage an den Bürger
           </label>
-          <span className="flex gap-1">
+          <span className={entwurfMoeglich ? "flex gap-1" : "hidden"}>
             <button type="button" disabled={!!entwirft} onClick={() => entwerfen(status === "rueckfrage" || hatAntwort ? "antwort" : "rueckfrage")} className="pressable rounded-full bg-[var(--line)] px-3 py-1 text-[13px] font-medium">
               {entwirft === "rueckfrage" || entwirft === "antwort" ? "Entwurf wird erstellt …" : "Entwurf vorschlagen"}
             </button>
@@ -243,7 +246,7 @@ export function VorgangAktionen({
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-[14px] font-medium">Bescheid digital zustellen</p>
-          <button type="button" disabled={!!entwirft} onClick={() => entwerfen("bescheid")} className="pressable rounded-full bg-[var(--line)] px-3 py-1 text-[13px] font-medium">
+          <button type="button" hidden={!entwurfMoeglich} disabled={!!entwirft} onClick={() => entwerfen("bescheid")} className="pressable rounded-full bg-[var(--line)] px-3 py-1 text-[13px] font-medium">
             {entwirft === "bescheid" ? "Entwurf wird erstellt …" : "Begleittext vorschlagen"}
           </button>
         </div>

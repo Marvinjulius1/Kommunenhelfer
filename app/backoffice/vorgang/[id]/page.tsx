@@ -35,6 +35,7 @@ const AKTION: Record<string, string> = {
   zugewiesen: "Zugewiesen",
   wiedervorlage: "Wiedervorlage",
   entwurf_erstellt: "Entwurf vorgeschlagen",
+  vorgang_exportiert: "Als PDF exportiert",
 };
 
 function Block({ titel, children }: { titel: string; children: React.ReactNode }) {
@@ -82,7 +83,13 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
             {v.zugewiesen ? ` · bei ${v.zugewiesen}` : ""}
           </p>
         </div>
-        <span className="rounded-full bg-[var(--line)] px-4 py-1 text-[13px]">{STATUS_LABEL[v.status]}</span>
+        <div className="flex flex-wrap items-center gap-2">
+          <a href={`/api/backoffice/vorgang/${v.id}/pdf`} className="pressable inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-1 text-[13px]">
+            <Icon name="file" className="size-4" />
+            Als PDF
+          </a>
+          <span className="rounded-full bg-[var(--line)] px-4 py-1 text-[13px]">{STATUS_LABEL[v.status]}</span>
+        </div>
       </div>
       {v.weiterleitung?.ok && v.weiterleitung.referenz && (
         <p className="mt-4 flex items-center gap-2 text-[14px] text-muted">
@@ -202,6 +209,7 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
               textbausteine={tenant.textbausteine ?? []}
               zahlungMoeglich={aktiv(tenant, "zahlung")}
               hatAntwort={nachrichten(v).at(-1)?.von === "buerger"}
+              entwurfMoeglich={aktiv(tenant, "kiEntwurf")}
             />
           </Block>
           {v.status !== "erledigt" && (

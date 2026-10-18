@@ -9,6 +9,7 @@ import { Glass } from "@/components/ui/Glass";
 import { aktuellerBenutzer, hatRolle } from "@/lib/backoffice/auth";
 import { feedbackSeit, feedbackText } from "@/lib/feedback/service";
 import { tx } from "@/lib/i18n";
+import { aktiv } from "@/lib/funktionen";
 import { statistikZeitraum } from "@/lib/statistik";
 import { getTenant } from "@/lib/tenant";
 import { annahmen, kennzahlen, veraenderung, zeitraum, ZEITRAUM_LABEL, type ZeitraumArt } from "@/lib/wirkung";
@@ -35,6 +36,7 @@ export default async function Bericht({ searchParams }: { searchParams: Promise<
   const tenant = await getTenant();
   const b = await aktuellerBenutzer(tenant);
   if (!b) redirect("/backoffice/anmelden");
+  if (!aktiv(tenant, "wirkungsbericht")) return <p className="text-[14px] text-muted">Diese Funktion ist im Paket Ihrer Gemeinde nicht enthalten.</p>;
   if (!hatRolle(b, "admin")) return <p className="text-[14px] text-muted">Den Wirkungsbericht sehen Benutzer mit der Rolle „admin“.</p>;
 
   const art = ((await searchParams).zeitraum ?? "monat") as ZeitraumArt;
@@ -95,6 +97,9 @@ export default async function Bericht({ searchParams }: { searchParams: Promise<
               </Link>
             ))}
           </nav>
+          <a href={`/api/backoffice/zahlungen?von=${z.von.slice(0, 10)}&bis=${z.bis.slice(0, 10)}`} className="pressable rounded-full border border-[var(--line)] px-4 py-2 text-[14px]">
+            Kassen-Export (CSV)
+          </a>
           <Drucken />
         </div>
       </div>

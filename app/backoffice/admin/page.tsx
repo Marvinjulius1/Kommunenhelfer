@@ -3,7 +3,7 @@ import { AdminFormular, type AdminLeistung } from "@/components/backoffice/Admin
 import { ladeAnpassungen } from "@/lib/admin/anpassungen";
 import { aktuellerBenutzer, hatRolle } from "@/lib/backoffice/auth";
 import { tx } from "@/lib/i18n";
-import { getTenant, getTenantBySlug } from "@/lib/tenant";
+import { basisTenant, getTenant } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +12,7 @@ export default async function AdminSeite() {
   const b = await aktuellerBenutzer(tenant);
   if (!b) redirect("/backoffice/anmelden");
   if (!hatRolle(b, "admin")) return <p className="text-[14px] text-muted">Den Admin-Bereich sehen Benutzer mit der Rolle „admin“.</p>;
-  const basis = getTenantBySlug(tenant.slug);
+  const basis = await basisTenant(tenant.slug);
   const a = await ladeAnpassungen(tenant.slug);
   const leistungen: AdminLeistung[] = basis.leistungen
     .map((l) => ({

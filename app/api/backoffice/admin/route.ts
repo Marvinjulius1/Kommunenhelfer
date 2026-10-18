@@ -11,7 +11,7 @@ import { hatRolle } from "@/lib/backoffice/auth";
 import { boZugang } from "@/lib/backoffice/zugang";
 import { pruefeGemeinde } from "@/config/schema";
 import type { LText } from "@/config/types";
-import { getTenantBySlug } from "@/lib/tenant";
+import { basisTenant } from "@/lib/tenant";
 
 export const runtime = "nodejs";
 
@@ -42,7 +42,7 @@ export async function PUT(req: Request) {
   if (!hatRolle(c.b, "admin")) return fehler("keine_berechtigung", 403);
   const d = Schema.safeParse(await leseJson(req, 128_000).catch(() => null));
   if (!d.success) return fehler("ungueltige_anfrage");
-  const basis = getTenantBySlug((await tenantAus(req)).slug);
+  const basis = await basisTenant((await tenantAus(req)).slug);
   if (Object.keys(d.data.leistungen).some((id) => !basis.leistungen.some((l) => l.id === id))) return fehler("leistung_unbekannt");
   // Geändert wird die deutsche Fassung; vorhandene Übersetzungen bleiben erhalten.
   const mitSprache = (alt: LText | undefined, neu: string | undefined): LText | undefined => (neu === undefined ? undefined : typeof alt === "object" ? { ...alt, de: neu } : neu);

@@ -9,7 +9,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { tenants, DEFAULT_TENANT } from "@/tenants";
 
-const PREVIEW = process.env.NODE_ENV !== "production" || process.env.ALLOW_TENANT_PREVIEW === "1";
+const FORMAT = /^[a-z0-9-]{2,40}$/;
+const PREVIEW = process.env.NODE_ENV !== "production" || process.env.ALLOW_TENANT_PREVIEW === "1" || process.env.DEMO_MODUS === "1";
 
 function tenantFuer(req: NextRequest): { slug: string; setCookie?: string } {
   const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "").split(":")[0];
@@ -17,11 +18,14 @@ function tenantFuer(req: NextRequest): { slug: string; setCookie?: string } {
   if (host.includes(".") && tenants[sub]) return { slug: sub };
 
   if (PREVIEW) {
+    // Auch im Betreiber-Bereich angelegte Gemeinden – der Server prüft, ob es sie gibt
     const q = req.nextUrl.searchParams.get("gemeinde");
-    if (q && tenants[q]) return { slug: q, setCookie: q };
+    if (q && FORMAT.test(q)) return { slug: q, setCookie: q };
     const c = req.cookies.get("gemeinde")?.value;
-    if (c && tenants[c]) return { slug: c };
+    if (c && FORMAT.test(c)) return { slug: c };
   }
+  // Subdomain einer im Portal angelegten Gemeinde (unbekannte fallen auf die Standard-Gemeinde zurück)
+  if (host.split(".").length >= 3 && FORMAT.test(sub) && sub !== "www") return { slug: sub };
   return { slug: DEFAULT_TENANT };
 }
 

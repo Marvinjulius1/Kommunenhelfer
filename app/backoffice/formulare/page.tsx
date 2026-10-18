@@ -4,7 +4,8 @@ import { ladeAnpassungen } from "@/lib/admin/anpassungen";
 import { aktuellerBenutzer, hatRolle } from "@/lib/backoffice/auth";
 import { zuBau } from "@/lib/formulare/baukasten";
 import { tx } from "@/lib/i18n";
-import { getTenant, getTenantBySlug } from "@/lib/tenant";
+import { aktiv } from "@/lib/funktionen";
+import { basisTenant, getTenant } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +13,9 @@ export default async function FormulareSeite() {
   const tenant = await getTenant();
   const b = await aktuellerBenutzer(tenant);
   if (!b) redirect("/backoffice/anmelden");
+  if (!aktiv(tenant, "formularBaukasten")) return <p className="text-[14px] text-muted">Diese Funktion ist im Paket Ihrer Gemeinde nicht enthalten.</p>;
   if (!hatRolle(b, "admin")) return <p className="text-[14px] text-muted">Formulare verwalten Benutzer mit der Rolle „admin“.</p>;
-  const basis = getTenantBySlug(tenant.slug);
+  const basis = await basisTenant(tenant.slug);
   const eigene = (await ladeAnpassungen(tenant.slug))?.eigeneLeistungen ?? [];
   const vorlagen = basis.leistungen
     .filter((l) => l.formular)

@@ -5,6 +5,7 @@ import { Page } from "@/components/ui/Page";
 import { aktiv } from "@/lib/funktionen";
 import { deutsch, tx } from "@/lib/i18n";
 import { getLang, getTenant } from "@/lib/tenant";
+import { portalAdresse } from "@/lib/landkreis";
 
 export const metadata: Metadata = { title: "Alle Dienste" };
 
@@ -76,6 +77,10 @@ export default async function DiensteSeite() {
     ...(an("ehrenamt") ? [{ href: "/ehrenamt", icon: "heart" as const, titel: de ? "Ehrenamt" : "Volunteering", text: de ? "Mit anpacken – hier wird Hilfe gesucht" : "Lend a hand" }] : []),
     ...(an("ratsinfo") && tenant.ratsinfo ? [{ href: "/ratsinfo", icon: "megaphone" as const, titel: de ? "Rat und Ausschüsse" : "Council", text: de ? "Sitzungen, Beschlüsse, Livestream" : "Meetings, decisions, livestream" }] : []),
   ];
+  const region: Dienst[] = [
+    ...(tenant.landkreis ? [{ href: tenant.landkreis.url ?? portalAdresse(tenant.landkreis.slug), icon: "home" as const, titel: tenant.landkreis.name, text: de ? "Kfz, Führerschein, Bauantrag, Wohngeld" : "Vehicles, driving licence, building, housing benefit" }] : []),
+    ...(tenant.gemeinden?.length ? [{ href: "/gemeinden", icon: "home" as const, titel: de ? "Ihre Gemeinde" : "Your municipality", text: de ? "Meldewesen, Ausweise, Abfall und mehr" : "Registration, IDs, waste and more" }] : []),
+  ];
   const lebenslagen: Dienst[] = an("lebenslagen")
     ? (tenant.lebenslagen ?? []).map((l) => ({ href: `/lebenslagen/${l.id}`, icon: "tasks" as const, titel: tx(l.titel, lang), text: tx(l.kurz, lang) }))
     : [];
@@ -87,6 +92,7 @@ export default async function DiensteSeite() {
       <Gruppe titel={de ? "Familie und Freizeit" : "Family and leisure"} dienste={familie} />
       <Gruppe titel={de ? "Mitmachen" : "Participate"} dienste={mitmachen} />
       <Gruppe titel={de ? "Lebenslagen" : "Life events"} dienste={lebenslagen} />
+      <Gruppe titel={de ? "In der Region" : "In the region"} dienste={region} />
     </Page>
   );
 }

@@ -30,3 +30,23 @@ export function onColor(hex: string): string {
 export function rgbTriplet(hex: string): string {
   return hexToRgb(hex).join(" ");
 }
+
+function mische(hex: string, ziel: [number, number, number], anteil: number) {
+  const [r, g, b] = hexToRgb(hex);
+  const m = (a: number, z: number) => Math.round(a + (z - a) * anteil);
+  return "#" + [m(r, ziel[0]), m(g, ziel[1]), m(b, ziel[2])].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+/** Dunkelt eine Farbe ab, bis sie auf hellem Grund 4.5:1 erreicht (WCAG AA). */
+export function barrierefreiHell(hex: string): string {
+  let f = hex;
+  for (let i = 1; i <= 20 && Math.min(contrast(f, "#ffffff"), contrast(f, "#f5f7f9")) < 4.5; i++) f = mische(hex, [0, 0, 0], i * 0.05);
+  return f;
+}
+
+/** Hellt eine Farbe auf, bis sie auf dunklem Grund und dunklen Karten 4.5:1 erreicht. */
+export function barrierefreiDunkel(hex: string): string {
+  let f = hex;
+  for (let i = 1; i <= 20 && Math.min(contrast(f, "#07090b"), contrast(f, "#12161a")) < 4.5; i++) f = mische(hex, [255, 255, 255], i * 0.05);
+  return f;
+}

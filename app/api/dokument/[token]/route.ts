@@ -12,7 +12,7 @@ import { protokolliere } from "@/lib/backoffice/audit";
 import { aktuellerBenutzer, darfAmt } from "@/lib/backoffice/auth";
 import { pruefeSignatur } from "@/lib/signatur";
 import { blobs } from "@/lib/storage/blobs";
-import { getTenantBySlug } from "@/lib/tenant";
+import { basisTenant } from "@/lib/tenant";
 import { ladeVorgang } from "@/lib/vorgaenge/service";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ const nichtGefunden = () => new Response("Nicht gefunden oder Link abgelaufen.",
 export async function GET(_req: Request, { params }: { params: Promise<{ token: string }> }) {
   const t = pruefeSignatur<{ d: string; v: string; t: string; u: string }>((await params).token, "dokument");
   if (!t) return nichtGefunden();
-  const tenant = getTenantBySlug(t.t);
+  const tenant = await basisTenant(t.t);
   if (tenant.slug !== t.t) return nichtGefunden();
   const v = await ladeVorgang(tenant, t.v);
   const dok = v?.dokumente.find((d) => d.id === t.d);

@@ -12,7 +12,8 @@
     "assistent:check": "node scripts/assistent-check.mjs",
     "backoffice:benutzer": "node scripts/backoffice-benutzer.mjs",
     "test": "vitest run",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "schnittstelle:schluessel": "node scripts/schnittstelle-schluessel.mjs"
   },
   "engines": {
     "node": ">=20"

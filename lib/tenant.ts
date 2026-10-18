@@ -15,9 +15,19 @@ export function getTenantBySlug(slug: string | null | undefined): GemeindeConfig
   return (slug && tenants[slug]) || tenants[DEFAULT_TENANT] || Object.values(tenants)[0];
 }
 
+/**
+ * Basis-Konfiguration ohne Admin-Anpassungen: Konfigurationsdatei, sonst eine im
+ * Betreiber-Bereich angelegte Gemeinde, sonst die Standard-Gemeinde.
+ */
+export async function basisTenant(slug: string | null | undefined): Promise<GemeindeConfig> {
+  if (slug && tenants[slug]) return tenants[slug];
+  const { dynamischerMandant } = await import("@/lib/mandanten/service");
+  return (await dynamischerMandant(slug))?.config ?? getTenantBySlug(DEFAULT_TENANT);
+}
+
 export async function getTenant(): Promise<GemeindeConfig> {
   const h = await headers();
-  return mitAnpassungen(getTenantBySlug(h.get("x-tenant")));
+  return mitAnpassungen(await basisTenant(h.get("x-tenant")));
 }
 
 /**

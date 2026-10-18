@@ -7,6 +7,7 @@
  * per Shared-Layout-Animation (nur transform) nach unten; das Wappen wird
  * kleiner und rückt nach oben. Kein Umschalten, kein Layout-Sprung.
  */
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Antwort, Nachricht } from "@/lib/assistant/types";
@@ -249,6 +250,14 @@ export function Home() {
               : undefined
           }
         />
+        {!gespraech && !!tenant.gemeinden?.length && (
+          <p className="mt-6 text-center text-[15px]">
+            <Link href="/gemeinden" className="inline-flex items-center gap-1 text-accent underline underline-offset-4">
+              {de ? "Anliegen bei Ihrer Gemeinde? Hier geht es zu Ihrer Gemeinde" : "Something for your municipality? Find it here"}
+              <Icon name="chevronRight" className="size-4 rtl:-scale-x-100" />
+            </Link>
+          </p>
+        )}
         <div aria-live="polite">
           {up.hinweis && (
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2 flex items-center justify-center gap-2 text-center text-[13px] text-muted">

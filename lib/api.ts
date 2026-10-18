@@ -1,11 +1,11 @@
 /** Gemeinsame Helfer für API-Routen. */
 import "server-only";
 import type { GemeindeConfig, Sprache } from "@/config/types";
-import { getTenantBySlug, mitAnpassungen } from "@/lib/tenant";
+import { basisTenant, mitAnpassungen } from "@/lib/tenant";
 
 /** Mandant aus dem von der Middleware gesetzten Header (inkl. Änderungen aus dem Admin-Bereich). */
 export async function tenantAus(req: Request): Promise<GemeindeConfig> {
-  return mitAnpassungen(getTenantBySlug(req.headers.get("x-tenant")));
+  return mitAnpassungen(await basisTenant(req.headers.get("x-tenant")));
 }
 
 export function langAus(req: Request, tenant: GemeindeConfig, wunsch?: unknown): Sprache {

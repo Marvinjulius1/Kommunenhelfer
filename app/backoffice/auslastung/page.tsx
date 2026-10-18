@@ -7,6 +7,7 @@ import { prognose } from "@/lib/auslastung/prognose";
 import { aktuellerBenutzer, darfAmt } from "@/lib/backoffice/auth";
 import { heuteBerlin } from "@/lib/booking/slots";
 import { tx } from "@/lib/i18n";
+import { aktiv } from "@/lib/funktionen";
 import { getTenant } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function Auslastung() {
   const tenant = await getTenant();
   const b = await aktuellerBenutzer(tenant);
   if (!b) redirect("/backoffice/anmelden");
+  if (!aktiv(tenant, "auslastung")) return <p className="text-[14px] text-muted">Diese Funktion ist im Paket Ihrer Gemeinde nicht enthalten.</p>;
   const heute = heuteBerlin();
   const aemter = tenant.aemter.filter((a) => a.termine && darfAmt(b, a.id));
   const daten = await Promise.all(

@@ -16,7 +16,9 @@ Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfig
 | **Familie & Freizeit** | **Kita-Platz-Börse** mit Warteliste · **Veranstaltungen & Ferienprogramm** mit Anmeldung · **Vereinsverzeichnis** · **Ehrenamtsbörse** |
 | **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · **Bürgerhaushalt** · Rat und Ausschüsse (OParl) mit Livestream |
 | **Für alle** | 7 Sprachen inkl. Arabisch (von rechts nach links) und **Leichter Sprache** · Vorlesen · optional Spracheingabe · WCAG 2.1 AA |
-| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · **Formular-Baukasten** · **Entwürfe für Rückfragen und Bescheide** · **Auslastungsprognose** · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook oder FIT-Connect |
+| **Verwaltung** | Backoffice mit Rollen, Zuweisung, Vertretung, Textbausteinen · Bescheide digital zustellen · Gebühren anfordern · Wartenummern aufrufen · Fundbüro, Ausweise, Meldungen · Portal selbst anpassen · **Formular-Baukasten** · **Entwürfe für Rückfragen und Bescheide** · **Auslastungsprognose** · Statistik · **Wirkungsbericht als PDF** · Fristüberwachung und Wiedervorlage · Weiterleitung per E-Mail, Webhook, FIT-Connect oder **WebDAV/DMS** · **Antrag als PDF** · **Kassen-Export** |
+| **Für Fachverfahren** | **Schnittstelle zum Abholen von Vorgängen und Zurückmelden** (Status, Rückfrage, Bescheid, Gebühr) |
+| **Für den Betreiber** | **Betreiber-Cockpit** mit allen Gemeinden · **Demo-Gemeinde per Klick** · **Pakete Basis/Komfort/Premium** mit Preisrechner · **Landkreis-Portal** mit Gemeindesuche und Zuständigkeit im Assistenten |
 
 ```
 Startseite → „Ich möchte meinen Hund anmelden“ → Unterlagen, Gebühren, Ablauf → Online-Antrag → Bestätigung → Meine Anliegen
@@ -43,8 +45,9 @@ Startseite → Büroklammer / Foto / Drag & Drop → Vorsortierung → Zusammenf
 14. [Barrierefreiheit](#barrierefreiheit-wcag-21-aa--bitv-20)
 15. [Datenschutz und Sicherheit](#datenschutz-und-sicherheit)
 16. [Schnittstellen: BundID, FIT-Connect, XÖV](#schnittstellen-bundid-fit-connect-xöv)
-17. [Tests und Qualität](#tests-und-qualität)
-18. [Roadmap](#roadmap)
+17. [Betreiber: Gemeinden, Pakete, Landkreis](#betreiber-gemeinden-pakete-landkreis)
+18. [Tests und Qualität](#tests-und-qualität)
+19. [Roadmap](#roadmap)
 
 ---
 
@@ -488,6 +491,29 @@ Dazu `FIT_CONNECT_CLIENT_ID` und `FIT_CONNECT_CLIENT_SECRET` setzen (Self-Servic
 
 > **Status:** nach der öffentlichen Spezifikation umgesetzt, die Verschlüsselung ist durch einen Test abgesichert – die Übermittlung selbst ist aber **noch nicht gegen die FIT-Connect-Testumgebung geprüft**. Im Echtbetrieb müssen `FIT_CONNECT_TOKEN_URL` und `FIT_CONNECT_SUBMISSION_URL` gesetzt werden.
 
+### Fachverfahren ohne FIT-Connect: Abholen, Ablegen, Zurückmelden
+
+Viele Fachverfahren (Steuer, Melderegister, Ordnungsamt, DMS/E-Akte) sprechen kein FIT-Connect. Dafür gibt es drei Wege – Daten müssen nicht doppelt getippt werden:
+
+| Weg | Einrichtung | Was passiert |
+|---|---|---|
+| **Ablage im DMS (WebDAV)** | Amt: `weiterleitung: { typ: "webdav", url, benutzerEnv: "DMS_USER", passwortEnv: "DMS_PASS" }` | Je Vorgang ein Ordner mit `antrag.pdf` (Zusammenfassung), `vorgang.json` (alle Angaben, maschinenlesbar) und den Unterlagen. Zugangsdaten nur als Umgebungsvariablen. |
+| **Abholen** | `GET /api/schnittstelle/vorgaenge?seit=<ISO>&status=eingegangen&limit=50` | Neue Vorgänge der freigegebenen Ämter als JSON, Unterlagen als signierte Links (begrenzt gültig). Jeder Abruf steht im Audit-Log. |
+| **Zurückmelden** | `POST /api/schnittstelle/vorgaenge/<id>` mit `{ status?, rueckfrage?, bescheid?: { titel, text?, pdf? }, gebuehr?: { betrag, zweck } }` | Status ändern, Rückfrage stellen, Bescheid (PDF, Base64) ins Postfach zustellen, Gebühr anfordern – der Bürger wird benachrichtigt wie bei der Bearbeitung im Backoffice. |
+
+Zugang per Schlüssel (`Authorization: Bearer …`), je Fachverfahren auf eine Gemeinde und bestimmte Ämter beschränkt:
+
+```bash
+npm run schnittstelle:schluessel -- "Steuer-Fachverfahren" musterstadt steueramt
+# → Schlüssel einmalig anzeigen und sicher übergeben; den JSON-Eintrag in SCHNITTSTELLEN eintragen
+```
+
+Gespeichert wird nur der SHA-256-Hash, verglichen in konstanter Zeit. Die Schnittstelle ist auf 120 Anfragen pro Minute begrenzt.
+
+**Im Backoffice:** „Als PDF“ an jedem Vorgang (für E-Akte oder Druck, protokolliert) und im Wirkungsbericht der **Kassen-Export** (CSV mit Datum, Betrag, Zweck, Bezug, Zahlart, Referenz und Summe; Rolle `admin`, Excel-tauglich, geschützt gegen Formel-Injektion).
+
+> **Status:** gegen einen echten DMS-WebDAV-Server und ein echtes Fachverfahren **noch nicht geprüft**; Abholen und Zurückmelden sind lokal mit generiertem Schlüssel getestet.
+
 ---
 
 ## Sprachen, Leichte Sprache, Vorlesen
@@ -632,9 +658,29 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ---
 
+## Betreiber: Gemeinden, Pakete, Landkreis
+
+**Betreiber-Cockpit** (`/backoffice/betreiber`, Benutzer mit `"gemeinde": "*"` und Rolle `admin`): alle Gemeinden mit Paket, Einwohnern und Jahrespreis, Paket ändern, Vorschau öffnen.
+
+**Neue Gemeinde per Klick:** Name, Art, Farbe, Einwohner, Paket, Anschrift und optional Wappen (SVG/PNG – SVGs mit Skripten oder externen Verweisen werden abgelehnt) eingeben. Das Portal entsteht aus der Musterstadt-Vorlage mit allen Leistungen; die Farbe wird automatisch auf WCAG-AA-Kontrast gebracht, ohne Wappen gibt es ein Schild mit Initiale. Als **Demo** mit allen Beispieldaten (Kitas, Veranstaltungen, Karte …) – löscht sich nach 60 Tagen – oder als leeres Portal für den Echtbetrieb. Erreichbar sofort unter `?gemeinde=<slug>` (Vorschau; in Produktion nur mit `DEMO_MODUS=1` oder `ALLOW_TENANT_PREVIEW=1`) bzw. unter der Subdomain. Gemeinden aus Dateien (`tenants/`) bleiben unverändert und gehen vor.
+
+**Pakete** (`lib/funktionen.ts`, Preise sind **Beispielwerte** netto pro Jahr, zentral anpassbar):
+
+| Paket | Inhalt | Preis |
+|---|---|---|
+| Basis | Assistent, Online-Anträge, Bürgerkonto, Bezahlen, Abfall, Mängelmelder | 2.400 € + 0,20 € je Einwohner |
+| Komfort | + Lebenslagen, Wartezeit, Fundbüro, Video-Beratung, SMS, Veranstaltungen, Karte, Parken, Friedhof, Wirkungsbericht, Auslastung | 4.800 € + 0,35 € je Einwohner |
+| Premium | + Beteiligung, Bürgerhaushalt, Ratsinfo, Kita-Börse, Ehrenamt, KI-Entwürfe, Formular-Baukasten | 8.400 € + 0,50 € je Einwohner |
+
+`paket` in der Konfiguration schaltet Funktionen außerhalb des Pakets ab (Seiten und Schnittstellen antworten mit 404); ein ausdrücklicher Schalter in `funktionen` geht immer vor. Ohne `paket` gelten die Standardfunktionen.
+
+**Landkreis-Version:** Ein Landkreis ist ein eigener Mandant (`art: "Landkreis"`, Beispiel `tenants/musterkreis`) mit seinen Leistungen (Kfz-Zulassung, Führerschein, Bauantrag, Wohngeld …) und der Liste `gemeinden` (Name, PLZ, Slug oder eigene URL). Das Kreisportal bietet „Zu Ihrer Gemeinde“ mit Suche nach Name oder PLZ (`/gemeinden`). Gemeinden tragen `landkreis: { slug, name }`: Der Assistent erkennt, wenn der Kreis zuständig ist („Auto anmelden“ → Zulassungsstelle des Kreises, auch wenn die Gemeinde eine ähnlich klingende Leistung hat), und die Dienste-Seite zeigt „In der Region“.
+
+---
+
 ## Tests und Qualität
 
-- `npm test` – 109 Tests (Vitest): Vollmachten (Einladung, Umfang, Ablauf, Widerruf), Unternehmenskonten (Mitglieder, Löschung mit letztem Inhaber), Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
+- `npm test` – 120 Tests (Vitest): Pakete und Preise, Demo-Gemeinde aus der Vorlage (gültige Konfiguration, ohne Beispieldaten im Echtbetrieb), Kontrast-Anpassung hell/dunkel, Wappen und SVG-Prüfung, Landkreis-Zuständigkeit und Gemeindesuche, PDF-Erzeugung (Umlaute, mehrere Seiten), Schnittstellen-Schlüssel (Hash, Gemeinde, Ämter), Vollmachten (Einladung, Umfang, Ablauf, Widerruf), Unternehmenskonten (Mitglieder, Löschung mit letztem Inhaber), Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
 - `npm run assistent:check` – 34 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
 - `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
 - Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100
@@ -643,7 +689,8 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Roadmap
 
-- **Für den Echtbetrieb anbinden:** BundID (SAML) statt Test-Identität, ePayBL-Zugangsdaten des Landes, FIT-Connect gegen die Testumgebung prüfen, ClamAV, SMTP
+- **Für den Echtbetrieb anbinden:** BundID (SAML) statt Test-Identität, ePayBL-Zugangsdaten des Landes, FIT-Connect gegen die Testumgebung prüfen, WebDAV/DMS und Schnittstelle mit einem echten Fachverfahren testen, SMS-Gateway, ClamAV, SMTP
+- Betreiber: Verträge/Rechnungen aus dem Cockpit, eigene Domains je Gemeinde per Klick, Vorschau ohne Cookie (Link mit Ablauf)
 - Datenbank-Adapter (PostgreSQL), S3-Objektspeicher in der EU und Redis-Rate-Limit für mehrere Instanzen
 - Backoffice: Termine verwalten, Wissensbasis pflegen, bedingte Felder im Formular-Baukasten
 - Übersetzungen der Seitentexte und Leistungsinhalte in alle Sprachen; Gebärdensprach-Videos

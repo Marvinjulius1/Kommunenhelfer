@@ -842,6 +842,7 @@ export default defineGemeinde({
   // (Beispieldaten – Bezirke und Termine sind frei erfunden)
   // -------------------------------------------------------------------------
   ortsteile: ["Altstadt", "Nordviertel", "Südfeld", "Oberdorf"],
+  landkreis: { slug: "musterkreis", name: "Landkreis Musterkreis" },
 
   // ---------------------------------------------------------------- Etappe 9: Bürgerdienste (Beispieldaten)
   karte: { mitte: [50.6512, 9.7458], zoom: 15 },

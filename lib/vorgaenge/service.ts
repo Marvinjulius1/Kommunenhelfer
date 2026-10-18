@@ -16,6 +16,8 @@ import { leiteWeiter } from "./weiterleitung";
 import { meldeStand } from "./benachrichtigung";
 import { werktageBis } from "./fristen";
 
+export const VORGANG_STATUS_LISTE: string[] = ["eingegangen", "in_bearbeitung", "rueckfrage", "erledigt"];
+
 export const STATUS_LABEL: Record<VorgangStatus, string> = {
   eingegangen: "Eingegangen",
   in_bearbeitung: "In Bearbeitung",
@@ -179,7 +181,7 @@ export async function loescheAbgelaufene(): Promise<number> {
   const safe = await s.purgeExpired<SafeRecord>("safe");
   await Promise.all([...post.flatMap((p) => (p.dokument ? [p.dokument.id] : [])), ...safe.map((x) => x.id)].map((id) => blobs.delete(id)));
   let weitere = 0;
-  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen", "feedback", "auslastung", "kitawuensche", "veranstaltungen", "anmeldungen", "ehrenamt", "interessen", "buergerhaushalte", "verwarnungen", "vollmachten", "vertretungslog"]) weitere += (await s.purgeExpired(c)).length;
+  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen", "feedback", "auslastung", "kitawuensche", "veranstaltungen", "anmeldungen", "ehrenamt", "interessen", "buergerhaushalte", "verwarnungen", "vollmachten", "vertretungslog", "mandanten"]) weitere += (await s.purgeExpired(c)).length;
   // Konten nach Inaktivität: mit allen zugehörigen Daten entfernen
   const konten = await s.purgeExpired<KontoRecord>("konten");
   for (const k of konten) await entferneKontoDaten(k);

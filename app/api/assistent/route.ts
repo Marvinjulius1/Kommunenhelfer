@@ -8,6 +8,8 @@ import { beantworte } from "@/lib/assistant/engine";
 import { fehler, langAus, leseJson, tenantAus } from "@/lib/api";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { zaehle } from "@/lib/statistik";
+import { kreisLeistung, kreisLink, kreisVon, punkteFuer } from "@/lib/landkreis";
+import { tx } from "@/lib/i18n";
 
 export const runtime = "nodejs";
 
@@ -37,7 +39,25 @@ export async function POST(req: Request) {
   }
 
   const tenant = await tenantAus(req);
-  const antwort = await beantworte(tenant, { ...body, lang: langAus(req, tenant, body.lang) });
+  let antwort = await beantworte(tenant, { ...body, lang: langAus(req, tenant, body.lang) });
+  // Landkreis zuständig (Kfz, Führerschein, Bauantrag …)? Greift, wenn die Gemeinde nichts weiß
+  // oder die Kreisleistung deutlich besser passt („Auto anmelden“ ist kein Wohnsitz).
+  if (tenant.landkreis && !body.dokumente?.length) {
+    const frage = [...body.nachrichten].reverse().find((m) => m.rolle === "buerger")?.text ?? "";
+    const kreis = await kreisVon(tenant);
+    const treffer = kreis ? kreisLeistung(kreis, frage) : undefined;
+    const lokal = antwort.leistungId ? tenant.leistungen.find((x) => x.id === antwort.leistungId) : undefined;
+    const besser = treffer && (!antwort.sicher || (treffer.punkte >= 3 && treffer.punkte > (lokal ? punkteFuer(lokal, frage) : 0)));
+    if (treffer && besser) {
+      const l = treffer.l;
+      antwort = {
+        text: `Dafür ist der **${tenant.landkreis.name}** zuständig: **${tx(l.titel, "de")}**.\n\n${tx(l.kurz, "de")}`,
+        aktionen: [{ typ: "link", url: kreisLink(tenant, l), label: l.online && l.formular ? "Beim Landkreis beantragen" : l.termin ? "Termin beim Landkreis" : "Zum Kreisportal" }],
+        quellen: [`${tenant.landkreis.name}: ${tx(l.titel, "de")}`],
+        sicher: true,
+      };
+    }
+  }
   await zaehle(tenant.slug, "assistent_anfragen", 1, antwort.leistungId);
   await zaehle(tenant.slug, antwort.sicher ? "assistent_beantwortet" : "assistent_weissnicht");
   return Response.json(antwort, { headers: { "Cache-Control": "no-store" } });

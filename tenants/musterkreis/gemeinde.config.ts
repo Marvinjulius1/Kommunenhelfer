@@ -1,0 +1,141 @@
+/**
+ * Konfiguration: Landkreis Musterkreis (Beispiel für die Landkreis-Version)
+ *
+ * Der Kreis bietet seine eigenen Leistungen an (Kfz, Führerschein, Bauantrag,
+ * Wohngeld) und führt zu den Portalen seiner Gemeinden. Die Gemeinden verweisen
+ * mit `landkreis` hierher. Alle Werte sind frei erfunden.
+ */
+import { defineGemeinde } from "@/config/define";
+
+const kontaktSchritt = {
+  id: "kontakt",
+  titel: "Ihre Angaben",
+  felder: [
+    { id: "vorname", typ: "text" as const, label: "Vorname", pflicht: true, autocomplete: "given-name", halb: true },
+    { id: "nachname", typ: "text" as const, label: "Nachname", pflicht: true, autocomplete: "family-name", halb: true },
+    { id: "geburtsdatum", typ: "date" as const, label: "Geburtsdatum", pflicht: true, autocomplete: "bday" },
+    { id: "strasse", typ: "text" as const, label: "Straße und Hausnummer", pflicht: true, autocomplete: "street-address" },
+    { id: "plz", typ: "plz" as const, label: "Postleitzahl", pflicht: true, autocomplete: "postal-code", halb: true },
+    { id: "ort", typ: "text" as const, label: "Ort", pflicht: true, autocomplete: "address-level2", halb: true },
+    { id: "email", typ: "email" as const, label: "E-Mail-Adresse", pflicht: true, autocomplete: "email" },
+  ],
+};
+
+export default defineGemeinde({
+  slug: "musterkreis",
+  name: "Musterkreis",
+  art: "Landkreis",
+  wappen: "/tenants/musterkreis/wappen.svg",
+  wappenAlt: "Wappen des Landkreises Musterkreis: weißer Stern auf rotem Grund unter goldenem Schildhaupt",
+  akzentfarbe: "#8A2E3C",
+  akzentfarbeDunkel: "#F0A0AC",
+  paket: "premium",
+  einwohner: 98000,
+  sprachen: ["de", "en"],
+  standardSprache: "de",
+  funktionen: { abfall: false, kita: false, parken: false, friedhof: false, karte: false },
+  texte: {
+    untertitel: { de: "Kreisverwaltung online", en: "District services online" },
+    platzhalter: { de: "Was möchten Sie beim Landkreis erledigen?", en: "What would you like to do?" },
+    begruessung: { de: "Guten Tag. Wobei kann der Landkreis helfen?", en: "Hello. How can the district help?" },
+  },
+  kontakt: { bezeichnung: "Landratsamt Musterkreis", strasse: "Kreishausplatz 1", plz: "12340", ort: "Kreisstadt", telefon: "+49 1234 900-0", email: "buergerservice@musterkreis.example" },
+  oeffnungszeiten: { mo: [["08:00", "12:00"]], di: [["08:00", "12:00"], ["13:30", "16:00"]], mi: [["08:00", "12:00"]], do: [["08:00", "12:00"], ["13:30", "18:00"]], fr: [["08:00", "12:00"]] },
+  schliesstage: [],
+  rechtliches: {
+    impressumUrl: "https://www.musterkreis.example/impressum",
+    datenschutzUrl: "https://www.musterkreis.example/datenschutz",
+    verantwortlich: "Landkreis Musterkreis, Kreishausplatz 1, 12340 Kreisstadt",
+    datenschutzbeauftragter: "datenschutz@musterkreis.example",
+    barrierefreiheitKontakt: "barrierefrei@musterkreis.example",
+  },
+  aemter: [
+    { id: "zulassung", name: "Zulassungsstelle", ort: "Landratsamt, Erdgeschoss", zustaendigkeiten: ["kfz", "zulassung"], termine: { zeiten: { mo: [["08:00", "12:00"]], di: [["08:00", "12:00"]], do: [["13:30", "18:00"]] }, slotMinuten: 15, parallel: 3, vorlaufTage: 1, buchbarTage: 30 } },
+    { id: "fuehrerschein", name: "Führerscheinstelle", ort: "Landratsamt, Erdgeschoss", zustaendigkeiten: ["fuehrerschein"], termine: { zeiten: { mo: [["08:00", "12:00"]], mi: [["08:00", "12:00"]] }, slotMinuten: 20, parallel: 2, vorlaufTage: 1, buchbarTage: 30 } },
+    { id: "bauamt", name: "Bauaufsicht", ort: "Landratsamt, 2. Obergeschoss", zustaendigkeiten: ["bau", "baugenehmigung"], bearbeitungTage: 30 },
+    { id: "sozialamt", name: "Wohngeldstelle", ort: "Landratsamt, 1. Obergeschoss", zustaendigkeiten: ["wohngeld"], bearbeitungTage: 20 },
+  ],
+  uploads: { aktiv: true, maxDateiMB: 15, maxGesamtMB: 60, maxDateien: 15, aufbewahrungTage: 180, standardAmtId: "zulassung" },
+  gemeinden: [
+    { slug: "musterstadt", name: "Stadt Musterstadt", plz: ["12345"] },
+    { slug: "beispielhausen", name: "Gemeinde Beispielhausen", plz: ["54321"] },
+    { name: "Gemeinde Nordheim", plz: ["12399"], url: "https://www.nordheim.example" },
+  ],
+  leistungen: [
+    {
+      id: "kfz-zulassung",
+      aktiv: true,
+      titel: { de: "Auto an-, um- oder abmelden", en: "Vehicle registration" },
+      kurz: "Fahrzeuge melden Sie online über i-Kfz oder mit Termin in der Zulassungsstelle an, um oder ab.",
+      stichworte: ["auto anmelden", "auto ummelden", "auto abmelden", "kfz", "zulassung", "kennzeichen", "fahrzeug", "zulassungsstelle", "wunschkennzeichen", "auto"],
+      unterlagen: ["Personalausweis", "Zulassungsbescheinigung Teil I und II", "eVB-Nummer der Versicherung", "Bei Abmeldung: Kennzeichenschilder"],
+      gebuehren: [{ bezeichnung: "Neuzulassung", betrag: 33.6 }, { bezeichnung: "Abmeldung", betrag: 11.9 }],
+      ablauf: ["Online über i-Kfz (mit Online-Ausweis) oder mit Termin.", "Sie erhalten die Zulassung und die Plaketten."],
+      amtId: "zulassung",
+      online: false,
+      termin: true,
+      externerLink: { label: "i-Kfz im Bundesportal", url: "https://verwaltung.bund.de/portal/DE/" },
+    },
+    {
+      id: "fuehrerschein-umtausch",
+      aktiv: true,
+      titel: { de: "Führerschein umtauschen", en: "Exchange driving licence" },
+      kurz: "Alte Papier- und Kartenführerscheine müssen bis zu einem Stichtag in den EU-Kartenführerschein umgetauscht werden.",
+      stichworte: ["fuehrerschein", "führerschein", "umtausch", "fuehrerschein umtauschen", "rosa lappen", "grauer lappen", "kartenfuehrerschein", "driving licence"],
+      unterlagen: ["Personalausweis", "Alter Führerschein", "Biometrisches Passfoto"],
+      gebuehren: [{ bezeichnung: "Umtausch", betrag: 25.3 }],
+      bezahlung: { betrag: 25.3 },
+      ablauf: ["Sie beantragen online und bezahlen.", "Sie laden ein Passfoto hoch.", "Sie holen den neuen Führerschein ab und geben den alten zurück."],
+      fristen: ["Die Umtauschfristen hängen vom Geburtsjahr bzw. Ausstellungsjahr ab."],
+      amtId: "fuehrerschein",
+      dokumente: [{ art: "lichtbild", pflicht: true }],
+      online: true,
+      termin: true,
+      formular: {
+        aufbewahrungTage: 180,
+        schritte: [
+          kontaktSchritt,
+          {
+            id: "fuehrerschein",
+            titel: "Ihr Führerschein",
+            felder: [
+              { id: "art", typ: "radio", label: "Welcher Führerschein?", pflicht: true, optionen: [{ wert: "papier", label: "Papierführerschein (grau oder rosa)" }, { wert: "karte", label: "Kartenführerschein vor 2013" }] },
+              { id: "behoerde", typ: "text", label: "Ausstellende Behörde", pflicht: true, maxLaenge: 120 },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      id: "bauantrag",
+      aktiv: true,
+      titel: { de: "Bauantrag stellen", en: "Building permit" },
+      kurz: "Für Neubau, Anbau oder Umnutzung brauchen Sie meist eine Baugenehmigung der Bauaufsicht des Kreises.",
+      stichworte: ["bauantrag", "baugenehmigung", "bauen", "anbau", "neubau", "carport", "garage bauen", "bauvoranfrage", "building permit"],
+      unterlagen: ["Bauvorlagen eines Entwurfsverfassers", "Lageplan", "Bauzeichnungen", "Baubeschreibung"],
+      gebuehren: [{ bezeichnung: "Baugenehmigung", betrag: "nach Baukosten", hinweis: "laut Baugebührenordnung" }],
+      ablauf: ["Ihr Entwurfsverfasser reicht den Bauantrag digital ein.", "Die Bauaufsicht beteiligt die Gemeinde und weitere Stellen.", "Sie erhalten die Baugenehmigung."],
+      amtId: "bauamt",
+      online: false,
+      termin: false,
+      externerLink: { label: "Digitaler Bauantrag", url: "https://verwaltung.bund.de/portal/DE/" },
+    },
+    {
+      id: "wohngeld",
+      aktiv: true,
+      titel: { de: "Wohngeld beantragen", en: "Housing benefit" },
+      kurz: "Wohngeld ist ein Zuschuss zur Miete oder zu den Kosten für selbst genutztes Wohneigentum.",
+      stichworte: ["wohngeld", "mietzuschuss", "miete zu hoch", "zuschuss miete", "lastenzuschuss", "housing benefit"],
+      unterlagen: ["Mietvertrag und Mietbescheinigung", "Einkommensnachweise aller Haushaltsmitglieder"],
+      gebuehren: [{ bezeichnung: "Antrag", betrag: null }],
+      ablauf: ["Sie stellen den Antrag online.", "Die Wohngeldstelle prüft und fordert ggf. Unterlagen an.", "Sie erhalten einen Bescheid."],
+      amtId: "sozialamt",
+      online: false,
+      termin: false,
+      externerLink: { label: "Wohngeld online beantragen", url: "https://verwaltung.bund.de/portal/DE/" },
+    },
+  ],
+  rueckfragen: [],
+  faq: [{ frage: "Wofür ist der Landkreis zuständig, wofür meine Gemeinde?", antwort: "Der Landkreis kümmert sich um Kfz-Zulassung, Führerscheine, Baugenehmigungen und Wohngeld. Meldeangelegenheiten, Ausweise, Hundesteuer und Abfall erledigen Sie bei Ihrer Gemeinde." }],
+  email: { absenderName: "Landkreis Musterkreis", absenderAdresse: "no-reply@musterkreis.example" },
+});

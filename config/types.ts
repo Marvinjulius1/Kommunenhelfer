@@ -61,7 +61,12 @@ export type Weiterleitung =
   | { typ: "email"; adresse: string }
   | { typ: "webhook"; url: string; /** Name der Umgebungsvariable mit dem Signatur-Geheimnis */ secretEnv: string }
   /** FIT-Connect-Zustellpunkt der Behörde (Destination-ID aus dem DVDV / Self-Service-Portal) */
-  | { typ: "fitconnect"; destinationId: string };
+  | { typ: "fitconnect"; destinationId: string }
+  /**
+   * Ablage im Dokumentenmanagement/der E-Akte per WebDAV (z. B. Nextcloud, d.velop, enaio, Windows-Freigabe über WebDAV):
+   * je Vorgang ein Ordner mit antrag.pdf, vorgang.json und den Unterlagen. Zugangsdaten aus Umgebungsvariablen.
+   */
+  | { typ: "webdav"; url: string; benutzerEnv: string; passwortEnv: string };
 
 /** Ein Amt / ein Fachbereich. */
 export interface Amt {
@@ -286,7 +291,18 @@ export interface Funktionen {
   karte: boolean;
   /** Warnbanner und amtliche Warnungen (NINA, braucht `ars`) */
   warnungen: boolean;
+  /** Backoffice: Entwürfe für Rückfragen und Bescheide */
+  kiEntwurf: boolean;
+  /** Backoffice: eigene Online-Formulare */
+  formularBaukasten: boolean;
+  /** Backoffice: Wirkungsbericht als PDF */
+  wirkungsbericht: boolean;
+  /** Backoffice: Auslastungsprognose */
+  auslastung: boolean;
 }
+
+/** Vertragspaket (siehe lib/funktionen.ts). Einzelne Funktionen lassen sich mit `funktionen` zusätzlich an- oder abschalten. */
+export type Paket = "basis" | "komfort" | "premium";
 
 export interface Kita {
   id: string;
@@ -491,6 +507,10 @@ export interface GemeindeConfig {
   sprachen: Sprache[];
   standardSprache: Sprache;
 
+  /** Vertragspaket – bestimmt die Standardfunktionen. Ohne Angabe: alle Standardfunktionen. */
+  paket?: Paket;
+  /** Einwohnerzahl (für den Preis und den Wirkungsbericht) */
+  einwohner?: number;
   /** Welche Portal-Funktionen diese Gemeinde anbietet (Standard: fast alle an). */
   funktionen?: Partial<Funktionen>;
 
@@ -556,6 +576,13 @@ export interface GemeindeConfig {
   orte?: Ort[];
   /** Kartenmitte und Zoomstufe der Stadtkarte */
   karte?: { mitte: [lat: number, lng: number]; zoom: number };
+  /**
+   * Zugehöriger Landkreis. Leistungen des Kreises (Kfz, Führerschein, Bauantrag …)
+   * werden dann aus dem Gemeindeportal heraus gefunden und verlinkt.
+   */
+  landkreis?: { slug: string; name: string; url?: string };
+  /** Nur für Landkreise: die kreisangehörigen Gemeinden (mit eigenem Portal oder Website) */
+  gemeinden?: { slug?: string; name: string; plz: string[]; url?: string }[];
   /** Öffentliche Ausschreibungen (Bekanntmachungen; Angebote laufen über die Vergabeplattform) */
   ausschreibungen?: { id: string; titel: string; kurz: string; vergabeart: string; frist: string; link: string }[];
   /** Amtlicher Regionalschlüssel (12 Stellen) – für amtliche Warnungen über NINA */

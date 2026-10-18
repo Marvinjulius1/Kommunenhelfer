@@ -4,6 +4,7 @@
  */
 import { z } from "zod";
 import { fehler, leseJson } from "@/lib/api";
+import { aktiv } from "@/lib/funktionen";
 import { protokolliere } from "@/lib/backoffice/audit";
 import { erstelleEntwurf } from "@/lib/backoffice/entwurf";
 import { vorbereiten } from "@/lib/backoffice/vorgang";
@@ -19,6 +20,7 @@ export const runtime = "nodejs";
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await vorbereiten(req, (await params).id);
   if ("antwort" in ctx) return ctx.antwort;
+  if (!aktiv(ctx.tenant, "kiEntwurf")) return fehler("nicht_im_paket", 404);
   const rl = rateLimit(`entwurf:${ctx.b.name}:${clientKey(req)}`, 30, 10 * 60_000);
   if (!rl.ok) return tooMany(rl.retryAfter);
   const p = z.object({ art: z.enum(["rueckfrage", "bescheid", "antwort"]) }).safeParse(await leseJson(req).catch(() => null));

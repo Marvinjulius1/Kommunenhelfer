@@ -11,7 +11,8 @@ import { hatRolle } from "@/lib/backoffice/auth";
 import { boZugang } from "@/lib/backoffice/zugang";
 import { pruefeGemeinde } from "@/config/schema";
 import { baueLeistung } from "@/lib/formulare/baukasten";
-import { getTenantBySlug } from "@/lib/tenant";
+import { basisTenant } from "@/lib/tenant";
+import { aktiv } from "@/lib/funktionen";
 
 export const runtime = "nodejs";
 
@@ -43,7 +44,8 @@ async function kontext(req: Request) {
   const c = await boZugang(req);
   if ("antwort" in c) return c;
   if (!hatRolle(c.b, "admin")) return { antwort: fehler("keine_berechtigung", 403) };
-  const basis = getTenantBySlug((await tenantAus(req)).slug);
+  if (!aktiv(c.tenant, "formularBaukasten")) return { antwort: fehler("nicht_im_paket", 404) };
+  const basis = await basisTenant((await tenantAus(req)).slug);
   const alt = await ladeAnpassungen(basis.slug);
   const record: AnpassungRecord = alt ?? { id: basis.slug, tenant: basis.slug, leistungen: {}, erstelltAm: new Date().toISOString(), loeschenAm: "9999-12-31T00:00:00.000Z" };
   return { ...c, basis, record };

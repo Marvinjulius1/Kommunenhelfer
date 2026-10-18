@@ -16,6 +16,7 @@ export default defineGemeinde({
   wappenAlt: "Wappen der Gemeinde Beispielhausen: ein goldener Baum auf grünem Schild",
   akzentfarbe: "#2B6E37",
   akzentfarbeDunkel: "#7BCB8A",
+  landkreis: { slug: "musterkreis", name: "Landkreis Musterkreis" },
   sprachen: ["de"],
   standardSprache: "de",
   texte: {

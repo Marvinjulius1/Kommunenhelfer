@@ -88,6 +88,7 @@ const amt = z.object({
       z.object({ typ: z.literal("email"), adresse: z.string().email() }),
       z.object({ typ: z.literal("webhook"), url: z.string().url(), secretEnv: z.string().regex(/^[A-Z0-9_]+$/) }),
       z.object({ typ: z.literal("fitconnect"), destinationId: z.string().uuid() }),
+      z.object({ typ: z.literal("webdav"), url: z.string().url(), benutzerEnv: z.string().regex(/^[A-Z0-9_]+$/), passwortEnv: z.string().regex(/^[A-Z0-9_]+$/) }),
     ])
     .optional(),
   bearbeitungshinweis: ltext.optional(),
@@ -111,6 +112,8 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
   wappenAlt: z.string().min(1),
   akzentfarbe: hex,
   akzentfarbeDunkel: hex.optional(),
+  paket: z.enum(["basis", "komfort", "premium"]).optional(),
+  einwohner: z.number().int().min(1).max(5_000_000).optional(),
   funktionen: z
     .object(
       Object.fromEntries(
@@ -217,6 +220,8 @@ export const gemeindeSchema: z.ZodType<GemeindeConfig> = z.object({
     )
     .optional(),
   karte: z.object({ mitte: z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)]), zoom: z.number().int().min(10).max(18) }).optional(),
+  landkreis: z.object({ slug: id, name: z.string().min(1), url: z.string().url().optional() }).optional(),
+  gemeinden: z.array(z.object({ slug: id.optional(), name: z.string().min(1), plz: z.array(z.string().regex(/^\d{5}$/)), url: z.string().url().optional() })).optional(),
   ausschreibungen: z.array(z.object({ id, titel: z.string().min(1), kurz: z.string(), vergabeart: z.string(), frist: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), link: z.string().url() })).optional(),
   ars: z.string().regex(/^\d{12}$/, "Regionalschlüssel mit 12 Ziffern").optional(),
   stichtage: z
@@ -324,7 +329,7 @@ export function pruefeGemeinde(roh: unknown): string[] {
   if (!aemter.has(t.uploads.standardAmtId)) fehler.push(`uploads.standardAmtId: Amt "${t.uploads.standardAmtId}" existiert nicht`);
   if (new Set(t.aemter.map((a) => a.id)).size !== t.aemter.length) fehler.push(`aemter: doppelte IDs`);
   for (const a of t.aemter)
-    if (a.weiterleitung?.typ === "webhook" && !/^https:\/\//.test(a.weiterleitung.url) && !/^http:\/\/localhost/.test(a.weiterleitung.url))
+    if ((a.weiterleitung?.typ === "webhook" || a.weiterleitung?.typ === "webdav") && !/^https:\/\//.test(a.weiterleitung.url) && !/^http:\/\/localhost/.test(a.weiterleitung.url))
       fehler.push(`aemter[${a.id}].weiterleitung.url: nur https:// erlaubt`);
 
   for (const k of t.maengel?.kategorien ?? []) if (!aemter.has(k.amtId)) fehler.push(`maengel.kategorien[${k.id}].amtId: Amt "${k.amtId}" existiert nicht`);

@@ -6,7 +6,8 @@ import { timingSafeEqual } from "node:crypto";
 import { fehler } from "@/lib/api";
 import { taeglich } from "@/lib/cron/aufgaben";
 import { demoModus } from "@/lib/demo";
-import { tenants } from "@/tenants";
+import { alleGemeinden } from "@/lib/mandanten/service";
+import { mitAnpassungen } from "@/lib/tenant";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,6 @@ function berechtigt(req: Request): boolean {
 
 export async function GET(req: Request) {
   if (!berechtigt(req)) return fehler("nicht_berechtigt", 401);
-  const ergebnis = await taeglich(Object.values(tenants));
+  const ergebnis = await taeglich(await Promise.all((await alleGemeinden()).map((g) => mitAnpassungen(g.config))));
   return Response.json({ ok: true, ergebnis });
 }
