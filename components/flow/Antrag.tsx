@@ -39,7 +39,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
   const [manuell, setManuell] = useState<Record<string, string>>({});
   const [dokFehler, setDokFehler] = useState(false);
   const gesamt = schritte.length + (hatDok ? 1 : 0) + 1;
-  const ausweisFehlt = !!leistung.erfordertOnlineAusweis && konto?.vertrauensniveau !== "hoch";
+  const ausweisFehlt = !!leistung.erfordertOnlineAusweis && (konto?.vertrauensniveau !== "hoch" || !!konto?.handeltFuer);
 
   const startwerte = useMemo(() => {
     const w: Werte = {};
@@ -58,6 +58,14 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
   const [einwFehler, setEinwFehler] = useState(false);
   const [sendet, setSendet] = useState(false);
   const [serverFehler, setServerFehler] = useState<string | null>(null);
+  // Antrag für ein Kind aus „Mein Haushalt“ – nur für Formulare mit Personenangaben
+  const [fuerKind, setFuerKind] = useState<number | undefined>(undefined);
+  const kinder = !konto?.handeltFuer && schritte.some((s) => s.felder.some((f) => f.id === "vorname")) ? (konto?.kinder ?? []) : [];
+  const waehleFuer = (i: number | undefined) => {
+    setFuerKind(i);
+    const k = i === undefined ? undefined : kinder[i];
+    setWerte((w) => ({ ...w, vorname: k ? k.vorname : (startwerte.vorname ?? ""), ...(schritte.some((s) => s.felder.some((f) => f.id === "geburtsdatum")) ? { geburtsdatum: k ? k.geburtsdatum : (startwerte.geburtsdatum ?? "") } : {}) }));
+  };
   const headingRef = useRef<HTMLHeadingElement>(null);
   const summaryRef = useRef<HTMLDivElement>(null);
 
@@ -145,6 +153,7 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
           werte,
           einwilligungen: Object.fromEntries(noetig.map((id) => [id, true])),
           lang,
+          ...(fuerKind !== undefined ? { fuerKind } : {}),
           ...(hatDok && fertigeAnhaenge.length
             ? { entwurf: entwurfId(), dokumente: fertigeAnhaenge.map((a) => ({ id: a.serverId!, art: zu[a.lokalId] })) }
             : {}),
@@ -234,11 +243,32 @@ export function Antrag({ leistung, vorbelegung }: { leistung: Leistung; vorbeleg
                   <LeistungDetails leistung={leistung} />
                 </Glass>
               </motion.div>
-              {vorbelegung && Object.keys(vorbelegung).length > 0 && (
-                <motion.p variants={einblenden} className="mt-6 flex items-center gap-2 text-[14px] text-muted">
-                  <Icon name="user" className="size-4" />
-                  {de ? "Ihre Angaben aus dem Bürgerkonto sind bereits eingetragen." : "Your details from your account are already filled in."}
+              {konto?.handeltFuer ? (
+                <motion.p variants={einblenden} className="mt-6 flex items-center gap-2 text-[14px] font-medium">
+                  <Icon name="users" className="size-4" />
+                  {de ? `Sie stellen diesen Antrag für ${konto.handeltFuer.name}. Die Angaben sind bereits eingetragen.` : `You are applying on behalf of ${konto.handeltFuer.name}.`}
                 </motion.p>
+              ) : (
+                vorbelegung &&
+                Object.keys(vorbelegung).length > 0 && (
+                  <motion.p variants={einblenden} className="mt-6 flex items-center gap-2 text-[14px] text-muted">
+                    <Icon name="user" className="size-4" />
+                    {de ? "Ihre Angaben aus dem Bürgerkonto sind bereits eingetragen." : "Your details from your account are already filled in."}
+                  </motion.p>
+                )
+              )}
+              {kinder.length > 0 && (
+                <motion.fieldset variants={einblenden} className="mt-6">
+                  <legend className="text-[15px] font-medium">{de ? "Für wen stellen Sie den Antrag?" : "Who is this application for?"}</legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {[undefined, ...kinder.map((_, i) => i)].map((i) => (
+                      <label key={i ?? "ich"} className={`pressable cursor-pointer rounded-full border px-4 py-2 text-[14px] ${fuerKind === i ? "border-fg font-medium" : "border-[var(--line)] text-muted"}`}>
+                        <input type="radio" name="fuer" className="sr-only" checked={fuerKind === i} onChange={() => waehleFuer(i)} />
+                        {i === undefined ? (de ? "Für mich" : "For me") : de ? `Für ${kinder[i].vorname || "mein Kind"}` : `For ${kinder[i].vorname || "my child"}`}
+                      </label>
+                    ))}
+                  </div>
+                </motion.fieldset>
               )}
               <motion.p variants={einblenden} className="mt-6 text-[13px] leading-relaxed text-subtle">
                 {de

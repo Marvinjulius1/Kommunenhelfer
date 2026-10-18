@@ -3,7 +3,7 @@ import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { fuegeNachrichtHinzu, ladeMitCode, ladeVorgang, setzeStatus } from "@/lib/vorgaenge/service";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 
 export const runtime = "nodejs";
 
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   }
   const tenant = await tenantAus(req);
   // Zugriff mit Zugangscode – oder als angemeldeter Kontoinhaber
-  const konto = await aktuellesKonto(tenant);
+  const konto = await kontoFuer(tenant, "antraege");
   const eigen = konto ? await ladeVorgang(tenant, body.id) : undefined;
   const v = body.code ? await ladeMitCode(tenant, body.id, body.code) : eigen && eigen.kontoId === konto!.id ? eigen : undefined;
   if (!v) return fehler("nicht_gefunden", 404);

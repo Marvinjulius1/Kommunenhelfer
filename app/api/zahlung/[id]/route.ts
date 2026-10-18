@@ -7,7 +7,7 @@ import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { gleicheHerkunft } from "@/lib/backoffice/auth";
 import { demoModus } from "@/lib/demo";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { zahlungsAnbieter } from "@/lib/zahlung/anbieter";
 import { ladeZahlung, markiereBezahlt, pruefeZahlungZugang } from "@/lib/zahlung/service";
 import { randomBytes } from "node:crypto";
@@ -18,7 +18,7 @@ async function berechtigt(req: Request, id: string) {
   const tenant = await tenantAus(req);
   const z = await ladeZahlung(tenant, id);
   if (!z) return null;
-  const konto = await aktuellesKonto(tenant);
+  const konto = await kontoFuer(tenant, "zahlungen");
   const ok = (konto && z.kontoId === konto.id) || pruefeZahlungZugang(new URL(req.url).searchParams.get("t"), z.id);
   return ok ? { tenant, z } : null;
 }

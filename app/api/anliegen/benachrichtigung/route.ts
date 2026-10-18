@@ -6,7 +6,7 @@
 import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { gleicheHerkunft } from "@/lib/backoffice/auth";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { kanalVerfuegbar, normalisiereTelefon, sendeKurznachricht } from "@/lib/kurznachricht";
 import { sendMail } from "@/lib/mail";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
@@ -20,7 +20,7 @@ const Basis = z.object({ id: z.string().max(40), code: z.string().max(64).option
 
 async function zugriff(req: Request, b: z.infer<typeof Basis>) {
   const tenant = await tenantAus(req);
-  const konto = await aktuellesKonto(tenant);
+  const konto = await kontoFuer(tenant, "antraege");
   const eigen = konto ? await ladeVorgang(tenant, b.id) : undefined;
   const v = b.code ? await ladeMitCode(tenant, b.id, b.code) : eigen && eigen.kontoId === konto!.id ? eigen : undefined;
   return { tenant, v };

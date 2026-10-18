@@ -847,6 +847,11 @@ export default defineGemeinde({
   karte: { mitte: [50.6512, 9.7458], zoom: 15 },
   // ars: "000000000000", // Amtlicher Regionalschlüssel für Warnungen aus NINA – für die Musterstadt (fiktiv) nicht gesetzt
 
+  ausschreibungen: [
+    { id: "2026-017", titel: "Winterdienst 2026/27 – Los 2 Südfeld", kurz: "Räum- und Streudienst auf Gemeindestraßen im Ortsteil Südfeld.", vergabeart: "Öffentliche Ausschreibung (VOL/A)", frist: "2026-11-20", link: "https://www.musterstadt.example/vergabe/2026-017" },
+    { id: "2026-018", titel: "Sanierung Sanitäranlagen Grundschule", kurz: "Erneuerung der Schülertoiletten im Erdgeschoss, Ausführung in den Osterferien.", vergabeart: "Beschränkte Ausschreibung (VOB/A)", frist: "2026-12-04", link: "https://www.musterstadt.example/vergabe/2026-018" },
+  ],
+
   kitas: [
     { id: "sonnenschein", name: "Kita Sonnenschein", traeger: "Stadt Musterstadt", adresse: "Lindenallee 12", ortsteil: "Nordviertel", lat: 50.6551, lng: 9.7431, altersgruppen: ["u3", "ue3"], plaetze: 75, oeffnungszeiten: "Mo–Fr 7–17 Uhr", profil: "Naturnah, mit großem Garten" },
     { id: "regenbogen", name: "Ev. Kita Regenbogen", traeger: "Ev. Kirchengemeinde", adresse: "Kirchplatz 2", ortsteil: "Altstadt", lat: 50.6509, lng: 9.7462, altersgruppen: ["ue3"], plaetze: 50, oeffnungszeiten: "Mo–Fr 7:30–16:30 Uhr", profil: "Religionspädagogisch, Sprachförderung" },

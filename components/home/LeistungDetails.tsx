@@ -43,7 +43,7 @@ export function LeistungDetails({ leistung, kompakt }: { leistung: Leistung; kom
                   {tx(g.bezeichnung, lang)}
                   {g.hinweis && <span className="block text-[13px] text-subtle">{tx(g.hinweis, lang)}</span>}
                 </dt>
-                <dd className="shrink-0 font-medium tabular-nums">
+                <dd className="max-w-[45%] shrink-0 text-end font-medium tabular-nums">
                   {g.betrag === null ? t.kostenfrei : typeof g.betrag === "number" ? formatEuro(g.betrag, lang) : g.betrag}
                 </dd>
               </div>

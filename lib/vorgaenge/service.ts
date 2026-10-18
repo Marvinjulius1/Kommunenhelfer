@@ -35,6 +35,8 @@ export interface NeuerVorgang {
   basisUrl: string;
   /** Bürgerkonto (falls angemeldet) */
   kontoId?: string;
+  /** Bevollmächtigte Person, die im Namen des Kontos eingereicht hat */
+  vertreterKontoId?: string;
   terminId?: string;
   mangel?: VorgangRecord["mangel"];
 }
@@ -48,6 +50,7 @@ export async function erstelleVorgang(v: NeuerVorgang): Promise<{ vorgangsnummer
     tenant: v.tenant.slug,
     quelle: v.quelle,
     kontoId: v.kontoId,
+    vertreterKontoId: v.vertreterKontoId,
     terminId: v.terminId,
     mangel: v.mangel,
     leistungId: v.leistung?.id,
@@ -176,7 +179,7 @@ export async function loescheAbgelaufene(): Promise<number> {
   const safe = await s.purgeExpired<SafeRecord>("safe");
   await Promise.all([...post.flatMap((p) => (p.dokument ? [p.dokument.id] : [])), ...safe.map((x) => x.id)].map((id) => blobs.delete(id)));
   let weitere = 0;
-  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen", "feedback", "auslastung", "kitawuensche", "veranstaltungen", "anmeldungen", "ehrenamt", "interessen", "buergerhaushalte", "verwarnungen"]) weitere += (await s.purgeExpired(c)).length;
+  for (const c of ["zahlungen", "push", "sitzungen", "checklisten", "meldungen", "cronlaeufe", "fundsachen", "ausweise", "wartenummern", "umfragen", "ideen", "vertretungen", "feedback", "auslastung", "kitawuensche", "veranstaltungen", "anmeldungen", "ehrenamt", "interessen", "buergerhaushalte", "verwarnungen", "vollmachten", "vertretungslog"]) weitere += (await s.purgeExpired(c)).length;
   // Konten nach Inaktivität: mit allen zugehörigen Daten entfernen
   const konten = await s.purgeExpired<KontoRecord>("konten");
   for (const k of konten) await entferneKontoDaten(k);

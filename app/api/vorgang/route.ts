@@ -11,7 +11,7 @@ import { zustaendigesAmt } from "@/lib/uploads/pruefung";
 import { uebernehmeUploads, uploadsImEntwurf } from "@/lib/uploads/service";
 import { erstelleVorgang, uploadsZuDokumenten } from "@/lib/vorgaenge/service";
 import { findeLeistung } from "@/lib/tenant";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { fuerText, handelndesKonto, protokolliereVertretung } from "@/lib/konto/vertretung";
 
 export const runtime = "nodejs";
 
@@ -54,19 +54,22 @@ export async function POST(req: Request) {
   const amtWunsch = body.amtId && tenant.aemter.some((a) => a.id === body.amtId) ? body.amtId : undefined;
   const amt = zustaendigesAmt(tenant, leistung?.id, amtWunsch);
 
-  const konto = await aktuellesKonto(tenant);
+  const h = await handelndesKonto(tenant, "antraege");
+  const konto = h?.konto;
   const ergebnis = await erstelleVorgang({
     tenant,
     kontoId: konto?.id,
     quelle: "upload",
     leistung,
     amtId: amt.id,
-    daten: { kontakt: body.kontakt, nachricht: body.nachricht },
+    daten: { kontakt: body.kontakt, nachricht: body.nachricht, fuer: h ? fuerText(h) : undefined },
+    vertreterKontoId: h?.vollmacht ? h.selbst.id : undefined,
     dokumente: uploadsZuDokumenten(uploads.map((u) => u!), arten),
     aufbewahrungTage: leistung?.aufbewahrungTage ?? tenant.uploads.aufbewahrungTage,
     basisUrl: basisUrl(req, tenant),
   });
   await uebernehmeUploads(uploads.map((u) => u!.id));
+  if (h) await protokolliereVertretung(h, "Unterlagen eingereicht", ergebnis.vorgangsnummer);
 
   return Response.json(
     { ...ergebnis, amt: tx(amt.name, "de"), bearbeitungshinweis: amt.bearbeitungshinweis ? tx(amt.bearbeitungshinweis, "de") : undefined },

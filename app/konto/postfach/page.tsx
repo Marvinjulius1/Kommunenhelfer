@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Page } from "@/components/ui/Page";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { postFuerKonto, postSicht } from "@/lib/postfach/service";
 import { getTenant } from "@/lib/tenant";
 
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 const ART = { bescheid: "Bescheid", nachricht: "Nachricht", erinnerung: "Erinnerung", meldung: "Meldung", zahlung: "Zahlung" } as const;
 
 export default async function Postfach() {
-  const k = await aktuellesKonto(await getTenant());
+  const k = await kontoFuer(await getTenant(), "post");
   if (!k) redirect("/konto/anmelden?weiter=/konto/postfach");
   const liste = (await postFuerKonto(k)).map(postSicht);
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium" });

@@ -14,6 +14,8 @@ import { aktiv } from "@/lib/funktionen";
 import { aktuellesKonto, sicht } from "@/lib/konto/service";
 import { Warnbanner } from "@/components/Warnbanner";
 import { aktiveWarnungen } from "@/lib/warnungen/service";
+import { vertretungSicht } from "@/lib/konto/vertretung";
+import { Vertretungsleiste } from "@/components/konto/Vertretungsleiste";
 
 export async function generateMetadata(): Promise<Metadata> {
   const tenant = await getTenant();
@@ -47,7 +49,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const lang = await getLang(tenant);
   const nonce = await getNonce();
   const kontoRecord = aktiv(tenant, "konto") ? await aktuellesKonto(tenant) : undefined;
-  const konto = kontoRecord ? sicht(kontoRecord) : null;
+  const vertretung = kontoRecord ? await vertretungSicht(tenant) : undefined;
+  const konto = kontoRecord ? { ...sicht(kontoRecord), handeltFuer: vertretung } : null;
   const dunkel = tenant.akzentfarbeDunkel ?? tenant.akzentfarbe;
   const warnungen = (await aktiveWarnungen(tenant, kontoRecord?.einstellungen.ortsteil).catch(() => [])).map(({ id, stufe, titel, quelle }) => ({ id, stufe, titel, quelle }));
 
@@ -68,6 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <TenantProvider tenant={fuerBrowser(tenant, lang)} lang={lang} konto={konto}>
           <Providers>
             <Warnbanner warnungen={warnungen} />
+            <Vertretungsleiste />
             <Header />
             <main id="inhalt" tabIndex={-1} className="flex flex-1 flex-col outline-none">
               {children}

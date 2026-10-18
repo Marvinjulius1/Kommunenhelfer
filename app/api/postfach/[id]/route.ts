@@ -5,7 +5,7 @@
  */
 import { tenantAus } from "@/lib/api";
 import { decryptJson } from "@/lib/crypto";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { alsGelesen, postSicht } from "@/lib/postfach/service";
 import type { PostfachRecord } from "@/lib/records";
 import { blobs } from "@/lib/storage/blobs";
@@ -22,7 +22,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const r = await store().get<PostfachRecord>("postfach", (await params).id);
   if (!r || r.tenant !== tenant.slug) return nein();
 
-  const konto = await aktuellesKonto(tenant);
+  const konto = await kontoFuer(tenant, "post");
   let berechtigt = !!konto && r.kontoId === konto.id;
   if (!berechtigt && r.vorgangId && url.searchParams.get("v") === r.vorgangId) {
     berechtigt = !!(await ladeMitCode(tenant, r.vorgangId, url.searchParams.get("c") ?? ""));

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { MeineAnliegen } from "@/components/anliegen/MeineAnliegen";
 import { Page } from "@/components/ui/Page";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { getLang, getTenant } from "@/lib/tenant";
 import { deutsch } from "@/lib/i18n";
 
@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Meine Anliegen" };
 export default async function AnliegenSeite() {
   const tenant = await getTenant();
   const lang = await getLang(tenant);
-  const konto = await aktuellesKonto(tenant);
+  const konto = await kontoFuer(tenant, "antraege");
   const de = deutsch(lang);
   return (
     <Page

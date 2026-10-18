@@ -6,7 +6,7 @@ import { z } from "zod";
 import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { buche, storniere } from "@/lib/booking/service";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { handelndesKonto, kontoFuer, protokolliereVertretung } from "@/lib/konto/vertretung";
 
 export const runtime = "nodejs";
 
@@ -31,9 +31,10 @@ export async function POST(req: Request) {
     return fehler("ungueltige_anfrage");
   }
   const tenant = await tenantAus(req);
-  const konto = await aktuellesKonto(tenant);
-  const r = await buche(tenant, { ...body, kontoId: konto?.id });
+  const h = await handelndesKonto(tenant, "termine");
+  const r = await buche(tenant, { ...body, kontoId: h?.konto.id });
   if ("fehler" in r) return fehler(r.fehler!, r.fehler === "slot_vergeben" ? 409 : 404);
+  if (h) await protokolliereVertretung(h, "Termin gebucht", body.slot.replace("T", " "));
   return Response.json(r, { status: 201 });
 }
 
@@ -49,7 +50,7 @@ export async function DELETE(req: Request) {
     return fehler("ungueltige_anfrage");
   }
   const tenant = await tenantAus(req);
-  const konto = body.code ? undefined : await aktuellesKonto(tenant);
+  const konto = body.code ? undefined : await kontoFuer(tenant, "termine");
   const ok = await storniere(tenant, body.id, body.code, konto?.id);
   return ok ? Response.json({ ok: true }) : fehler("nicht_gefunden", 404);
 }

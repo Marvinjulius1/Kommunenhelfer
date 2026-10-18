@@ -81,6 +81,7 @@ export async function kontoUebersicht(tenant: GemeindeConfig, k: KontoRecord) {
 
   kacheln.push(
     ...(aktiv(tenant, "hinweise") ? [{ href: "/konto/haushalt", icon: "home" as const, titel: "Mein Haushalt", text: "Kinder, Hund, Reisepass – für Hinweise, die zu Ihnen passen" }] : []),
+    { href: "/konto/vollmachten", icon: "users" as const, titel: "Vollmachten & Unternehmen", text: "Für Angehörige oder die eigene Firma handeln" },
     { href: "/konto/einstellungen", icon: "bell", titel: "Benachrichtigungen", text: k.einstellungen.pushBenachrichtigung ? "Push und E-Mail aktiv" : "E-Mail, Push, Wohnort" },
     { href: "/konto/profil", icon: "user", titel: "Persönliche Daten", text: "Füllen Formulare automatisch aus" },
     { href: "/konto/sicherheit", icon: "lock", titel: "Sicherheit & Datenschutz", text: "Geräte, Passwort, Datenexport, Konto löschen" },

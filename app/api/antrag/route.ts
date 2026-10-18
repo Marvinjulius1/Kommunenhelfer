@@ -7,7 +7,8 @@ import { z } from "zod";
 import { basisUrl, fehler, langAus, leseJson, tenantAus } from "@/lib/api";
 import { validiereFormular } from "@/lib/flows/validate";
 import { gatewayFuer } from "@/lib/integrations";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { fuerText, handelndesKonto, protokolliereVertretung } from "@/lib/konto/vertretung";
+import { profilVon } from "@/lib/konto/service";
 import { aktiv } from "@/lib/funktionen";
 import { zahlungsAnbieter } from "@/lib/zahlung/anbieter";
 import { betragFuer, legeZahlungAn, zahlungZugang } from "@/lib/zahlung/service";
@@ -29,6 +30,8 @@ const Schema = z.object({
   lang: z.string().max(5).optional(),
   entwurf: z.string().regex(/^[A-Za-z0-9_-]{16,64}$/).optional(),
   dokumente: z.array(z.object({ id: z.string().max(64), art: z.string().max(60) })).max(30).optional(),
+  /** Antrag für ein Kind aus „Mein Haushalt“ (Index) */
+  fuerKind: z.number().int().min(0).max(11).optional(),
 });
 
 export async function POST(req: Request) {
@@ -54,9 +57,17 @@ export async function POST(req: Request) {
   const pruefung = validiereFormular(leistung.formular, body.werte, lang);
   if (!pruefung.ok) return fehler("validierung", 422, { felder: pruefung.fehler });
 
-  const konto = await aktuellesKonto(tenant);
-  // Rechtlich nur mit sicherer Identifizierung (z. B. elektronische Wohnsitzanmeldung)
-  if (leistung.erfordertOnlineAusweis && konto?.vertrauensniveau !== "hoch") return fehler("online_ausweis_noetig", 403);
+  const h = await handelndesKonto(tenant, "antraege");
+  const konto = h?.konto;
+  // Rechtlich nur mit sicherer Identifizierung (z. B. elektronische Wohnsitzanmeldung) – und nur persönlich
+  if (leistung.erfordertOnlineAusweis && (konto?.vertrauensniveau !== "hoch" || h?.vollmacht)) return fehler("online_ausweis_noetig", 403);
+  let fuer = h ? fuerText(h) : undefined;
+  if (body.fuerKind !== undefined && h) {
+    const p = profilVon(h.selbst);
+    const kind = p.kinder?.[body.fuerKind];
+    if (!kind) return fehler("ungueltige_anfrage");
+    fuer = `Für das Kind ${kind.vorname} (geb. ${new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(kind.geburtsdatum + "T12:00:00Z"))}), gesetzlich vertreten durch ${[p.vorname, p.nachname].filter(Boolean).join(" ")}`;
+  }
 
   // Unterlagen: nur eigene, noch nicht abgesendete Uploads dieses Entwurfs
   let dokumente: DokumentMeta[] | undefined;
@@ -73,9 +84,10 @@ export async function POST(req: Request) {
     uploadIds = uploads.map((u) => u!.id);
   }
 
-  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant), kontoId: konto?.id, dokumente });
+  const ergebnis = await gatewayFuer(leistung).einreichen({ tenant, leistung, daten: pruefung.werte, basisUrl: basisUrl(req, tenant), kontoId: konto?.id, dokumente, fuer, vertreterKontoId: h?.vollmacht ? h.selbst.id : undefined });
   if (uploadIds.length) await uebernehmeUploads(uploadIds);
   const titel = tx(leistung.titel, lang);
+  if (h) await protokolliereVertretung(h, "Antrag gestellt", `${tx(leistung.titel, "de")} (${ergebnis.vorgangsnummer})`);
 
   // Gebühr direkt online bezahlen (falls konfiguriert)
   let zahlung: { id: string; betragCent: number; url: string } | undefined;

@@ -556,6 +556,8 @@ export interface GemeindeConfig {
   orte?: Ort[];
   /** Kartenmitte und Zoomstufe der Stadtkarte */
   karte?: { mitte: [lat: number, lng: number]; zoom: number };
+  /** Öffentliche Ausschreibungen (Bekanntmachungen; Angebote laufen über die Vergabeplattform) */
+  ausschreibungen?: { id: string; titel: string; kurz: string; vergabeart: string; frist: string; link: string }[];
   /** Amtlicher Regionalschlüssel (12 Stellen) – für amtliche Warnungen über NINA */
   ars?: string;
   /** Stichtage für persönliche Hinweise im Bürgerkonto */

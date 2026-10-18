@@ -8,7 +8,7 @@ import { fehler, leseJson, tenantAus } from "@/lib/api";
 import { gleicheHerkunft } from "@/lib/backoffice/auth";
 import { ergaenzeText, speichereFeedback } from "@/lib/feedback/service";
 import { aktiv } from "@/lib/funktionen";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { clientKey, rateLimit, tooMany } from "@/lib/rate-limit";
 import { store } from "@/lib/storage/store";
 import { ladeMitCode, ladeVorgang } from "@/lib/vorgaenge/service";
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   let leistungId = p.data.leistungId && tenant.leistungen.some((l) => l.id === p.data.leistungId) ? p.data.leistungId : undefined;
   let amtId: string | undefined;
   if (p.data.vorgang) {
-    const konto = await aktuellesKonto(tenant);
+    const konto = await kontoFuer(tenant, "antraege");
     const eigen = konto ? await ladeVorgang(tenant, p.data.vorgang.id) : undefined;
     const v = p.data.vorgang.code ? await ladeMitCode(tenant, p.data.vorgang.id, p.data.vorgang.code) : eigen?.kontoId === konto?.id ? eigen : undefined;
     if (!v) return fehler("nicht_gefunden", 404);

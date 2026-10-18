@@ -11,7 +11,7 @@ Eine Codebasis, beliebig viele Gemeinden. Jede Gemeinde wird über **eine Konfig
 | Bereich | Funktionen |
 |---|---|
 | **Erledigen** | Assistent mit einem Eingabefeld · Status per SMS/E-Mail auch ohne Konto · Zufriedenheit mit einem Klick · 30 Leistungen mit Online-Anträgen · Unterlagen hochladen/fotografieren · Online-Ausweis (BundID) · Online-Bezahlung · Terminbuchung vor Ort oder per Video · Live-Wartezeit und Wartenummer · „Ist mein Ausweis da?“ |
-| **Bürgerkonto** | **„Was steht bei mir an?“** (Ausweis läuft ab, Hundesteuer fällig, Kind wird 3 …) · Mein Haushalt · Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
+| **Bürgerkonto** | **Familie, Vollmacht, Unternehmenskonto** · **„Was steht bei mir an?“** (Ausweis läuft ab, Hundesteuer fällig, Kind wird 3 …) · Mein Haushalt · Meine Anliegen · digitales Postfach mit Bescheiden · Zahlungen · Dokumentensafe · vorausgefüllte Formulare · Push und E-Mail · Lebenslagen-Checklisten mit Fristen · Datenexport und Löschung |
 | **Alltag** | Abfallkalender mit Erinnerung · Mängelmelder mit Foto und GPS · Fundbüro · Aktuelles nach Ortsteil · **Warnungen** (Banner, NINA) · **Stadtkarte** · **Parken & Verwarnungsgeld** · **Friedhöfe** |
 | **Familie & Freizeit** | **Kita-Platz-Börse** mit Warteliste · **Veranstaltungen & Ferienprogramm** mit Anmeldung · **Vereinsverzeichnis** · **Ehrenamtsbörse** |
 | **Mitmachen** | Umfragen (eine Stimme pro Person) · Ideen mit Unterstützung · **Bürgerhaushalt** · Rat und Ausschüsse (OParl) mit Livestream |
@@ -435,6 +435,24 @@ Jede Aufgabe läuft pro Tag höchstens einmal.
 | **Fristen und Wiedervorlage** | `/backoffice` (Filter „Frist“), Vorgang | Bearbeitungsfrist in Werktagen ohne Feiertage und Schließtage (`bearbeitungTage` je Leistung oder Amt, Standard 10). Überschrittene Fristen und fällige Wiedervorlagen stehen oben. |
 | **Wirkungsbericht** | `/backoffice/bericht` (Rolle `admin`) | Online-Anteil, eingesparte Arbeitszeit und Gegenwert, Bearbeitungsdauer, Fristquote, Zufriedenheit, häufigste Anliegen, Vergleich zum Vorzeitraum. „Als PDF speichern“ über den Druckdialog. Annahmen offen ausgewiesen und per `wirkung` anpassbar. |
 
+### Familie, Vollmacht und Unternehmen
+
+Unter `/konto/vollmachten`:
+
+- **Anträge für Kinder:** Kinder aus „Mein Haushalt“ stehen im Antrag unter „Für wen stellen Sie den Antrag?“ zur Wahl. Ihre Daten werden eingetragen. Im Vorgang steht „Für das Kind …, gesetzlich vertreten durch …“.
+- **Vollmacht** (z. B. Tochter für ihre Mutter):
+  - Die vertretene Person erteilt die Vollmacht selbst, mit Umfang (Anträge, Termine, Post, Zahlungen) und optionalem Ablaufdatum.
+  - Die bevollmächtigte Person nimmt sie über den Link per E-Mail mit dem eigenen Konto an.
+  - Danach kann sie „für … handeln“. Eine dunkle Leiste zeigt das auf jeder Seite an.
+  - Anträge, Termine, Post und Zahlungen landen im Konto der vertretenen Person. Alles wird protokolliert und ist dort unter „Was andere in meinem Namen getan haben“ sichtbar. Ein Widerruf ist jederzeit möglich, von beiden Seiten.
+- **Unternehmenskonto:**
+  - Firma oder Verein als eigenes Konto ohne Login, mit Inhaber/innen und Mitarbeitenden, die per Einladung dazukommen.
+  - „Für das Unternehmen handeln“ trägt die Anschrift und den Firmennamen ein; als Ansprechperson gilt die handelnde Person.
+  - Gewerbe, Sondernutzung, Gebühren und Bescheide liegen an einem Ort.
+  - Mit dem letzten Inhaber-Konto wird das Unternehmenskonto gelöscht.
+- **Nie übertragbar:** Wohnsitzanmeldung mit Online-Ausweis, Abstimmungen und Bürgerhaushalt, Profil, Sicherheit, Datenexport, Konto löschen.
+- **Ausschreibungen** der Gemeinde stehen unter `/ausschreibungen` (`ausschreibungen` in der Config, Angebote laufen über die Vergabeplattform).
+
 ### Familie, Freizeit und Alltag
 
 | Dienst | Bürger | Backoffice | Konfiguration / Datenschutz |
@@ -616,7 +634,7 @@ Die Architektur trennt Oberfläche und Übermittlung über Interfaces in `lib/in
 
 ## Tests und Qualität
 
-- `npm test` – 105 Tests (Vitest): Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
+- `npm test` – 109 Tests (Vitest): Vollmachten (Einladung, Umfang, Ablauf, Widerruf), Unternehmenskonten (Mitglieder, Löschung mit letztem Inhaber), Kita-Warteliste und Angebote, Anmeldungen mit Warteliste (auch gleichzeitig), Bürgerhaushalt (Budget, eine Teilnahme), Verwarnungsgeld, NINA, Kartenrechnung, Livestream, Formular-Baukasten (IDs, Kollisionen, Validierung), Entwürfe (fehlende Unterlagen, keine erfundenen Beträge), Auslastungsprognose, persönliche Hinweise (Stichtage, Kinder, Ausblenden), Werktagsfristen, Telefonnummern, Wirkungskennzahlen, Upload (Formate, aktive Inhalte, Virus, Limits, Duplikate, fail closed), Weiterleitung, Löschkonzept, Config-Validierung, Signaturen, Formularregeln, Gebühren und Zahlungslinks, Postfach-Verschlüsselung, Feiertage und Abfallkalender, EXIF-Entfernung, Lebenslagen, Ausweis-Status, Fundbüro, Wartenummern (auch gleichzeitige Vergabe), Unterlagen-Zuordnung, Umfragen (eine Stimme, Anonymität, gleichzeitige Stimmen), Ideen-Moderation, Admin-Anpassungen, Vertretung, FIT-Connect-Verschlüsselung (JWE-Rundlauf), Sprach-Fallbacks, schlanke Browser-Config
 - `npm run assistent:check` – 34 Fälle inkl. Manipulationsversuchen, Fremdsprache, leerer/zu langer Eingabe
 - `npm run tenant:check` – prüft alle Gemeinde-Konfigurationen (Schema, Querverweise, Kontraste)
 - Lighthouse (Mobil, Produktions-Build): Startseite, Dienste, Antrag, Beteiligung, Wartezeit, Abfall und Leichte Sprache – Performance 98–100, Barrierefreiheit 100, Best Practices 100, SEO 100

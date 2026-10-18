@@ -112,6 +112,12 @@ export default async function VorgangDetail({ params }: { params: Promise<{ id: 
                 <dd>{d.kontakt.telefon || "–"}</dd>
               </div>
             </dl>
+            {d.fuer && (
+              <p className="mt-4 flex items-start gap-2 rounded-[14px] bg-[var(--line)] px-4 py-2 text-[14px]">
+                <Icon name="users" className="mt-0.5 size-4 shrink-0" />
+                {d.fuer}
+              </p>
+            )}
             {d.nachricht && <p className="mt-4 whitespace-pre-wrap text-[15px] leading-relaxed">{d.nachricht}</p>}
           </Block>
 

@@ -53,6 +53,8 @@ export default async function DiensteSeite() {
     ...(an("warteschlange") ? [{ href: "/wartezeit", icon: "clock" as const, titel: de ? "Wartezeit & Wartenummer" : "Waiting times", text: de ? "Live sehen, Nummer online ziehen" : "Live, take a number online" }] : []),
     ...(an("ausweisStatus") ? [{ href: "/ausweis-status", icon: "id" as const, titel: de ? "Ist mein Ausweis da?" : "Is my ID ready?", text: de ? "Status mit der Antragsnummer prüfen" : "Check with your application number" }] : []),
     ...(an("konto") ? [{ href: "/konto", icon: "user" as const, titel: de ? "Bürgerkonto" : "Citizen account", text: de ? "Postfach, Zahlungen, Dokumentensafe" : "Inbox, payments, document safe" }] : []),
+    ...(an("konto") ? [{ href: "/konto/vollmachten", icon: "users" as const, titel: de ? "Familie, Vollmacht, Unternehmen" : "Family, power of attorney, business", text: de ? "Für Angehörige oder die eigene Firma handeln" : "Act for relatives or your company" }] : []),
+    ...(tenant.ausschreibungen?.length ? [{ href: "/ausschreibungen", icon: "doc" as const, titel: de ? "Ausschreibungen" : "Tenders", text: de ? "Aufträge der Gemeinde" : "Public contracts" }] : []),
   ];
   const alltag: Dienst[] = [
     ...(an("abfall") && tenant.abfall ? [{ href: "/abfall", icon: "leaf" as const, titel: de ? "Abfallkalender" : "Waste calendar", text: de ? "Abfuhrtermine und Erinnerung" : "Collection dates and reminders" }] : []),

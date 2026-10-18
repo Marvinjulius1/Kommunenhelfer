@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Glass } from "@/components/ui/Glass";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { getTenant } from "@/lib/tenant";
 import { euro, ladeZahlung, pruefeZahlungZugang } from "@/lib/zahlung/service";
 
@@ -13,7 +13,7 @@ const METHODE: Record<string, string> = { karte: "Kreditkarte", paypal: "PayPal"
 export default async function Quittung({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ t?: string }> }) {
   const tenant = await getTenant();
   const z = await ladeZahlung(tenant, (await params).id);
-  const konto = await aktuellesKonto(tenant);
+  const konto = await kontoFuer(tenant, "zahlungen");
   if (!z || z.status !== "bezahlt" || !((konto && z.kontoId === konto.id) || pruefeZahlungZugang((await searchParams).t, z.id))) notFound();
   const fmt = new Intl.DateTimeFormat("de-DE", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Berlin" });
   return (

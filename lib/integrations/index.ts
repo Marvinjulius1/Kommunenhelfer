@@ -44,6 +44,10 @@ export interface AntragEinreichung {
   kontoId?: string;
   /** Mit dem Antrag hochgeladene Unterlagen */
   dokumente?: import("@/lib/records").DokumentMeta[];
+  /** Für wen der Antrag gestellt wurde (Kind, Vollmacht, Unternehmen) */
+  fuer?: string;
+  /** Konto der bevollmächtigten Person, falls jemand im fremden Namen handelt */
+  vertreterKontoId?: string;
 }
 
 export interface EinreichungsErgebnis {

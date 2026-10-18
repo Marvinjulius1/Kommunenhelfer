@@ -815,4 +815,53 @@ export const weitereLeistungen: Leistung[] = [
       ],
     },
   },
+  // ---------------------------------------------------------------- Unternehmen
+  {
+    id: "sondernutzung",
+    aktiv: true,
+    titel: { de: "Sondernutzung öffentlicher Flächen", en: "Special use of public space" },
+    kurz: "Außengastronomie, Gerüst, Container oder Werbeaufsteller auf Gehweg oder Straße brauchen eine Erlaubnis.",
+    stichworte: ["sondernutzung", "aussengastronomie", "außengastronomie", "gerüst", "geruest", "container", "werbeaufsteller", "kundenstopper", "tische auf dem gehweg", "baustelleneinrichtung"],
+    unterlagen: ["Lageplan oder Skizze mit Maßen", "Bei Gerüsten: Angaben zum Bauvorhaben"],
+    gebuehren: [{ bezeichnung: "Verwaltungsgebühr", betrag: 35 }, { bezeichnung: "Sondernutzungsgebühr", betrag: "nach Fläche und Dauer", hinweis: "laut Sondernutzungssatzung" }],
+    bezahlung: { betrag: 35 },
+    ablauf: ["Sie beschreiben Art, Ort, Fläche und Zeitraum.", "Sie bezahlen die Verwaltungsgebühr online.", "Das Ordnungsamt prüft und schickt die Erlaubnis mit dem Bescheid über die Sondernutzungsgebühr."],
+    fristen: ["Bitte mindestens 2 Wochen vor Beginn beantragen."],
+    amtId: "ordnungsamt",
+    dokumente: [{ art: "sonstiges", pflicht: false, hinweis: "Lageplan oder Skizze" }],
+    online: true,
+    termin: false,
+    dauer: "ca. 5 Minuten",
+    formular: {
+      aufbewahrungTage: 365,
+      schritte: [
+        kontaktSchritt,
+        {
+          id: "nutzung",
+          titel: "Was möchten Sie aufstellen?",
+          felder: [
+            { id: "betriebsname", typ: "text", label: "Unternehmen (falls vorhanden)", maxLaenge: 160 },
+            {
+              id: "art",
+              typ: "radio",
+              label: "Art der Nutzung",
+              pflicht: true,
+              optionen: [
+                { wert: "gastro", label: "Tische und Stühle (Außengastronomie)" },
+                { wert: "geruest", label: "Gerüst oder Baustelleneinrichtung" },
+                { wert: "container", label: "Container oder Mulde" },
+                { wert: "werbung", label: "Werbeaufsteller oder Warenauslage" },
+                { wert: "sonstiges", label: "Etwas anderes" },
+              ],
+            },
+            { id: "nutzungsort", typ: "text", label: "Genauer Ort", hinweis: "Straße, Hausnummer, z. B. „Gehweg vor dem Haus“", pflicht: true, maxLaenge: 160 },
+            { id: "flaeche", typ: "number", label: "Fläche in Quadratmetern", pflicht: true, min: 1, max: 1000, halb: true },
+            { id: "von", typ: "date", label: "Von", pflicht: true, halb: true },
+            { id: "bis", typ: "date", label: "Bis", pflicht: true, halb: true },
+          ],
+        },
+      ],
+      bestaetigungen: [{ id: "richtig", label: "Ich bestätige, dass meine Angaben richtig und vollständig sind." }],
+    },
+  },
 ];

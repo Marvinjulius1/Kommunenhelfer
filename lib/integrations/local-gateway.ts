@@ -9,9 +9,10 @@ import type { SubmissionGateway } from "./index";
 
 export const localGateway: SubmissionGateway = {
   id: "local",
-  async einreichen({ tenant, leistung, daten, basisUrl, kontoId, dokumente }) {
+  async einreichen({ tenant, leistung, daten, basisUrl, kontoId, dokumente, fuer, vertreterKontoId }) {
     return erstelleVorgang({
       kontoId,
+      vertreterKontoId,
       dokumente,
       tenant,
       quelle: "formular",
@@ -24,6 +25,7 @@ export const localGateway: SubmissionGateway = {
           telefon: daten.telefon,
         },
         werte: daten,
+        fuer,
       },
       aufbewahrungTage: leistung.formular?.aufbewahrungTage ?? tenant.uploads.aufbewahrungTage,
       basisUrl,

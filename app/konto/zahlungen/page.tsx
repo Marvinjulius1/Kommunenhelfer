@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Glass } from "@/components/ui/Glass";
 import { Page } from "@/components/ui/Page";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { getTenant } from "@/lib/tenant";
 import { euro, zahlungenVon } from "@/lib/zahlung/service";
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Zahlungen" };
 export const dynamic = "force-dynamic";
 
 export default async function Zahlungen() {
-  const k = await aktuellesKonto(await getTenant());
+  const k = await kontoFuer(await getTenant(), "zahlungen");
   if (!k) redirect("/konto/anmelden?weiter=/konto/zahlungen");
   const liste = await zahlungenVon((z) => z.kontoId === k.id);
   const offen = liste.filter((z) => z.status === "offen");

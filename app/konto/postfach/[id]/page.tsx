@@ -4,7 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { Glass } from "@/components/ui/Glass";
 import { Icon } from "@/components/ui/Icon";
 import { Markdown } from "@/components/ui/Markdown";
-import { aktuellesKonto } from "@/lib/konto/service";
+import { kontoFuer } from "@/lib/konto/vertretung";
 import { alsGelesen, postSicht } from "@/lib/postfach/service";
 import type { PostfachRecord } from "@/lib/records";
 import { store } from "@/lib/storage/store";
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Postfach" };
 export const dynamic = "force-dynamic";
 
 export default async function PostEintrag({ params }: { params: Promise<{ id: string }> }) {
-  const k = await aktuellesKonto(await getTenant());
+  const k = await kontoFuer(await getTenant(), "post");
   if (!k) redirect("/konto/anmelden?weiter=/konto/postfach");
   const r = await store().get<PostfachRecord>("postfach", (await params).id);
   if (!r || r.kontoId !== k.id) notFound();

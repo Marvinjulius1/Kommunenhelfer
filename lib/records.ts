@@ -30,6 +30,8 @@ export interface VorgangDaten {
   werte?: Record<string, string>;
   /** Freitext des Bürgers */
   nachricht?: string;
+  /** Für wen der Antrag gestellt wurde, z. B. „Kind: Mia, vertreten durch …“ oder „Im Auftrag von …“ */
+  fuer?: string;
 }
 
 export interface Nachricht {
@@ -61,6 +63,8 @@ export interface VorgangRecord extends StoredRecord {
   /** Verschlüsselt: Nachricht[] (Rückfragen und Antworten) */
   nachrichten: Verschluesselt;
   einwilligungAm: string;
+  /** Eingereicht durch eine bevollmächtigte Person oder ein Firmenmitglied */
+  vertreterKontoId?: string;
   /** Wiedervorlage im Backoffice (Notiz verschlüsselt) */
   wiedervorlage?: { am: string; notiz?: Verschluesselt; benutzer: string };
   /** Verschlüsselt: Kanaele[] – Status-Nachrichten per SMS/WhatsApp/E-Mail, auch ohne Konto */
@@ -155,6 +159,9 @@ export interface KontoRecord extends StoredRecord {
   letzteAnmeldung: string;
   /** Bereits versandte Erinnerungen (z. B. "ausweis-90:2027-03-01"), damit nichts doppelt kommt */
   erinnerungen?: string[];
+  /** Person (Standard) oder Unternehmen/Verein – Organisationen haben keinen eigenen Login */
+  art?: "person" | "organisation";
+  organisation?: { rechtsform?: string };
   /** Ausgeblendete Hinweise („Was steht bei mir an?“) – IDs enthalten das Datum, Wiederkehrendes erscheint im nächsten Jahr neu */
   ausgeblendet?: string[];
 }
@@ -450,4 +457,38 @@ export interface VerwarnungRecord extends StoredRecord {
   zahlungId?: string;
   vorgangId?: string;
   erfasstVon: string;
+}
+
+// ---------------------------------------------------------------------------
+// Vollmachten, Familie, Unternehmen
+// ---------------------------------------------------------------------------
+
+export type VollmachtUmfang = "antraege" | "termine" | "post" | "zahlungen";
+
+/**
+ * Vollmacht zwischen zwei Konten – oder Mitgliedschaft in einem Unternehmenskonto.
+ * vonKontoId = wer vertreten wird (Person oder Organisation), anKontoId = wer handelt.
+ */
+export interface VollmachtRecord extends StoredRecord {
+  art: "vollmacht" | "organisation";
+  vonKontoId: string;
+  anKontoId?: string;
+  rolle?: "inhaber" | "mitarbeiter";
+  umfang: VollmachtUmfang[];
+  /** Ablauf (ISO-Datum), sonst unbefristet bis zum Widerruf */
+  bis?: string;
+  status: "offen" | "aktiv" | "widerrufen";
+  /** Einladung: Hash des Codes aus dem Link */
+  einladungHash?: string;
+  /** Verschlüsselt: { vonName, anName, anEmail } */
+  inhalt: Verschluesselt;
+}
+
+/** Was eine bevollmächtigte Person im Namen einer anderen getan hat – sichtbar für die vertretene Person. */
+export interface VertretungsLogRecord extends StoredRecord {
+  vollmachtId: string;
+  vonKontoId: string;
+  anKontoId: string;
+  aktion: string;
+  details?: string;
 }

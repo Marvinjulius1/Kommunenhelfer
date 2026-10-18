@@ -12,7 +12,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { cookies, headers } from "next/headers";
 import type { GemeindeConfig } from "@/config/types";
 import { decryptJson, encryptJson, zweckSchluessel } from "@/lib/crypto";
-import type { AnmeldungRecord, AusweisRecord, IdeeRecord, KontoRecord, PostfachRecord, SafeRecord, SitzungRecord, TerminRecord, VorgangRecord, WarteRecord, ZahlungRecord } from "@/lib/records";
+import type { VollmachtRecord, AnmeldungRecord, AusweisRecord, IdeeRecord, KontoRecord, PostfachRecord, SafeRecord, SitzungRecord, TerminRecord, VorgangRecord, WarteRecord, ZahlungRecord } from "@/lib/records";
 import { blobs } from "@/lib/storage/blobs";
 import { pruefeSignatur, signiere } from "@/lib/signatur";
 import { inTagen, store } from "@/lib/storage/store";
@@ -46,6 +46,7 @@ export function sicht(k: KontoRecord): KontoSicht {
     geburtsdatum: p.geburtsdatum,
     vertrauensniveau: k.vertrauensniveau,
     emailBestaetigt: k.emailBestaetigt,
+    kinder: p.kinder?.length ? p.kinder : undefined,
   };
 }
 
@@ -186,6 +187,15 @@ export async function entferneKontoDaten(k: Pick<KontoRecord, "id">) {
   for (const w of await s.list<WarteRecord>("wartenummern", (x) => x.kontoId === k.id)) await s.put("wartenummern", { ...w, kontoId: undefined });
   for (const i of await s.list<IdeeRecord>("ideen", (x) => x.kontoId === k.id)) await s.put("ideen", { ...i, kontoId: undefined });
   for (const a of await s.list<AnmeldungRecord>("anmeldungen", (x) => x.kontoId === k.id)) await s.put("anmeldungen", { ...a, kontoId: undefined });
+  // Vollmachten: erteilte und erhaltene enden; Unternehmen ohne weitere Inhaber werden mit gelöscht
+  for (const v of await s.list<VollmachtRecord>("vollmachten", (x) => x.vonKontoId === k.id || x.anKontoId === k.id)) {
+    await s.delete("vollmachten", v.id);
+    if (v.art === "organisation" && v.anKontoId === k.id && v.rolle === "inhaber") {
+      const weitere = await s.list<VollmachtRecord>("vollmachten", (x) => x.vonKontoId === v.vonKontoId && x.rolle === "inhaber" && x.status === "aktiv" && x.anKontoId !== k.id);
+      const org = await s.get<KontoRecord>("konten", v.vonKontoId);
+      if (!weitere.length && org) await entferneKontoDaten(org);
+    }
+  }
   for (const sammlung of ["checklisten", "push", "kitawuensche"]) {
     for (const r of await s.list<{ id: string; kontoId?: string; tenant: string; erstelltAm: string; loeschenAm: string }>(sammlung, (x) => x.kontoId === k.id)) {
       await s.delete(sammlung, r.id);

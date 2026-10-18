@@ -57,6 +57,10 @@ export interface KontoSicht {
   geburtsdatum?: string;
   vertrauensniveau: Vertrauensniveau;
   emailBestaetigt: boolean;
+  /** Kinder aus „Mein Haushalt“ – für Anträge im Namen eines Kindes */
+  kinder?: { vorname: string; geburtsdatum: string }[];
+  /** Aktive Vertretung: Die Person handelt gerade für jemand anderen */
+  handeltFuer?: { name: string; art: "vollmacht" | "organisation"; umfang: string[] };
 }
 
 /** Felder, die aus dem Profil in Formulare übernommen werden (Feld-ID → Profil-Feld). */
